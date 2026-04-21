@@ -30,6 +30,22 @@ Description: Fix YouTube images not loading
 Author: Eevee
 Name: YouTube Fix
 
+Package: com.kyic.autoc
+Version: 1.0.1
+Architecture: iphoneos-arm64
+Maintainer: Kyic <your@email>
+Installed-Size: 168
+Depends: mobilesubstrate | org.coolstar.sileo
+Filename: ./autoc_1.0.1_arm64.deb
+Size: 6250
+MD5sum: 5203ac75595f2284f5248c4adac2d03e
+SHA1: df6c3f2a9da1fc9613f06c10f4082b8d69d0b271
+SHA256: e95f578e8240b6c43dd26a64f25f988f6d35ec104702c36c09bc21ddf98bbbb5
+Section: Tweaks
+Description: Tweak xoá cache thông minh + ẩn quảng cáo bán hàng, ghim sản phẩm YouTube
+Author: Kyic
+Name: AutoC YouTube
+
 Package: com.ps.noytmpremium
 Version: 1.0.2
 Architecture: iphoneos-arm64
