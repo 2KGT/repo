@@ -14,26 +14,26 @@
 
 ### 🚀 Thêm Repo
 
-<div align="center" style="display: flex; flex-direction: column; gap: 24px; max-width: 380px; margin: 0 auto;">
+<div align="center" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; max-width: 700px; margin: 30px auto;">
 
-  <!-- Nút Esign / Feather -->
-  <div>
+  <!-- Nút Esign -->
+  <div style="text-align: center; min-width: 280px;">
     <h3>📱 Esign / Feather</h3>
     <a href="https://2kgt.github.io/repo/apps.json">
       <img src="https://img.shields.io/badge/ADD_TO_ESIGN-FE3C30?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Esign">
     </a>
-    <p style="margin-top: 8px;">
+    <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.9;">
       <code>https://2kgt.github.io/repo/apps.json</code>
     </p>
   </div>
 
-  <!-- Nút Sileo / Cydia -->
-  <div>
+  <!-- Nút Sileo -->
+  <div style="text-align: center; min-width: 280px;">
     <h3>📦 Sileo / Cydia / Zebra</h3>
     <a href="https://2kgt.github.io/repo/">
       <img src="https://img.shields.io/badge/ADD_TO_SILEO-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Sileo">
     </a>
-    <p style="margin-top: 8px;">
+    <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.9;">
       <code>https://2kgt.github.io/repo/</code>
     </p>
   </div>
