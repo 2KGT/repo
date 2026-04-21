@@ -14,7 +14,38 @@
 
 ### 🚀 Thêm Repo
 
-#### 📦 Thêm vào Sileo / Cydia / Zebra
-[![Add to Sileo](https://img.shields.io/badge/Add_to_Sileo-007AFF?style=for-the-badge&logo=apple&logoColor=white)](https://2kgt.github.io/repo/)
+<div align="center">
 
-**Link thủ công:**
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <h3>📦 Sileo / Cydia / Zebra</h3>
+      <a href="https://2kgt.github.io/repo/">
+        <img src="https://img.shields.io/badge/Add_to_Sileo-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Sileo">
+      </a>
+      <br><br>
+      <code>https://2kgt.github.io/repo/</code>
+    </td>
+    <td align="center" width="50%">
+      <h3>📱 Esign / Feather</h3>
+      <a href="https://2kgt.github.io/repo/apps.json">
+        <img src="https://img.shields.io/badge/Add_to_Esign-FE3C30?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Esign">
+      </a>
+      <br><br>
+      <code>https://2kgt.github.io/repo/apps.json</code>
+    </td>
+  </tr>
+</table>
+
+</div>
+
+---
+
+### 📍 Thông tin
+- **Vị trí**: Hanoi, Vietnam  
+- **Cập nhật**: Thường xuyên  
+- **Hỗ trợ**: Sileo • Cydia • Zebra • Esign • Feather
+
+---
+
+**Cảm ơn bạn đã sử dụng repo!** ❤️
