@@ -1,6 +1,7 @@
 {
   "name": "Kyic IPA Repo",
   "identifier": "com.kyic.iparepo",
+  "iconURL": "https://2kgt.github.io/repo/icons/Kyic.png",
   "apps": [
     {
       "name": "Esign",
