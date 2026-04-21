@@ -1,3 +1,6 @@
+# Repo Cydia https://2kgt.github.io/repo/
+# Repo Ésign https://2kgt.github.io/repo/apps.json
+
 # Repo 2kgt
 Một mẫu kho lưu trữ Cydia. Mẫu này chứa mẫu về cách bạn có thể dễ dàng tạo các trang mô tả mà không cần sao chép các trang html của mình. Các trang được tạo kiểu bằng cách sử dụng Bootsrap thực sự dễ sử dụng. Bạn có thể xem nó trông như thế nào bằng cách truy cập repo mẫu này trên máy tính để bàn hoặc điện thoại di động của bạn.
 
