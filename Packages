@@ -1,8 +1,0 @@
-Origin: Kyic Repository
-Label: Kyic Repository
-Suite: stable
-Version: 1.0
-Codename: ios
-Architectures: iphoneos-arm64 iphoneos-arm
-Components: main
-Description: Kyic Repository - Repo tweaks cho iOS
