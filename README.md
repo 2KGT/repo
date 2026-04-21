@@ -12,16 +12,11 @@
 
 ---
 
-<div align="center" style="display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; margin: 40px 0;">
+<div align="center" style="margin: 40px 0;">
 
-  <!-- Nút Esign đỏ -->
-  <a href="https://2kgt.github.io/repo/apps.json">
-    <img src="https://img.shields.io/badge/ADD_TO_ESIGN-FE3C30?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Esign">
-  </a>
-
-  <!-- Nút Sileo xanh -->
+  <!-- Nút xanh - ADD SOURCE -->
   <a href="https://2kgt.github.io/repo/">
-    <img src="https://img.shields.io/badge/ADD_TO_SILEO-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Sileo">
+    <img src="https://img.shields.io/badge/ADD_SOURCE-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="Add Source">
   </a>
 
 </div>
