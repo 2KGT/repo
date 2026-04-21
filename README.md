@@ -1,5 +1,3 @@
-# Kyic Repository
-
 <p align="center">
   <img src="https://2kgt.github.io/repo/CydiaIcon.png" width="120" height="120" alt="Kyic Repository">
 </p>
