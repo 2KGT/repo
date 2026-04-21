@@ -1,9 +1,9 @@
-name: Update apps.json from Releases
+name: Auto Update apps.json from Releases
 
 on:
   release:
     types: [published, edited]
-  workflow_dispatch:   # Cho phép chạy thủ công
+  workflow_dispatch:
 
 jobs:
   update-json:
@@ -22,38 +22,50 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+
+            // Lấy tất cả Releases
             const { data: releases } = await github.rest.repos.listReleases({
               owner: context.repo.owner,
               repo: context.repo.repo,
             });
 
-            const apps = [];
+            const autoApps = [];
 
             for (const release of releases) {
               for (const asset of release.assets) {
-                if (asset.name.endsWith('.ipa')) {
-                  const appName = asset.name.replace(/\.ipa$/, '').replace(/_/g, ' ').replace(/-\d+$/, '');
-                  
-                  apps.push({
-                    name: appName || release.name || "Unknown App",
-                    bundleIdentifier: "com.unknown.app", // Bạn có thể chỉnh sau hoặc để thủ công
-                    version: release.tag_name.replace(/^v/, ''),
+                if (asset.name.toLowerCase().endsWith('.ipa')) {
+                  const fileName = asset.name.replace(/\.ipa$/i, '');
+                  let appName = fileName.split(/[-_]/)[0] || release.name || "Unknown";
+                  appName = appName.replace(/^\d+/, '').trim();
+
+                  // Tự động đoán bundleIdentifier phổ biến
+                  let bundleId = "com.unknown.app";
+                  const lowerName = appName.toLowerCase();
+                  if (lowerName.includes("youtube")) bundleId = "com.google.ios.youtube";
+                  else if (lowerName.includes("esign")) bundleId = "com.esign.installer";
+                  else if (lowerName.includes("turrit")) bundleId = "com.turrit.app";
+
+                  autoApps.push({
+                    name: appName,
+                    bundleIdentifier: bundleId,
+                    version: release.tag_name.replace(/^v/i, ''),
                     downloadURL: asset.browser_download_url,
                     size: asset.size,
                     developerName: "Kyic",
-                    subtitle: appName || release.name,
-                    description: release.name || "IPA từ Kyic Repository",
-                    localizedDescription: release.body ? release.body.substring(0, 300) : "IPA đã được kiểm tra và tổng hợp bởi Kyic.",
-                    versionDate: release.published_at.split('T')[0],
-                    iconURL: `https://2kgt.github.io/repo/icons/${appName.replace(/\s+/g, '') || 'Default'}.png`
+                    subtitle: `${appName} ${release.tag_name.replace(/^v/i, '')}`,
+                    description: `${appName} phiên bản ${release.tag_name.replace(/^v/i, '')}`,
+                    localizedDescription: release.body 
+                      ? release.body.substring(0, 250) + "..." 
+                      : `${appName} đã được kiểm tra và tổng hợp bởi Kyic.`,
+                    versionDate: release.published_at ? release.published_at.split('T')[0] : new Date().toISOString().split('T')[0],
+                    iconURL: `https://2kgt.github.io/repo/icons/${appName.replace(/\s+/g, '')}.png`
                   });
                 }
               }
             }
 
-            // Giữ lại các app thủ công (như Esign, Turrit) nếu cần
+            // Các app thủ công (bạn có thể thêm bớt ở đây)
             const manualApps = [
-              // Dán phần Esign và Turrit của bạn vào đây
               {
                 "name": "Esign",
                 "bundleIdentifier": "com.esign.installer",
@@ -63,14 +75,26 @@ jobs:
                 "developerName": "Kyic",
                 "subtitle": "Công cụ ký IPA mạnh mẽ",
                 "description": "Esign v5.0.2 - Tool ký và sideload IPA không cần máy tính.",
-                "localizedDescription": "Chức năng đã thêm: Hỗ trợ ký nhiều loại chứng chỉ...",
+                "localizedDescription": "Chức năng đã thêm: Hỗ trợ ký nhiều loại chứng chỉ • Tối ưu tốc độ • Giao diện mới.\nIPA đã được kiểm tra và tổng hợp bởi Kyic.",
                 "versionDate": "2026-04-21",
                 "iconURL": "https://2kgt.github.io/repo/icons/Esign.png"
+              },
+              {
+                "name": "Turrit",
+                "bundleIdentifier": "com.turrit.app",
+                "version": "1.4.6",
+                "downloadURL": "https://2kgt.github.io/repo/apps/turrit.ipa",
+                "size": 88900000,
+                "developerName": "Kyic",
+                "subtitle": "Ứng dụng Turrit",
+                "description": "Turrit - App Telegram bên thứ ba đa năng.",
+                "localizedDescription": "Turrit-TGEXtra 1.7.3.\nIPA đã được kiểm tra và tổng hợp bởi Kyic Team.",
+                "versionDate": "2026-04-21",
+                "iconURL": "https://2kgt.github.io/repo/icons/Turrit.png"
               }
-              // Thêm Turrit tương tự nếu muốn
             ];
 
-            const finalApps = [...manualApps, ...apps];
+            const finalApps = [...manualApps, ...autoApps];
 
             const jsonContent = {
               "name": "Kyic IPA Repository",
@@ -80,10 +104,4 @@ jobs:
             };
 
             fs.writeFileSync('apps.json', JSON.stringify(jsonContent, null, 2));
-            console.log('✅ apps.json đã được tạo tự động từ Releases!');
-
-      - name: Commit and push apps.json
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Auto update apps.json from new Releases"
-          file_pattern: apps.json
+            console.log(`✅ Đã tạo apps.json với ${finalApps.length} ứng dụng!`);
