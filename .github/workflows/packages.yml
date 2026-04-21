@@ -1,26 +1,36 @@
-name: Generate Packages
+name: Auto Generate Packages for Sileo/Cydia
 
 on:
   push:
     paths:
       - 'debs/**'
-
-permissions:
-  contents: write
+  workflow_dispatch:   # Cho phép chạy thủ công
 
 jobs:
-  build:
+  generate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install dpkg-scanpackages
         run: sudo apt-get update && sudo apt-get install -y dpkg-dev
 
-      - name: Generate Packages
+      - name: Generate Packages and Packages.bz2
         run: |
           cd debs
           dpkg-scanpackages -m . /dev/null > ../Packages
           cd ..
           bzip2 -kf Packages
-          echo "✅ Packages và Packages.bz2 đã được tạo tự động!"
+          echo "✅ Đã tạo Packages và Packages.bz2 thành công!"
+
+      - name: Commit Packages files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto update Packages & Packages.bz2"
+          file_pattern: Packages*
