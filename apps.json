@@ -3,14 +3,14 @@
   "identifier": "com.kyic.iparepo",
   "apps": [
     {
-      "name": "Tên App Của Bạn",
-      "bundleIdentifier": "com.example.app",
+      "name": "**Tên App**",
+      "bundleIdentifier": "com.example.myapp",
       "version": "1.0",
-      "downloadURL": "https://2kgt.github.io/repo/apps/ten-app.ipa",
+      "downloadURL": "https://2kgt.github.io/repo/apps/**ten-app.ipa**",
       "size": 0,
       "developerName": "Kyic",
-      "subtitle": "Ứng dụng test",
-      "description": "Mô tả ngắn về app"
+      "subtitle": "Ứng dụng test từ repo",
+      "description": "Mô tả ngắn gọn về app này"
     }
   ]
 }
