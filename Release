@@ -1,8 +1,8 @@
-Origin: Kyic Repo
-Label: Kyic Repo
+Origin: Kyic IPA Repository
+Label: Kyic IPA Repository
 Suite: stable
 Version: 1.0
 Codename: ios
 Architectures: iphoneos-arm64 iphoneos-arm
 Components: main
-Description: Repo Sileo & IPA của Kyic - Hanoi
+Description: Kyic IPA Repository - Repo Sileo & IPA
