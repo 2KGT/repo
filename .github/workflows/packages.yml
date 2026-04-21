@@ -5,13 +5,16 @@ on:
     paths:
       - 'debs/**'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dpkg
+      - name: Install dpkg-scanpackages
         run: sudo apt-get update && sudo apt-get install -y dpkg-dev
 
       - name: Generate Packages
@@ -20,4 +23,4 @@ jobs:
           dpkg-scanpackages -m . /dev/null > ../Packages
           cd ..
           bzip2 -kf Packages
-          echo "✅ Packages.bz2 đã được tạo tự động!"
+          echo "✅ Packages và Packages.bz2 đã được tạo tự động!"
