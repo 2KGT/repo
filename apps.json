@@ -11,7 +11,22 @@
       "developerName": "Kyic",
       "subtitle": "Công cụ ký IPA mạnh mẽ",
       "description": "Esign v5.0.2 - Tool ký và sideload IPA không cần máy tính. Hỗ trợ nhiều chứng chỉ.",
-      "iconURL": "https://2kgt.github.io/repo/apps/esign.png"
+      "localizedDescription": "Chức năng đã thêm: Hỗ trợ ký nhiều loại chứng chỉ • Tối ưu tốc độ • Giao diện mới.\nIPA đã được kiểm tra và tổng hợp bởi Kyic.",
+      "versionDate": "2026-04-21",
+      "iconURL": "https://2kgt.github.io/repo/icons/Esign.png"
+    },
+    {
+      "name": "Turrit",
+      "bundleIdentifier": "com.turrit.app",
+      "version": "1.0",
+      "downloadURL": "https://2kgt.github.io/repo/apps/turrit.ipa",
+      "size": 0,
+      "developerName": "Kyic",
+      "subtitle": "Ứng dụng Turrit",
+      "description": "Turrit - App đa năng đang chuẩn bị update.",
+      "localizedDescription": "Chuẩn bị cập nhật lớn.\nIPA đã được kiểm tra và tổng hợp bởi Kyic Team.",
+      "versionDate": "2026-04-21",
+      "iconURL": "https://2kgt.github.io/repo/icons/Turrit.png"
     }
   ]
 }
