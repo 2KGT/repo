@@ -12,21 +12,17 @@
 
 ---
 
-<div align="center" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; max-width: 700px; margin: 40px auto;">
+<div align="center" style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin: 30px 0;">
 
-  <!-- Nút Esign (đỏ) -->
-  <div style="text-align: center;">
-    <a href="https://2kgt.github.io/repo/apps.json">
-      <img src="https://img.shields.io/badge/ADD_TO_ESIGN-FE3C30?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Esign">
-    </a>
-  </div>
+  <!-- Nút Esign đỏ -->
+  <a href="https://2kgt.github.io/repo/apps.json">
+    <img src="https://img.shields.io/badge/ADD_TO_ESIGN-FE3C30?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Esign">
+  </a>
 
-  <!-- Nút Sileo (xanh) -->
-  <div style="text-align: center;">
-    <a href="https://2kgt.github.io/repo/">
-      <img src="https://img.shields.io/badge/ADD_TO_SILEO-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Sileo">
-    </a>
-  </div>
+  <!-- Nút Sileo xanh -->
+  <a href="https://2kgt.github.io/repo/">
+    <img src="https://img.shields.io/badge/ADD_TO_SILEO-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Sileo">
+  </a>
 
 </div>
 
