@@ -14,26 +14,28 @@
 
 ### 🚀 Thêm Repo
 
-<div align="center" style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; max-width: 700px; margin: 0 auto;">
+<div align="center" style="display: flex; flex-direction: column; gap: 24px; max-width: 380px; margin: 0 auto;">
 
-  <!-- Nút Esign / Feather - Trái (đỏ) -->
-  <div style="text-align: center; flex: 1; min-width: 280px;">
+  <!-- Nút Esign / Feather -->
+  <div>
     <h3>📱 Esign / Feather</h3>
     <a href="https://2kgt.github.io/repo/apps.json">
-      <img src="https://img.shields.io/badge/Add_to_Esign-FE3C30?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Esign">
+      <img src="https://img.shields.io/badge/ADD_TO_ESIGN-FE3C30?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Esign">
     </a>
-    <br><br>
-    <code>https://2kgt.github.io/repo/apps.json</code>
+    <p style="margin-top: 8px;">
+      <code>https://2kgt.github.io/repo/apps.json</code>
+    </p>
   </div>
 
-  <!-- Nút Sileo / Cydia - Phải (xanh) -->
-  <div style="text-align: center; flex: 1; min-width: 280px;">
+  <!-- Nút Sileo / Cydia -->
+  <div>
     <h3>📦 Sileo / Cydia / Zebra</h3>
     <a href="https://2kgt.github.io/repo/">
-      <img src="https://img.shields.io/badge/Add_to_Sileo-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Sileo">
+      <img src="https://img.shields.io/badge/ADD_TO_SILEO-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Sileo">
     </a>
-    <br><br>
-    <code>https://2kgt.github.io/repo/</code>
+    <p style="margin-top: 8px;">
+      <code>https://2kgt.github.io/repo/</code>
+    </p>
   </div>
 
 </div>
@@ -42,7 +44,7 @@
 
 ### 📍 Thông tin
 - **Vị trí**: Hanoi, Vietnam  
-- **Cập nhật**: Thường xuyên  
+- **Cập nhật**: Thường xuyên
 
 ---
 
