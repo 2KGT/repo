@@ -21,8 +21,3 @@ jobs:
           cd ..
           bzip2 -kf Packages
           echo "✅ Đã tạo Packages và Packages.bz2 thành công!"
-
-      - name: Commit Packages files
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Auto update Packages.bz2"
