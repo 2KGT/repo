@@ -1,5 +1,5 @@
 {
-  "name": "Kyic IPA Repo",
+  "name": "Kyic IPA Repository",
   "identifier": "com.kyic.iparepo",
   "iconURL": "https://2kgt.github.io/repo/icons/Kyic.png",
   "apps": [
@@ -19,9 +19,9 @@
     {
       "name": "Turrit",
       "bundleIdentifier": "com.turrit.app",
-      "version": "1.0",
+      "version": "1.4.6",
       "downloadURL": "https://2kgt.github.io/repo/apps/turrit.ipa",
-      "size": 0,
+      "size": 88900000,
       "developerName": "Kyic",
       "subtitle": "Ứng dụng Turrit",
       "description": "Turrit - App đa năng đang chuẩn bị update.",
