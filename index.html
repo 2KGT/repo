@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kyic IPA Repository</title>
+    <title>Kyic Repository</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             background: linear-gradient(135deg, #1e3a8a, #3b82f6);
             color: white;
             text-align: center;
@@ -14,57 +14,51 @@
             padding: 40px 20px;
             min-height: 100vh;
         }
-        .container { max-width: 600px; margin: 0 auto; }
-        img {
-            width: 110px;
-            height: 110px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        h1 { font-size: 2.4em; margin: 10px 0; }
-        p { font-size: 1.15em; opacity: 0.9; margin-bottom: 35px; }
+        img { width: 120px; height: 120px; border-radius: 22px; margin: 20px 0; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+        h1 { font-size: 2.5em; margin: 10px 0; }
+        p { font-size: 1.2em; opacity: 0.9; margin-bottom: 40px; }
         .btn {
             display: block;
-            margin: 12px auto;
-            max-width: 320px;
-            padding: 16px 20px;
-            font-size: 1.1em;
+            margin: 15px auto;
+            max-width: 340px;
+            padding: 18px 24px;
+            font-size: 1.15em;
             font-weight: 600;
-            border-radius: 14px;
+            border-radius: 16px;
             text-decoration: none;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
         }
-        .esign-btn {
-            background: white;
-            color: #1e3a8a;
-        }
-        .sileo-btn {
-            background: #1e40af;
-            color: white;
-        }
+        .esign-btn { background: white; color: #1e3a8a; }
+        .sileo-btn { background: #1e40af; color: white; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <img src="https://2kgt.github.io/repo/icons/Kyic.png" alt="Kyic IPA Repository">
-        <h1>Kyic IPA Repository</h1>
-        <p>Repo chuyên cung cấp IPA &amp; Tweaks chất lượng cao cho iOS</p>
-        
-        <!-- Nút Esign / Feather -->
-        <a href="https://2kgt.github.io/repo/apps.json" class="btn esign-btn">
-            📱 Thêm vào Esign / Feather
-        </a>
-        
-        <!-- Nút Sileo / Cydia -->
-        <a href="https://2kgt.github.io/repo/" class="btn sileo-btn">
-            📦 Thêm vào Sileo / Cydia
-        </a>
-        
-        <div style="margin-top: 50px; font-size: 0.95em; opacity: 0.85;">
-            📍 Hanoi, Vietnam<br>
-            Cập nhật thường xuyên • Hỗ trợ Esign, Feather, Sileo
-        </div>
+    <img src="https://2kgt.github.io/repo/CydiaIcon.png" alt="Kyic Repository">
+    <h1>Kyic Repository</h1>
+    <p>Repo cung cấp tweak & IPA chất lượng cho iOS</p>
+
+    <a href="#" onclick="copyEsign(); return false;" class="btn esign-btn">
+        📋 Copy Link thêm vào Esign / Feather
+    </a>
+
+    <a href="https://2kgt.github.io/repo/" class="btn sileo-btn">
+        📦 Thêm vào Sileo / Cydia / Zebra
+    </a>
+
+    <div style="margin-top: 60px; font-size: 0.95em; opacity: 0.85;">
+        📍 Hanoi, Vietnam<br><br>
+        Nhấn nút trên → Dán link vào Esign (App Source) hoặc Feather
     </div>
+
+    <script>
+        function copyEsign() {
+            const link = "https://2kgt.github.io/repo/apps.json";
+            navigator.clipboard.writeText(link).then(() => {
+                alert("✅ Đã copy link!\n\nMở Esign → App Source → + → Dán link\nHoặc Feather → Add AltStore Source");
+            }).catch(() => {
+                prompt("Copy thủ công:", link);
+            });
+        }
+    </script>
 </body>
 </html>
