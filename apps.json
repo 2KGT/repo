@@ -3,14 +3,14 @@
   "identifier": "com.kyic.iparepo",
   "apps": [
     {
-      "name": "**Tên App**",
-      "bundleIdentifier": "com.example.myapp",
+      "name": "Esign",
+      "bundleIdentifier": "com.esign.installer",
       "version": "1.0",
-      "downloadURL": "https://2kgt.github.io/repo/apps/**ten-app.ipa**",
-      "size": 0,
+      "downloadURL": "https://2kgt.github.io/repo/apps/esign.ipa",
+      "size": 7500000,
       "developerName": "Kyic",
-      "subtitle": "Ứng dụng test từ repo",
-      "description": "Mô tả ngắn gọn về app này"
+      "subtitle": "Công cụ ký IPA mạnh mẽ",
+      "description": "Esign - Tool ký và cài đặt IPA trực tiếp trên iPhone. Hỗ trợ nhiều chứng chỉ và tweak."
     }
   ]
 }
