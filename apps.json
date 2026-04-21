@@ -5,7 +5,7 @@
     {
       "name": "Esign",
       "bundleIdentifier": "com.esign.installer",
-      "version": "1.0",
+      "version": "5.0.2",
       "downloadURL": "https://2kgt.github.io/repo/apps/esign.ipa",
       "size": 7500000,
       "developerName": "Kyic",
