@@ -14,9 +14,9 @@
 
 ### Thêm Repo
 
-<div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin: 30px 0;">
+<div align="center" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; max-width: 700px; margin: 30px auto;">
 
-  <!-- Nút Esign / Feather -->
+  <!-- Nút Esign -->
   <div style="text-align: center; flex: 1; min-width: 260px;">
     <h3>📱 Esign / Feather</h3>
     <a href="https://2kgt.github.io/repo/apps.json">
@@ -24,7 +24,7 @@
     </a>
   </div>
 
-  <!-- Nút Sileo / Cydia -->
+  <!-- Nút Sileo -->
   <div style="text-align: center; flex: 1; min-width: 260px;">
     <h3>📦 Sileo / Cydia / Zebra</h3>
     <a href="https://2kgt.github.io/repo/">
@@ -36,7 +36,7 @@
 
 ---
 
-### 📍 Thông tin
+### Thông tin
 - **Vị trí**: Hanoi, Vietnam  
 - **Cập nhật**: Thường xuyên
 
