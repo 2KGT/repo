@@ -1,0 +1,16 @@
+{
+  "name": "Kyic IPA Repo",
+  "identifier": "com.kyic.iparepo",
+  "apps": [
+    {
+      "name": "Tên App Của Bạn",
+      "bundleIdentifier": "com.example.app",
+      "version": "1.0",
+      "downloadURL": "https://2kgt.github.io/repo/apps/ten-app.ipa",
+      "size": 0,
+      "developerName": "Kyic",
+      "subtitle": "Ứng dụng test",
+      "description": "Mô tả ngắn về app"
+    }
+  ]
+}
