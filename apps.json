@@ -7,10 +7,11 @@
       "bundleIdentifier": "com.esign.installer",
       "version": "5.0.2",
       "downloadURL": "https://2kgt.github.io/repo/apps/esign.ipa",
-      "size": 7500000,
+      "size": 7510000,
       "developerName": "Kyic",
       "subtitle": "Công cụ ký IPA mạnh mẽ",
-      "description": "Esign - Tool ký và cài đặt IPA trực tiếp trên iPhone. Hỗ trợ nhiều chứng chỉ và tweak."
+      "description": "Esign v5.0.2 - Tool ký và sideload IPA không cần máy tính. Hỗ trợ nhiều chứng chỉ.",
+      "iconURL": "https://2kgt.github.io/repo/apps/esign.png"
     }
   ]
 }
