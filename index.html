@@ -14,46 +14,34 @@
             padding: 40px 20px;
             min-height: 100vh;
         }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
+        .container { max-width: 600px; margin: 0 auto; }
         img {
-            width: 120px;
-            height: 120px;
+            width: 110px;
+            height: 110px;
             border-radius: 20px;
             margin-bottom: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-        p {
-            font-size: 1.2em;
-            opacity: 0.9;
-            margin-bottom: 30px;
-        }
+        h1 { font-size: 2.4em; margin: 10px 0; }
+        p { font-size: 1.15em; opacity: 0.9; margin-bottom: 35px; }
         .btn {
-            display: inline-block;
+            display: block;
+            margin: 12px auto;
+            max-width: 320px;
+            padding: 16px 20px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 14px;
+            text-decoration: none;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+        }
+        .esign-btn {
             background: white;
             color: #1e3a8a;
-            padding: 14px 32px;
-            font-size: 1.1em;
-            font-weight: bold;
-            border-radius: 12px;
-            text-decoration: none;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-            transition: all 0.3s;
         }
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 25px rgba(0,0,0,0.3);
-        }
-        .info {
-            margin-top: 40px;
-            font-size: 0.95em;
-            opacity: 0.8;
+        .sileo-btn {
+            background: #1e40af;
+            color: white;
         }
     </style>
 </head>
@@ -63,13 +51,19 @@
         <h1>Kyic IPA Repository</h1>
         <p>Repo chuyên cung cấp IPA &amp; Tweaks chất lượng cao cho iOS</p>
         
-        <a href="https://2kgt.github.io/repo/apps.json" class="btn">📱 Thêm vào Esign / Feather</a>
-        <br><br>
-        <a href="https://2kgt.github.io/repo/" class="btn" style="background:#1e40af; color:white;">📦 Thêm vào Sileo / Cydia</a>
+        <!-- Nút Esign / Feather -->
+        <a href="https://2kgt.github.io/repo/apps.json" class="btn esign-btn">
+            📱 Thêm vào Esign / Feather
+        </a>
         
-        <div class="info">
-            <p>📍 Hanoi, Vietnam<br>
-            Cập nhật thường xuyên • Hỗ trợ Esign, Feather, Sileo</p>
+        <!-- Nút Sileo / Cydia -->
+        <a href="https://2kgt.github.io/repo/" class="btn sileo-btn">
+            📦 Thêm vào Sileo / Cydia
+        </a>
+        
+        <div style="margin-top: 50px; font-size: 0.95em; opacity: 0.85;">
+            📍 Hanoi, Vietnam<br>
+            Cập nhật thường xuyên • Hỗ trợ Esign, Feather, Sileo
         </div>
     </div>
 </body>
