@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dpkg-scanpackages
+      - name: Install dpkg
         run: sudo apt-get update && sudo apt-get install -y dpkg-dev
 
       - name: Generate Packages
@@ -20,4 +20,4 @@ jobs:
           dpkg-scanpackages -m . /dev/null > ../Packages
           cd ..
           bzip2 -kf Packages
-          echo "✅ Đã tạo Packages và Packages.bz2 thành công!"
+          echo "✅ Packages.bz2 đã được tạo tự động!"
