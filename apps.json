@@ -21,7 +21,7 @@
   "bundleIdentifier": "com.google.ios.youtube",
   "version": "21.16.2",
   "downloadURL": "https://github.com/2KGT/repo/releases/download/YouTube_21.16.2/YouTube_21.16.2_ytx.ipa",
-  "size": 380000000,   // thay bằng kích thước thực tế của file (bytes). Nếu không biết thì tạm để 380000000
+  "size": 127926272,   // thay bằng kích thước thực tế của file (bytes). Nếu không biết thì tạm để 380000000
   "developerName": "Kyic",
   "subtitle": "YouTube 21.16.2",
   "description": "YouTube phiên bản 21.16.2",
