@@ -12,20 +12,20 @@
 
 ---
 
-### 🚀 Thêm Repo
+### Thêm Repo
 
-<div align="center" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+<div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin: 30px 0;">
 
-  <!-- Nút Esign -->
-  <div style="text-align: center;">
+  <!-- Nút Esign / Feather -->
+  <div style="text-align: center; flex: 1; min-width: 260px;">
     <h3>📱 Esign / Feather</h3>
     <a href="https://2kgt.github.io/repo/apps.json">
       <img src="https://img.shields.io/badge/ADD_TO_ESIGN-FE3C30?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Esign">
     </a>
   </div>
 
-  <!-- Nút Sileo -->
-  <div style="text-align: center;">
+  <!-- Nút Sileo / Cydia -->
+  <div style="text-align: center; flex: 1; min-width: 260px;">
     <h3>📦 Sileo / Cydia / Zebra</h3>
     <a href="https://2kgt.github.io/repo/">
       <img src="https://img.shields.io/badge/ADD_TO_SILEO-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Sileo">
