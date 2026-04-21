@@ -14,19 +14,9 @@
 
 <div align="center" style="margin: 40px 0;">
 
-  <!-- Nút xanh - ADD SOURCE -->
+  <!-- Nút xanh ADD SOURCE -->
   <a href="https://2kgt.github.io/repo/">
     <img src="https://img.shields.io/badge/ADD_SOURCE-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="Add Source">
   </a>
 
 </div>
-
----
-
-### 📍 Thông tin
-- **Vị trí**: Hanoi, Vietnam  
-- **Cập nhật**: Thường xuyên
-
----
-
-**Cảm ơn bạn đã sử dụng repo!** ❤️
