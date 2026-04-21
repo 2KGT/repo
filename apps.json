@@ -17,18 +17,18 @@
       "iconURL": "https://2kgt.github.io/repo/icons/Esign.png"
     },
     {
-  "name": "YouTube",
-  "bundleIdentifier": "com.google.ios.youtube",
-  "version": "21.16.2",
-  "downloadURL": "https://github.com/2KGT/repo/releases/download/YouTube_21.16.2/YouTube_21.16.2_ytx.ipa",
-  "size": 127926272,   // thay bằng kích thước thực tế của file (bytes). Nếu không biết thì tạm để 380000000
-  "developerName": "Kyic",
-  "subtitle": "YouTube 21.16.2",
-  "description": "YouTube phiên bản 21.16.2",
-  "localizedDescription": "YouTube chính thức phiên bản 21.16.2.\nĐã kiểm tra và tổng hợp bởi Kyic.",
-  "versionDate": "2026-04-21",
-  "iconURL": "https://2kgt.github.io/repo/icons/YouTube.png"
-  },
+      "name": "YouTube",
+      "bundleIdentifier": "com.google.ios.youtube",
+      "version": "21.16.2",
+      "downloadURL": "https://github.com/2KGT/repo/releases/download/youtube-21.16.2/YouTube_21.16.2_ytx.ipa",
+      "size": 127926272,
+      "developerName": "Kyic",
+      "subtitle": "YouTube 21.16.2",
+      "description": "YouTube phiên bản 21.16.2",
+      "localizedDescription": "YouTube chính thức phiên bản 21.16.2 (122 MB).\nĐã kiểm tra và tổng hợp bởi Kyic.",
+      "versionDate": "2026-04-21",
+      "iconURL": "https://2kgt.github.io/repo/icons/YouTube.png"
+    },
     {
       "name": "Turrit",
       "bundleIdentifier": "com.turrit.app",
@@ -37,7 +37,7 @@
       "size": 88900000,
       "developerName": "Kyic",
       "subtitle": "Ứng dụng Turrit",
-      "description": "Turrit -  App Telegram bên thứ ba đa năng .",
+      "description": "Turrit - App Telegram bên thứ ba đa năng.",
       "localizedDescription": "Turrit-TGEXtra 1.7.3.\nIPA đã được kiểm tra và tổng hợp bởi Kyic Team.",
       "versionDate": "2026-04-21",
       "iconURL": "https://2kgt.github.io/repo/icons/Turrit.png"
