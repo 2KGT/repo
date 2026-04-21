@@ -1,0 +1,341 @@
+Package: com.2d09.autoc
+Version: 1.0.0
+Architecture: iphoneos-arm
+Maintainer: 2KGT
+Installed-Size: 72
+Depends: mobilesubstrate
+Filename: ./autoc_1.0.0_arm64.deb
+Size: 3260
+MD5sum: 25292f65b6682993f6269b4d58727186
+SHA1: 727d06ca1157892dda56be57d315108bf334f20d
+SHA256: e64ef50183d807ababe4e0b7d08340a136e9ac04bed744da5db7fe1f54e1fc47
+Section: Tweaks
+Description: YouTube CacheClear
+Author: 2KGT
+Name: YTCacheClear
+
+Package: com.eevee.youtubefix
+Version: 1.0
+Architecture: iphoneos-arm
+Maintainer: Eevee
+Installed-Size: 168
+Depends: mobilesubstrate (>= 0.9.5000)
+Filename: ./youtubefix_1.0_arm.deb
+Size: 3340
+MD5sum: d99e00f006098a79723750b6988d6226
+SHA1: f83d4ed4d2aab84a1c9cef1a2f0e1066006ea5ce
+SHA256: 18d40b2c0dd880665b39480eba4f1a21597ba7b6f72bcf4e23e4fcc08429773e
+Section: Tweaks
+Description: Fix YouTube images not loading
+Author: Eevee
+Name: YouTube Fix
+
+Package: com.ps.noytmpremium
+Version: 1.0.2
+Architecture: iphoneos-arm64
+Maintainer: PoomSmart
+Installed-Size: 56
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0)
+Filename: ./noytmpremium_1.0.2_arm64.deb
+Size: 3394
+MD5sum: 07f3dcf11503613ea0608ad97e89816e
+SHA1: 33e3689a3db5f0cc4dfd874a6003fa8a7b819933
+SHA256: e5cf94b859354301727d9ae242026998050769fe58e506fa9b4ad1406d0ab272
+Section: Tweaks
+Description: Removes YouTube Music Premium upsell elements.
+Author: PoomSmart
+Depiction: https://poomsmart.github.io/repo/depictions/noytmpremium.html
+Name: NoYTMPremium
+Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/noytmpremium.json
+
+Package: com.ps.noytpremium
+Version: 1.0.7
+Architecture: iphoneos-arm
+Maintainer: PoomSmart
+Installed-Size: 56
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0)
+Filename: ./noytpremium_1.0.7_arm.deb
+Size: 2842
+MD5sum: c8822406448994c0a0b1e316501b2da2
+SHA1: bbdd609cd6007ba0cfaa7982821ff4782b6a5843
+SHA256: 3283e35eeed1b8526e389056571a1110dfd0c9541ac29d34b4c495f6b500a934
+Section: Tweaks
+Description: Removes YouTube Premium upsells.
+Author: PoomSmart
+Depiction: https://poomsmart.github.io/repo/depictions/noytpremium.html
+Name: NoYTPremium
+Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/noytpremium.json
+
+Package: com.ps.yougroupsettings
+Version: 1.0.9
+Architecture: iphoneos-arm64
+Maintainer: PoomSmart <unicorn03.glimmer@icloud.com>
+Installed-Size: 114
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0)
+Filename: ./yougroupsettings_1.0.9_arm64.deb
+Size: 5232
+MD5sum: ceb50fb35a2325ae81348f137ff27433
+SHA1: a86296e9d88e630449527d8efe83ef20975c0df3
+SHA256: c6df24d9b4169f9a88aa618e4f3de85adca2f98177961d95daedeb33307f7728
+Section: Tweaks
+Description: Allows tweak-made settings to be grouped and displayed in iOS YouTube app.
+Tag: compatible_min::ios11.0
+Author: PoomSmart <unicorn03.glimmer@icloud.com>
+Depiction: https://chariz.com/get/yougroupsettings
+Icon: https://img.chariz.cloud/icon/yougroupsettings/icon@3x.png
+Name: YouGroupSettings
+
+Package: com.ps.yougroupsettings
+Version: 1.0.9
+Architecture: iphoneos-arm
+Maintainer: PoomSmart <unicorn03.glimmer@icloud.com>
+Installed-Size: 106
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0)
+Filename: ./yougroupsettings_1.0.9_arm.deb
+Size: 5242
+MD5sum: 8d8c094e34840c50ead8c958b0eac8f6
+SHA1: 596d4c5afcd8fe93bab3cf59c36ff3e33e54ae7b
+SHA256: 2d3bca8c5ace9f11e5735c4ee7fdfd3b330103b968039a3e2ad2ead009838499
+Section: Tweaks
+Description: Allows tweak-made settings to be grouped and displayed in iOS YouTube app.
+Tag: compatible_min::ios11.0
+Author: PoomSmart <unicorn03.glimmer@icloud.com>
+Depiction: https://chariz.com/get/yougroupsettings
+Icon: https://img.chariz.cloud/icon/yougroupsettings/icon@3x.png
+Name: YouGroupSettings
+
+Package: com.ps.youmute
+Version: 1.4.0
+Architecture: iphoneos-arm64
+Maintainer: PoomSmart
+Installed-Size: 128
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytvideooverlay (>= 2.3.2)
+Filename: ./youmute_1.4.0_arm64.deb
+Size: 6048
+MD5sum: edc5b15720b34d9cc36aa95fe31d7086
+SHA1: aa68f1d3bce1f0ba2ff832a391bd4177db5ff5b2
+SHA256: 8703314eb695d078b8e0f47b7b5f926d85216b35f69aeefb8e0d7ef4980e0bbc
+Section: Tweaks
+Description: Mutes/unmutes videos in YouTube directly.
+Author: PoomSmart
+Depiction: https://poomsmart.github.io/repo/depictions/youmute.html
+Name: YouMute
+Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/youmute.json
+
+Package: com.ps.youmute
+Version: 1.4.0
+Architecture: iphoneos-arm
+Maintainer: PoomSmart
+Installed-Size: 112
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytvideooverlay (>= 2.3.2)
+Filename: ./youmute_1.4.0_arm.deb
+Size: 6198
+MD5sum: 151fc1b208fa9105da9f6d74c0069029
+SHA1: 6501bf2a689b1d75317249dbf676b25bd4ffdc12
+SHA256: 27b098f4ac4da14b8ca719f70eff5432bdd41885160a47e799958577acd744ae
+Section: Tweaks
+Description: Mutes/unmutes videos in YouTube directly.
+Author: PoomSmart
+Depiction: https://poomsmart.github.io/repo/depictions/youmute.html
+Name: YouMute
+Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/youmute.json
+
+Package: com.ps.youpip
+Version: 1.12.10
+Architecture: iphoneos-arm
+Maintainer: PoomSmart
+Installed-Size: 196
+Depends: mobilesubstrate, com.ps.ytvideooverlay (>= 2.0.0), firmware (>= 11.0), firmware (>= 14.0) | gsc.ipad | com.ps.forceinpicture (>= 1.0.1)
+Conflicts: com.spicat.youpip
+Replaces: com.spicat.youpip
+Provides: com.spicat.youpip
+Filename: ./youpip_1.12.10_arm.deb
+Size: 25506
+MD5sum: bf4844635210c76e026df1c507e699d1
+SHA1: e400652e5fb36a9a1c9f00e9660317326d48be6d
+SHA256: 1e24c929cd0470f099c093d9dd3d02a03c6612c42aeef99ff00538dd78233524
+Section: Tweaks
+Description: Enables native PiP in iOS YouTube app.
+Author: PoomSmart
+Depiction: https://poomsmart.github.io/repo/depictions/youpip.html
+Name: YouPiP
+Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/youpip.json
+
+Package: com.ps.youspeed
+Version: 1.6.6
+Architecture: iphoneos-arm64
+Maintainer: PoomSmart
+Installed-Size: 108
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytvideooverlay (>= 2.2.0)
+Conflicts: com.lyvendia.ytspeed
+Filename: ./youspeed_1.6.6_arm64.deb
+Size: 11956
+MD5sum: d671f41744bb5a5f32d9ad94c30d9c89
+SHA1: 45f0b18b26df913c91aeca90837750a04876e8d1
+SHA256: da3429b5f7b725c8f96b6ef10f8fbd6db9f3047303d508563feba9f0c7757f73
+Section: Tweaks
+Description: Views/changes video speed in iOS YouTube app faster, and more speed options.
+Author: PoomSmart
+Depiction: https://poomsmart.github.io/repo/depictions/youspeed.html
+Name: YouSpeed
+Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/youspeed.json
+
+Package: com.ps.youspeed
+Version: 1.6.6
+Architecture: iphoneos-arm
+Maintainer: PoomSmart
+Installed-Size: 92
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytvideooverlay (>= 2.2.0)
+Conflicts: com.lyvendia.ytspeed
+Filename: ./youspeed_1.6.6_arm.deb
+Size: 12130
+MD5sum: b351b096edbee16abd3382f08bd66bd5
+SHA1: 0d38455c807632e3a43939cce996abad1d5e3f5a
+SHA256: fb6587b7241c02788fbe0eb143cbfb2728183ea42dc3aa666a54eaf04e390da2
+Section: Tweaks
+Description: Views/changes video speed in iOS YouTube app faster, and more speed options.
+Author: PoomSmart
+Depiction: https://poomsmart.github.io/repo/depictions/youspeed.html
+Name: YouSpeed
+Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/youspeed.json
+
+Package: com.ps.ytlegacy
+Version: 1.9.2
+Architecture: iphoneos-arm64
+Maintainer: PoomSmart
+Installed-Size: 2380
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.youspeed | firmware (>= 15.0), com.ps.ytclassicvideoquality | firmware (>= 15.0), weeb.lillie.youtubedislikesreturn (>= 1.13.9) | firmware (>= 15.0)
+Filename: ./ytlegacy_1.9.2_arm64.deb
+Size: 227334
+MD5sum: e8b48ff3526375532e540beaa3298501
+SHA1: c59cb1e39a38e280fc2ca8110f69c88f6622f31a
+SHA256: 6ec3a411a629f293b68769523528ccf9087376f63d7df9d1181311fdf9bad8bc
+Section: Tweaks
+Description: Attempts to make old YouTube versions work again.
+Author: PoomSmart
+Depiction: https://poomsmart.github.io/repo/depictions/ytlegacy.html
+Name: YouTube Legacy
+Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/ytlegacy.json
+
+Package: com.ps.ytunshorts
+Version: 1.3.1
+Architecture: iphoneos-arm
+Maintainer: PoomSmart
+Installed-Size: 56
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytreexplore
+Conflicts: com.ps.ytshortsprogress, com.miro.ytnoshorts
+Filename: ./ytunshorts_1.3.1_arm.deb
+Size: 3272
+MD5sum: 5e24e9313e8a3ed072821a3bc78ce16d
+SHA1: 4dfa72e3cf924c9aad1af3b0d989b6aa4b812ab4
+SHA256: 71e51ac80e9976a1c5338e5e869cd3e02583eb2135607d44c407145a8612e9b6
+Section: Tweaks
+Description: Removes Shorts from YouTube app's feed.
+Author: PoomSmart
+Name: YTUnShorts
+
+Package: com.ps.ytunshorts
+Version: 1.3.1
+Architecture: iphoneos-arm64
+Maintainer: PoomSmart
+Installed-Size: 56
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytreexplore
+Conflicts: com.ps.ytshortsprogress, com.miro.ytnoshorts
+Filename: ./ytunshorts_1.3.1_arm64.deb
+Size: 3356
+MD5sum: 2ab4ee43ae059fc3f699b4f5acf2b334
+SHA1: 01bc5cd5e64dabdd613d2cb6fefd6bb26f3f20ab
+SHA256: 8c331803cf8bd4611ca0d7a2cfff5b6e1a30b3ef697d015f6e1a185ed49c64ca
+Section: Tweaks
+Description: Removes Shorts from YouTube app's feed.
+Author: PoomSmart
+Name: YTUnShorts
+
+Package: com.ps.ytvideooverlay
+Version: 2.3.5
+Architecture: iphoneos-arm64
+Maintainer: PoomSmart
+Installed-Size: 144
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0)
+Filename: ./ytvideooverlay_2.3.5_arm64.deb
+Size: 16258
+MD5sum: e04ce8fa25491d8b6ffcb7c6fa225519
+SHA1: d7df7c2ab8dc970beae4ac77d6288a354a367017
+SHA256: 525742716f9437dd134863547bcb436bd4d286d89c6b4c71d976e3b56d27859c
+Section: Tweaks
+Description: A helper tweak to add buttons on YouTube video overlay.
+Author: PoomSmart
+Depiction: https://poomsmart.github.io/repo/depictions/ytvideooverlay.html
+Name: YTVideoOverlay
+Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/ytvideooverlay.json
+
+Package: com.ps.ytvideooverlay
+Version: 2.3.5
+Architecture: iphoneos-arm
+Maintainer: PoomSmart
+Installed-Size: 128
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0)
+Filename: ./ytvideooverlay_2.3.5_arm.deb
+Size: 16312
+MD5sum: 23e3dd7f153f1d4e90d8da2c1baada80
+SHA1: 52396294a57763e3c658649b8bf9cf8097aa2cb0
+SHA256: ca8d34f15b4f7702b254970a41ece76a38e4f3e56261bf4bac3b919de4324344
+Section: Tweaks
+Description: A helper tweak to add buttons on YouTube video overlay.
+Author: PoomSmart
+Depiction: https://poomsmart.github.io/repo/depictions/ytvideooverlay.html
+Name: YTVideoOverlay
+Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/ytvideooverlay.json
+
+Package: com.ps.ytx
+Version: 1.7.19
+Architecture: iphoneos-arm64
+Maintainer: PoomSmart
+Installed-Size: 72
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytabgoodies
+Filename: ./ytx_1.7.19_arm64.deb
+Size: 5684
+MD5sum: 043c6e792611c9c4d4501c90d9794153
+SHA1: fb5e68562a652452607ce48af202e25212a9023c
+SHA256: 4c42a461ec2838962614a97f7f4d3a77a39bf073145fd7543bdbd2a255bbc7c2
+Section: Tweaks
+Description: A YouTube improvement tweak.
+Author: PoomSmart
+Depiction: https://poomsmart.github.io/repo/depictions/ytx.html
+Name: YouTube X
+Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/ytx.json
+
+Package: com.ps.ytx
+Version: 1.7.19
+Architecture: iphoneos-arm
+Maintainer: PoomSmart
+Installed-Size: 56
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytabgoodies
+Filename: ./YoutubeX_1.7.19_arm.deb
+Size: 5728
+MD5sum: 1fe505d84bec2e5b24d2bb26e48ac48f
+SHA1: 18ee76c6192cba0e15d11ae97d8db7bc37776f93
+SHA256: 5c4203245b9eafa05fd356f21e7613788146dcad6abcda3ae193b6d1b6cc26a5
+Section: Tweaks
+Description: A YouTube improvement tweak.
+Author: PoomSmart
+Depiction: https://poomsmart.github.io/repo/depictions/ytx.html
+Name: YouTube X
+Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/ytx.json
+
+Package: com.yourname.ytcacheclear
+Version: 1.0.0
+Architecture: iphoneos-arm
+Maintainer: Your Name
+Installed-Size: 72
+Depends: mobilesubstrate
+Filename: ./ytcacheclear_1.0.0_arm.deb
+Size: 3264
+MD5sum: a59af58749ca8920c45dc4da6b0f744c
+SHA1: de4cd60ed3b1239dd83ee8edef36e26dbcbc35d7
+SHA256: 63a772d71c64ddbd9e0547031bfa0eb1c8746182f9e88950524295e90089d7ad
+Section: Tweaks
+Description: Clear YouTube Cache
+Author: Your Name
+Name: YTCacheClear
+
