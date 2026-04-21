@@ -12,21 +12,17 @@
 
 ---
 
-### Thêm Repo
+<div align="center" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; max-width: 700px; margin: 40px auto;">
 
-<div align="center" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; max-width: 700px; margin: 30px auto;">
-
-  <!-- Nút Esign -->
-  <div style="text-align: center; flex: 1; min-width: 260px;">
-    <h3>📱 Esign / Feather</h3>
+  <!-- Nút Esign (đỏ) -->
+  <div style="text-align: center;">
     <a href="https://2kgt.github.io/repo/apps.json">
       <img src="https://img.shields.io/badge/ADD_TO_ESIGN-FE3C30?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Esign">
     </a>
   </div>
 
-  <!-- Nút Sileo -->
-  <div style="text-align: center; flex: 1; min-width: 260px;">
-    <h3>📦 Sileo / Cydia / Zebra</h3>
+  <!-- Nút Sileo (xanh) -->
+  <div style="text-align: center;">
     <a href="https://2kgt.github.io/repo/">
       <img src="https://img.shields.io/badge/ADD_TO_SILEO-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="Add to Sileo">
     </a>
@@ -36,7 +32,7 @@
 
 ---
 
-### Thông tin
+### 📍 Thông tin
 - **Vị trí**: Hanoi, Vietnam  
 - **Cập nhật**: Thường xuyên
 
