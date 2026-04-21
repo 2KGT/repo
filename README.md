@@ -12,7 +12,7 @@
 
 ---
 
-<div align="center" style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin: 30px 0;">
+<div align="center" style="display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; margin: 40px 0;">
 
   <!-- Nút Esign đỏ -->
   <a href="https://2kgt.github.io/repo/apps.json">
