@@ -1,0 +1,28 @@
+name: Generate Packages
+
+on:
+  push:
+    paths:
+      - 'debs/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dpkg-scanpackages
+        run: sudo apt-get update && sudo apt-get install -y dpkg-dev
+
+      - name: Generate Packages
+        run: |
+          cd debs
+          dpkg-scanpackages -m . /dev/null > ../Packages
+          cd ..
+          bzip2 -kf Packages
+          echo "✅ Đã tạo Packages và Packages.bz2 thành công!"
+
+      - name: Commit Packages files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto update Packages.bz2"
