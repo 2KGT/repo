@@ -1,11 +1,9 @@
-name: Auto Update apps.json
+name: Auto Update apps.json from apps/ folder
 
 on:
   push:
     paths:
       - 'apps/*.ipa'
-  release:
-    types: [published, edited]
   workflow_dispatch:
 
 jobs:
@@ -15,85 +13,66 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Generate apps.json from apps/ folder and Releases
+      - name: Update apps.json from apps/ folder
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            let apps = [];
 
-            // 1. Quét từ thư mục apps/
+            // Đọc apps.json hiện tại
+            let appsJson = { "name": "Kyic IPA Repository", "identifier": "com.kyic.iparepo", "iconURL": "https://2kgt.github.io/repo/icons/Kyic.png", "apps": [] };
+
             try {
-              const appFiles = await github.rest.repos.getContent({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                path: 'apps'
-              });
-
-              for (const file of appFiles.data) {
-                if (file.name.toLowerCase().endsWith('.ipa')) {
-                  const name = file.name.replace(/\.ipa$/i, '').replace(/_/g, ' ');
-                  apps.push({
-                    name: name,
-                    bundleIdentifier: "com.unknown.app",
-                    version: "1.0",
-                    downloadURL: `https://2kgt.github.io/repo/apps/${file.name}`,
-                    size: file.size || 0,
-                    developerName: "Kyic",
-                    subtitle: name,
-                    description: `${name} IPA`,
-                    localizedDescription: `${name} đã được kiểm tra và tổng hợp bởi Kyic.`,
-                    versionDate: new Date().toISOString().split('T')[0],
-                    iconURL: `https://2kgt.github.io/repo/icons/${name.replace(/\s+/g, '')}.png`
-                  });
-                }
-              }
+              const existing = fs.readFileSync('apps.json', 'utf8');
+              appsJson = JSON.parse(existing);
             } catch (e) {
-              console.log("No apps folder or no .ipa files");
+              console.log("No existing apps.json, creating new one");
             }
 
-            // 2. Quét từ Releases (ưu tiên nếu có)
-            try {
-              const { data: releases } = await github.rest.repos.listReleases({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-              });
+            // Quét tất cả file .ipa trong thư mục apps/
+            const { data: files } = await github.rest.repos.getContent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              path: 'apps'
+            });
 
-              for (const release of releases) {
-                for (const asset of release.assets) {
-                  if (asset.name.toLowerCase().endsWith('.ipa')) {
-                    const name = asset.name.replace(/\.ipa$/i, '').replace(/_/g, ' ');
-                    apps.push({
-                      name: name,
-                      bundleIdentifier: "com.unknown.app",
-                      version: release.tag_name.replace(/^v/i, ''),
-                      downloadURL: asset.browser_download_url,
-                      size: asset.size,
-                      developerName: "Kyic",
-                      subtitle: name,
-                      description: `${name} ${release.tag_name.replace(/^v/i, '')}`,
-                      localizedDescription: release.body || `${name} đã được kiểm tra và tổng hợp bởi Kyic.`,
-                      versionDate: release.published_at ? release.published_at.split('T')[0] : new Date().toISOString().split('T')[0],
-                      iconURL: `https://2kgt.github.io/repo/icons/${name.replace(/\s+/g, '')}.png`
-                    });
-                  }
-                }
+            const newApps = [];
+
+            for (const file of files) {
+              if (file.name.toLowerCase().endsWith('.ipa')) {
+                const appName = file.name.replace(/\.ipa$/i, '').replace(/_/g, ' ');
+                newApps.push({
+                  name: appName,
+                  bundleIdentifier: "com.unknown.app",
+                  version: "1.0",
+                  downloadURL: `https://2kgt.github.io/repo/apps/${file.name}`,
+                  size: file.size || 0,
+                  developerName: "Kyic",
+                  subtitle: appName,
+                  description: `${appName} IPA`,
+                  localizedDescription: `${appName} đã được kiểm tra và tổng hợp bởi Kyic.`,
+                  versionDate: new Date().toISOString().split('T')[0],
+                  iconURL: `https://2kgt.github.io/repo/icons/${appName.replace(/\s+/g, '')}.png`
+                });
               }
-            } catch (e) {
-              console.log("No releases or error fetching releases");
             }
 
-            // Giữ lại app thủ công
-            const manual = [ /* Esign, Turrit, Zebra... bạn có thể thêm vào đây */ ];
+            // Giữ lại các app thủ công (Esign, Turrit, Zebra thủ công nếu cần)
+            const manualApps = appsJson.apps.filter(app => 
+              app.name === "Esign" || app.name === "Turrit"
+            );
+
+            const finalApps = [...manualApps, ...newApps];
 
             const finalJson = {
               "name": "Kyic IPA Repository",
               "identifier": "com.kyic.iparepo",
               "iconURL": "https://2kgt.github.io/repo/icons/Kyic.png",
-              "apps": [...manual, ...apps]
+              "apps": finalApps
             };
 
             fs.writeFileSync('apps.json', JSON.stringify(finalJson, null, 2));
-            console.log(`✅ Updated apps.json with ${apps.length} apps from folder and releases`);
+            console.log(`✅ Updated apps.json with ${finalApps.length} apps`);
