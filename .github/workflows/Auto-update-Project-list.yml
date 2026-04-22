@@ -1,4 +1,4 @@
-name: "🔄 Auto Update Project List"
+name: "Auto Update Project List"
 
 on:
   push:
