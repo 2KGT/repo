@@ -1,11 +1,12 @@
 Package: com.kyic.autoac
-Name: autoac
-Version: 1.0.8
+Name: AutoAC
+Version: 1.0.1
 Architecture: iphoneos-arm64
 Section: Tweaks
 Priority: optional
 Maintainer: Kyic
 Depends: firmware (>= 14.0)
-Description: autoc tweak by Kyic.
+Description: AutoAC - Tweak tự động hóa một số tính năng trên YouTube.
+Author: Kyic
 SileoDepiction: https://2kgt.github.io/repo/depictions/autoac.json
 Icon: https://2kgt.github.io/repo/icons/autoac.png
