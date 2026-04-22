@@ -1,16 +1,12 @@
-name: Build Multi Tweak (Professional Edition)
+name: Build Multi Tweak (Fuzzy Search Edition)
 
 on:
   workflow_dispatch:
     inputs:
       project:
-        description: '🚀 Chọn dự án cần build'
+        description: '⌨️ Nhập tên dự án (Gợi ý gần đúng: auto, dl...)'
         required: true
-        default: 'AutoAC'
-        type: choice
-        options:
-          - AutoAC
-          - AutoDL
+        type: string
 
 jobs:
   build:
@@ -27,40 +23,52 @@ jobs:
       - name: Setup Theos
         uses: Randomblock1/theos-action@v1
 
-      - name: Build and Process Metadata
+      - name: Fuzzy Discovery & Metadata
         id: metadata
         run: |
-          PROJECT_NAME="${{ github.event.inputs.project }}"
+          INPUT_NAME="${{ github.event.inputs.project }}"
+          SEARCH_TERM=$(echo "$INPUT_NAME" | xargs | tr '[:upper:]' '[:lower:]')
+          
+          echo "🔍 Đang tìm kiếm dự án gần đúng với từ khóa: '$SEARCH_TERM'..."
+          
+          # --- THUẬT TOÁN GỢI Ý GẦN ĐÚNG ---
+          # Tìm tất cả thư mục trong Build_Tweak, chuyển về chữ thường và so sánh
+          MATCH=$(ls src/Build_Tweak/ | grep -i "$SEARCH_TERM" | head -n 1)
+
+          if [ -z "$MATCH" ]; then
+            echo "❌ Không tìm thấy dự án nào khớp với '$SEARCH_TERM'."
+            echo "📂 Danh sách dự án hiện có: $(ls -m src/Build_Tweak/)"
+            exit 1
+          fi
+
+          # Nếu tìm thấy, gán lại PROJECT_NAME chính xác theo tên thư mục (case-sensitive)
+          PROJECT_NAME="$MATCH"
           DIR="src/Build_Tweak/$PROJECT_NAME"
+          
+          echo "✅ Đã tìm thấy dự án phù hợp nhất: $PROJECT_NAME"
+          echo "proj_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
+
           CONTROL="$DIR/control"
           CHANGELOG="$DIR/CHANGELOG.md"
-          
-          # Tìm file nguồn .x hoặc .xm
           SOURCE=$(find "$DIR" -maxdepth 1 -name "*.x" -o -name "*.xm" | head -n 1)
           
           mkdir -p deb_output
 
-          if [ ! -f "$CONTROL" ]; then
-            echo "❌ Không tìm thấy file control tại: $DIR"
-            exit 1
-          fi
-
-          # --- 1. TỰ ĐỘNG TĂNG VERSION (KIỂU SỬA LỖI) ---
+          # --- 1. TỰ ĐỘNG TĂNG VERSION ---
           current_ver=$(grep "^Version:" "$CONTROL" | cut -d' ' -f2)
           IFS='.' read -r major minor patch <<< "$current_ver"
-          # Tăng số cuối cùng (bản vá) tự động
           new_ver="$major.$minor.$((patch + 1))"
           sed -i '' "s/Version: $current_ver/Version: $new_ver/" "$CONTROL"
+          echo "proj_ver=$new_ver" >> $GITHUB_OUTPUT
 
           # --- 2. QUÉT CODE TRÍCH XUẤT CHỨC NĂNG ---
           if [ -n "$SOURCE" ] && [ -f "$SOURCE" ]; then
             news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || echo "- Cập nhật tính năng hệ thống")
             fixes=$(grep "// FIX:" "$SOURCE" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || echo "- Sửa các lỗi nhỏ và tối ưu hóa")
-            # Xóa comment sau khi trích xuất
             sed -i '' '/\/\/ NEW:/d' "$SOURCE"
             sed -i '' '/\/\/ FIX:/d' "$SOURCE"
           else
-            news="- Cập nhật phiên bản mới"
+            news="- Cập nhật tính năng mới"
             fixes="- Tối ưu hóa hiệu năng"
           fi
           
@@ -79,19 +87,15 @@ jobs:
           fi
 
           # --- 4. BUILD ---
-          echo "🔨 Đang build $PROJECT_NAME v$new_ver..."
           make -C "$DIR" clean package FINALPACKAGE=1
           find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
 
-          # Xuất biến cho các bước sau
-          echo "proj_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
-          echo "proj_ver=$new_ver" >> $GITHUB_OUTPUT
           echo "proj_desc=$(grep "^Description:" "$CONTROL" | cut -d' ' -f2-)" >> $GITHUB_OUTPUT
           echo "proj_changelog<<EOF" >> $GITHUB_OUTPUT
           echo -e "$latest_content" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Commit & Push Auto-Updates
+      - name: Commit & Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -103,12 +107,10 @@ jobs:
           git diff --cached --quiet || git commit -m "build(${{ steps.metadata.outputs.proj_name }}): v${{ steps.metadata.outputs.proj_ver }} [skip ci]"
           git push origin main
 
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          # Tag: autoac-v1.0.1
           tag_name: ${{ steps.metadata.outputs.proj_name }}-v${{ steps.metadata.outputs.proj_ver }}
-          # Title: autoac - v1.0.1
           name: "${{ steps.metadata.outputs.proj_name }} - v${{ steps.metadata.outputs.proj_ver }}"
           files: deb_output/*.deb
           body: |
