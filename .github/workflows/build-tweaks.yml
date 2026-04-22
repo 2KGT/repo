@@ -8,7 +8,7 @@ on:
         required: true
         type: choice
         options:
-          - Default
+          - ---
 jobs:
   build:
     runs-on: macos-latest
