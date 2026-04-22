@@ -53,34 +53,39 @@ jobs:
         run: |
           git clone https://github.com/PoomSmart/YouTubeHeader $THEOS/include/YouTubeHeader || echo "YouTubeHeader already exists"
 
-      - name: Build Selected Project
+      - name: Build Selected Project & Collect Debs
         run: |
           PROJECT="${{ inputs.project || 'all' }}"
           echo "🔨 Đang build: $PROJECT"
+          
+          # Tạo thư mục tạm để chứa toàn bộ deb sau khi build
+          mkdir -p deb_output
 
           if [ "$PROJECT" = "all" ]; then
             for dir in src/*/ ; do
               if [ -f "$dir/Makefile" ]; then
                 proj=$(basename "$dir")
                 echo "→ Building $proj ..."
-                mkdir -p "$dir/packages" # Tự động tạo thư mục packages
-                make -C "$dir" package FINALPACKAGE=1 || echo "Build $proj failed"
+                # Bỏ "|| echo" để bắt lỗi nếu code sai
+                make -C "$dir" package FINALPACKAGE=1
+                find "$dir" -name "*.deb" -exec cp {} deb_output/ \;
               fi
             done
           else
             echo "→ Building $PROJECT ..."
-            mkdir -p "src/$PROJECT/packages" # Tự động tạo thư mục packages
-            make -C "src/$PROJECT" package FINALPACKAGE=1 || echo "Build failed"
+            # Bỏ "|| echo" để bắt lỗi nếu code sai
+            make -C "src/$PROJECT" package FINALPACKAGE=1
+            find "src/$PROJECT" -name "*.deb" -exec cp {} deb_output/ \;
           fi
           
-          echo "🔎 Các file .deb đã tạo:"
-          find . -name "*.deb"
+          echo "🔎 Các file .deb đã tạo thành công:"
+          ls -la deb_output/
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Build-${{ inputs.project || 'all' }}
-          path: '**/*.deb' # Quét toàn bộ để không bỏ sót file
+          path: deb_output/*.deb # Lấy trực tiếp từ thư mục tạm
           if-no-files-found: warn
 
       - name: Copy to debs/ and Commit
@@ -89,8 +94,7 @@ jobs:
           git checkout main
           
           mkdir -p debs
-          # Tìm tất cả file .deb (ngoại trừ trong debs/) và copy vào debs/
-          find . -name "*.deb" -not -path "./debs/*" -exec cp {} debs/ \;
+          cp deb_output/*.deb debs/ 2>/dev/null || true
           echo "✅ Copied .deb files to debs/"
 
           git config user.name "github-actions[bot]"
@@ -111,7 +115,7 @@ jobs:
         with:
           tag_name: ${{ steps.tag_version.outputs.new_tag || github.ref_name }}
           name: Release ${{ steps.tag_version.outputs.new_tag || github.ref_name }}
-          files: debs/*.deb # Lấy trực tiếp từ thư mục debs/ đã copy
+          files: deb_output/*.deb
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
