@@ -1,4 +1,4 @@
-name: Auto Update apps.json from apps/ folder
+name: Update apps.json when IPA uploaded
 
 on:
   push:
@@ -13,66 +13,47 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Update apps.json from apps/ folder
+      - name: Update apps.json
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
+            let apps = [];
 
-            // Đọc apps.json hiện tại
-            let appsJson = { "name": "Kyic IPA Repository", "identifier": "com.kyic.iparepo", "iconURL": "https://2kgt.github.io/repo/icons/Kyic.png", "apps": [] };
-
-            try {
-              const existing = fs.readFileSync('apps.json', 'utf8');
-              appsJson = JSON.parse(existing);
-            } catch (e) {
-              console.log("No existing apps.json, creating new one");
-            }
-
-            // Quét tất cả file .ipa trong thư mục apps/
+            // Quét tất cả .ipa trong thư mục apps/
             const { data: files } = await github.rest.repos.getContent({
               owner: context.repo.owner,
               repo: context.repo.repo,
               path: 'apps'
             });
 
-            const newApps = [];
-
             for (const file of files) {
               if (file.name.toLowerCase().endsWith('.ipa')) {
-                const appName = file.name.replace(/\.ipa$/i, '').replace(/_/g, ' ');
-                newApps.push({
-                  name: appName,
+                const name = file.name.replace(/\.ipa$/i, '').replace(/_/g, ' ');
+                apps.push({
+                  name: name,
                   bundleIdentifier: "com.unknown.app",
                   version: "1.0",
                   downloadURL: `https://2kgt.github.io/repo/apps/${file.name}`,
                   size: file.size || 0,
                   developerName: "Kyic",
-                  subtitle: appName,
-                  description: `${appName} IPA`,
-                  localizedDescription: `${appName} đã được kiểm tra và tổng hợp bởi Kyic.`,
+                  subtitle: name,
+                  description: `${name} IPA`,
+                  localizedDescription: `${name} đã được kiểm tra và tổng hợp bởi Kyic.`,
                   versionDate: new Date().toISOString().split('T')[0],
-                  iconURL: `https://2kgt.github.io/repo/icons/${appName.replace(/\s+/g, '')}.png`
+                  iconURL: `https://2kgt.github.io/repo/icons/${name.replace(/\s+/g, '')}.png`
                 });
               }
             }
 
-            // Giữ lại các app thủ công (Esign, Turrit, Zebra thủ công nếu cần)
-            const manualApps = appsJson.apps.filter(app => 
-              app.name === "Esign" || app.name === "Turrit"
-            );
-
-            const finalApps = [...manualApps, ...newApps];
-
-            const finalJson = {
+            const json = {
               "name": "Kyic IPA Repository",
               "identifier": "com.kyic.iparepo",
               "iconURL": "https://2kgt.github.io/repo/icons/Kyic.png",
-              "apps": finalApps
+              "apps": apps
             };
 
-            fs.writeFileSync('apps.json', JSON.stringify(finalJson, null, 2));
-            console.log(`✅ Updated apps.json with ${finalApps.length} apps`);
+            fs.writeFileSync('apps.json', JSON.stringify(json, null, 2));
+            console.log("✅ apps.json updated from apps/ folder");
