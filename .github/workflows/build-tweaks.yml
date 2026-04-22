@@ -35,7 +35,9 @@ jobs:
           DIR="src/$PROJECT_NAME"
           CONTROL="$DIR/control"
           CHANGELOG="$DIR/CHANGELOG.md"
-          SOURCE="$DIR/Tweak.xm"
+          
+          # Tự động tìm file .x hoặc .xm (Ưu tiên .x theo yêu cầu của bạn)
+          SOURCE=$(find "$DIR" -maxdepth 1 -name "*.x" -o -name "*.xm" | head -n 1)
           
           mkdir -p deb_output
 
@@ -51,12 +53,19 @@ jobs:
           sed -i '' "s/Version: $current_ver/Version: $new_ver/" "$CONTROL"
 
           # --- 2. QUÉT CODE TRÍCH XUẤT CHỨC NĂNG ---
-          news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || echo "- Cập nhật tính năng hệ thống")
-          fixes=$(grep "// FIX:" "$SOURCE" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || echo "- Sửa các lỗi nhỏ và tối ưu hóa")
-          
-          # Xóa comment trong code để tránh lặp lại lần sau
-          sed -i '' '/\/\/ NEW:/d' "$SOURCE"
-          sed -i '' '/\/\/ FIX:/d' "$SOURCE"
+          if [ -f "$SOURCE" ]; then
+            echo "🔍 Đang quét file nguồn: $SOURCE"
+            news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || echo "- Cập nhật tính năng hệ thống")
+            fixes=$(grep "// FIX:" "$SOURCE" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || echo "- Sửa các lỗi nhỏ và tối ưu hóa")
+            
+            # Xóa comment trong code để tránh lặp lại lần sau
+            sed -i '' '/\/\/ NEW:/d' "$SOURCE"
+            sed -i '' '/\/\/ FIX:/d' "$SOURCE"
+          else
+            echo "⚠️ Không tìm thấy file .x hoặc .xm, sử dụng ghi chú mặc định."
+            news="- Cập nhật phiên bản mới"
+            fixes="- Tối ưu hóa hiệu năng"
+          fi
           
           latest_content="### ✨ Tính năng mới\n$news\n\n### 🐛 Sửa lỗi & Cải thiện\n$fixes"
 
@@ -64,7 +73,6 @@ jobs:
           note_section="---\n### ⚠️ Lưu ý\n- Yêu cầu iOS 14.0 trở lên.\n- Xóa phiên bản cũ trước khi cài đặt bản mới này."
           
           if [ -f "$CHANGELOG" ]; then
-              # Lấy tối đa 30 dòng lịch sử cũ
               old_history=$(sed -n '/### 📜 Lịch sử/,/---/p' "$CHANGELOG" | grep -v "### 📜 Lịch sử" | grep -v "---" | head -n 30)
               
               echo -e "\n$latest_content\n\n" > "$CHANGELOG"
@@ -95,7 +103,6 @@ jobs:
           git fetch origin main
           git checkout main
           
-          # Cập nhật thư mục debs tập trung
           mkdir -p debs
           cp -v deb_output/*.deb debs/ 2>/dev/null || true
           
