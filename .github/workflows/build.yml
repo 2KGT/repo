@@ -16,7 +16,7 @@ on:
         - autodl
         - all
       bump_type:
-        description: 'Loại tăng version (patch / minor / major)'
+        description: 'Loại tăng version'
         required: true
         default: 'patch'
         type: choice
@@ -44,17 +44,14 @@ jobs:
         run: |
           git clone https://github.com/PoomSmart/YouTubeHeader $THEOS/include/YouTubeHeader || echo "YouTubeHeader already exists"
 
-      # Build dự án được chọn - ĐÃ FIX
-      - name: Build Selected Project(s)
+      # Build dự án
+      - name: Build Selected Project
         run: |
           PROJECT="${{ github.event.inputs.project }}"
-          if [ -z "$PROJECT" ]; then
-            PROJECT="autoac"   # Default nếu không nhận được input
-          fi
-          echo "🔨 Đang build dự án: $PROJECT"
+          if [ -z "$PROJECT" ]; then PROJECT="autoac"; fi
+          echo "🔨 Đang build: $PROJECT"
 
           if [ "$PROJECT" = "all" ]; then
-            echo "Build tất cả dự án trong src/"
             for dir in src/*/ ; do
               if [ -f "$dir/Makefile" ]; then
                 proj=$(basename "$dir")
@@ -66,40 +63,39 @@ jobs:
           else
             echo "→ Building $PROJECT ..."
             cp -r "src/$PROJECT"/* . 2>/dev/null || true
-            make package FINALPACKAGE=1 || echo "Build failed - check if src/$PROJECT/Makefile exists"
+            make package FINALPACKAGE=1 || echo "Build failed"
           fi
 
+      # Upload Artifacts để bạn tải về (luôn có)
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Builds-${{ github.event.inputs.project || 'autoac' }}
+          name: AutoAC-Build-${{ github.event.inputs.project || 'autoac' }}
           path: packages/*.deb
+          if-no-files-found: warn
 
-      # Copy vào debs/ chỉ khi là bản chính thức
-      - name: Copy DEB to debs/ (Official Release Only)
+      # ==================== CHỈ COPY VÀ COMMIT VÀO debs/ KHI BUILD CHÍNH THỨC ====================
+      - name: Copy to debs/ and Commit (Official Release Only)
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           mkdir -p debs
-          cp packages/*.deb debs/
-          echo "✅ Đã copy .deb vào thư mục debs/"
+          cp packages/*.deb debs/ 2>/dev/null || echo "No .deb file found"
+          echo "✅ Copied .deb files to debs/"
 
-      # Commit version & Tag
-      - name: Commit new version & Create Tag
-        if: github.ref == 'refs/heads/main'
-        run: |
+          # Tự động commit thư mục debs/
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add control || true
-          git commit -m "chore: bump version [skip ci]" || echo "No changes to commit"
-          git tag "v1.0.0" || true   # Tạm thời hardcode để test, sau sẽ fix
-          git push origin main --tags || true
+          git add debs/
+          git commit -m "chore: add official .deb files to debs/ [skip ci]" || echo "No new .deb to commit"
+          git push origin main || echo "Nothing to push"
+          echo "✅ Committed debs/ folder"
 
-      # Tạo GitHub Release
+      # Tạo Release
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0   # Tạm thời để test
+          tag_name: v1.0.0
           name: AutoAC v1.0.0
           files: packages/*.deb
           generate_release_notes: true
