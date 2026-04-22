@@ -1,30 +1,21 @@
-name: Update apps.json from apps/ and Releases
-
-on:
-  push:
-    paths:
-      - 'apps/*.ipa'
-  release:
-    types: [published, edited]
-  workflow_dispatch:
-
-jobs:
-  update:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Update apps.json
-        uses: actions/github-script@v7
-        with:
-          script: |
             const fs = require('fs');
 
-            let apps = [];
+            // Dùng Map để lọc trùng (key là tên app viết thường)
+            const appMap = new Map();
+
+            // Hàm quét phiên bản từ tên file (vd: App_v1.2.3.ipa -> 1.2.3)
+            const extractVersion = (filename) => {
+              const match = filename.match(/[_-]v?(\d+\.\d+(?:\.\d+)?)/i);
+              return match ? match[1] : "1.0";
+            };
+
+            // Hàm làm sạch tên app (bỏ đuôi .ipa và chuỗi phiên bản)
+            const cleanAppName = (filename) => {
+              return filename.replace(/\.ipa$/i, '')
+                             .replace(/[_-]v?\d+(\.\d+)*.*$/i, '')
+                             .replace(/_/g, ' ')
+                             .trim();
+            };
 
             // 1. Quét từ thư mục apps/
             try {
@@ -36,16 +27,18 @@ jobs:
 
               for (const file of files) {
                 if (file.name.toLowerCase().endsWith('.ipa')) {
-                  const name = file.name.replace(/\.ipa$/i, '').replace(/_/g, ' ').trim();
-                  apps.push({
+                  const name = cleanAppName(file.name);
+                  const version = extractVersion(file.name);
+                  
+                  appMap.set(name.toLowerCase(), {
                     name: name,
                     bundleIdentifier: "com.unknown.app",
-                    version: "1.0",
+                    version: version,
                     downloadURL: `https://2kgt.github.io/repo/apps/${file.name}`,
                     size: file.size || 0,
                     developerName: "Kyic",
                     subtitle: name,
-                    description: `${name} IPA`,
+                    description: `${name} v${version}`,
                     localizedDescription: `${name} đã được kiểm tra và tổng hợp bởi Kyic.`,
                     versionDate: new Date().toISOString().split('T')[0],
                     iconURL: `https://2kgt.github.io/repo/icons/${name.replace(/\s+/g, '')}.png`
@@ -56,7 +49,7 @@ jobs:
               console.log("No apps/ folder or no .ipa files found");
             }
 
-            // 2. Quét từ Releases (ưu tiên nếu có file .ipa trong Release)
+            // 2. Quét từ Releases (Ghi đè app từ thư mục apps/ nếu trùng tên)
             try {
               const { data: releases } = await github.rest.repos.listReleases({
                 owner: context.repo.owner,
@@ -66,8 +59,9 @@ jobs:
               for (const release of releases) {
                 for (const asset of release.assets) {
                   if (asset.name.toLowerCase().endsWith('.ipa')) {
-                    const name = asset.name.replace(/\.ipa$/i, '').replace(/_/g, ' ').trim();
-                    apps.push({
+                    const name = cleanAppName(asset.name);
+                    
+                    appMap.set(name.toLowerCase(), {
                       name: name,
                       bundleIdentifier: "com.unknown.app",
                       version: release.tag_name.replace(/^v/i, ''),
@@ -87,7 +81,10 @@ jobs:
               console.log("No releases found");
             }
 
-            // Giữ lại các app thủ công quan trọng
+            // Chuyển Map thành Array
+            const autoApps = Array.from(appMap.values());
+
+            // 3. Giữ lại các app thủ công quan trọng
             const manualApps = [
               {
                 "name": "Esign",
@@ -117,12 +114,16 @@ jobs:
               }
             ];
 
+            // Lọc bỏ những app auto nếu đã có trong danh sách manual (tránh trùng manual vs auto)
+            const manualNames = manualApps.map(a => a.name.toLowerCase());
+            const finalAutoApps = autoApps.filter(a => !manualNames.includes(a.name.toLowerCase()));
+
             const finalJson = {
               "name": "Kyic IPA Repository",
               "identifier": "com.kyic.iparepo",
               "iconURL": "https://2kgt.github.io/repo/icons/Kyic.png",
-              "apps": [...manualApps, ...apps]
+              "apps": [...manualApps, ...finalAutoApps]
             };
 
             fs.writeFileSync('apps.json', JSON.stringify(finalJson, null, 2));
-            console.log(`✅ apps.json updated with ${apps.length} apps from folder and releases`);
+            console.log(`✅ apps.json updated. Total apps: ${finalJson.apps.length}`);
