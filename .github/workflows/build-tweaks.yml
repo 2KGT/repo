@@ -4,14 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       project:
-        description: '🧱Chọn dự án src/ build'
+        description: '🚀 Chọn dự án cần build'
         required: true
         default: 'autoac'
         type: choice
         options:
           - autoac
           - autodl
-          # Thêm các thư mục dự án khác của bạn tại đây
 
 jobs:
   build:
@@ -32,38 +31,35 @@ jobs:
         id: metadata
         run: |
           PROJECT_NAME="${{ github.event.inputs.project }}"
-          DIR="src/$PROJECT_NAME"
+          # Đường dẫn đã được chuẩn hóa (Build_Tweak không dấu cách)
+          DIR="src/Build_Tweak/$PROJECT_NAME"
           CONTROL="$DIR/control"
           CHANGELOG="$DIR/CHANGELOG.md"
           
-          # Tự động tìm file .x hoặc .xm (Ưu tiên .x theo yêu cầu của bạn)
+          # Tìm file .x hoặc .xm
           SOURCE=$(find "$DIR" -maxdepth 1 -name "*.x" -o -name "*.xm" | head -n 1)
           
           mkdir -p deb_output
 
           if [ ! -f "$CONTROL" ]; then
-            echo "❌ Không tìm thấy file control tại $DIR"
+            echo "❌ Không tìm thấy file control tại: $DIR"
             exit 1
           fi
 
-          # --- 1. TỰ ĐỘNG TĂNG VERSION (Bản vá - Patch) ---
+          # --- 1. TỰ ĐỘNG TĂNG VERSION ---
           current_ver=$(grep "^Version:" "$CONTROL" | cut -d' ' -f2)
           IFS='.' read -r major minor patch <<< "$current_ver"
           new_ver="$major.$minor.$((patch + 1))"
           sed -i '' "s/Version: $current_ver/Version: $new_ver/" "$CONTROL"
 
-          # --- 2. QUÉT CODE TRÍCH XUẤT CHỨC NĂNG ---
-          if [ -f "$SOURCE" ]; then
-            echo "🔍 Đang quét file nguồn: $SOURCE"
+          # --- 2. QUÉT CODE VÀ XÓA COMMENT ---
+          if [ -n "$SOURCE" ] && [ -f "$SOURCE" ]; then
             news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || echo "- Cập nhật tính năng hệ thống")
             fixes=$(grep "// FIX:" "$SOURCE" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || echo "- Sửa các lỗi nhỏ và tối ưu hóa")
-            
-            # Xóa comment trong code để tránh lặp lại lần sau
             sed -i '' '/\/\/ NEW:/d' "$SOURCE"
             sed -i '' '/\/\/ FIX:/d' "$SOURCE"
           else
-            echo "⚠️ Không tìm thấy file .x hoặc .xm, sử dụng ghi chú mặc định."
-            news="- Cập nhật phiên bản mới"
+            news="- Cập nhật tính năng mới"
             fixes="- Tối ưu hóa hiệu năng"
           fi
           
@@ -71,10 +67,8 @@ jobs:
 
           # --- 3. CẬP NHẬT CHANGELOG.MD ---
           note_section="---\n### ⚠️ Lưu ý\n- Yêu cầu iOS 14.0 trở lên.\n- Xóa phiên bản cũ trước khi cài đặt bản mới này."
-          
           if [ -f "$CHANGELOG" ]; then
-              old_history=$(sed -n '/### 📜 Lịch sử/,/---/p' "$CHANGELOG" | grep -v "### 📜 Lịch sử" | grep -v "---" | head -n 30)
-              
+              old_history=$(sed -n '/### 📜 Lịch sử/,/---/p' "$CHANGELOG" | grep -v "### 📜 Lịch sử" | grep -v "---" | head -n 20)
               echo -e "\n$latest_content\n\n" > "$CHANGELOG"
               echo -e "---\n### 📜 Lịch sử phiên bản cũ\n$old_history" >> "$CHANGELOG"
               echo -e "\n$latest_content (v$current_ver)" >> "$CHANGELOG"
@@ -83,12 +77,11 @@ jobs:
               echo -e "\n$latest_content\n\n\n---\n### 📜 Lịch sử phiên bản cũ\n(Chưa có lịch sử)\n\n$note_section" > "$CHANGELOG"
           fi
 
-          # --- 4. BUILD DEB ---
-          echo "🔨 Đang build $PROJECT_NAME v$new_ver..."
+          # --- 4. BUILD ---
           make -C "$DIR" clean package FINALPACKAGE=1
           find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
 
-          # Xuất biến môi trường cho các bước sau
+          # Xuất biến
           echo "proj_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
           echo "proj_ver=$new_ver" >> $GITHUB_OUTPUT
           echo "proj_desc=$(grep "^Description:" "$CONTROL" | cut -d' ' -f2-)" >> $GITHUB_OUTPUT
@@ -96,23 +89,19 @@ jobs:
           echo -e "$latest_content" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Commit & Push Auto-Updates
+      - name: Commit & Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin main
           git checkout main
-          
           mkdir -p debs
           cp -v deb_output/*.deb debs/ 2>/dev/null || true
-          
           git add .
-          if ! git diff --cached --quiet; then
-            git commit -m "build(${{ steps.metadata.outputs.proj_name }}): v${{ steps.metadata.outputs.proj_ver }} [skip ci]"
-            git push origin main
-          fi
+          git diff --cached --quiet || git commit -m "build(${{ steps.metadata.outputs.proj_name }}): v${{ steps.metadata.outputs.proj_ver }} [skip ci]"
+          git push origin main
 
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.metadata.outputs.proj_name }}-v${{ steps.metadata.outputs.proj_ver }}
@@ -128,6 +117,5 @@ jobs:
             ### ⚠️ Lưu ý
             - Yêu cầu iOS 14.0 trở lên.
             - Xóa phiên bản cũ trước khi cài đặt bản mới này.
-          generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
