@@ -8,8 +8,7 @@ on:
         required: true
         type: choice
         options:
-          - autoac # Danh sách này sẽ được Workflow phụ tự động điền
-
+          - "---
 jobs:
   build:
     runs-on: macos-latest
