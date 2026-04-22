@@ -40,6 +40,14 @@ jobs:
               return filename.replace(/\.ipa$/i, '').replace(/[_-]v?\d+(\.\d+)*.*$/i, '').replace(/_/g, ' ').trim();
             };
 
+            // Hàm xử lý tên danh mục (VD: public.app-category.utilities -> Utilities)
+            const formatCategory = (rawCategory) => {
+              if (!rawCategory) return "Utilities";
+              const parts = rawCategory.split('.');
+              const lastPart = parts[parts.length - 1];
+              return lastPart.charAt(0).toUpperCase() + lastPart.slice(1);
+            };
+
             // 1. Quét sâu (Parse) từ thư mục apps/
             if (fs.existsSync('apps')) {
               const files = fs.readdirSync('apps').filter(f => f.toLowerCase().endsWith('.ipa'));
@@ -48,23 +56,22 @@ jobs:
                 const filePath = `apps/${file}`;
                 const name = cleanAppName(file);
                 let bundleId = "com.unknown.app";
+                let category = "Utilities";
                 let appPermissions = { entitlements: [], privacy: {} };
 
                 try {
                   const parser = new AppInfoParser(filePath);
                   const info = await parser.parse();
                   
-                  // Lấy Bundle ID
                   bundleId = info.CFBundleIdentifier || bundleId;
+                  category = formatCategory(info.LSApplicationCategoryType); // Quét danh mục
 
-                  // Lấy Quyền hạn (Privacy/Usage Description)
                   for (const key in info) {
                     if (key.endsWith('UsageDescription')) {
                       appPermissions.privacy[key] = info[key];
                     }
                   }
 
-                  // Lấy Định danh Entitlements
                   if (info.mobileProvision && info.mobileProvision.Entitlements) {
                     appPermissions.entitlements = Object.keys(info.mobileProvision.Entitlements);
                   }
@@ -78,11 +85,12 @@ jobs:
                   name: name,
                   bundleIdentifier: bundleId,
                   version: extractVersion(file),
-                  versionDate: stats.mtime.toISOString(), // Lấy thời gian update thực tế
+                  versionDate: stats.mtime.toISOString(),
                   size: stats.size,
                   downloadURL: `https://2kgt.github.io/repo/apps/${file}`,
                   developerName: "Kyic",
                   subtitle: name,
+                  category: category,
                   description: `${name} v${extractVersion(file)}`,
                   localizedDescription: `${name} đã được kiểm tra và tổng hợp bởi Kyic.`,
                   iconURL: `https://2kgt.github.io/repo/icons/${name.replace(/\s+/g, '')}.png`,
@@ -91,7 +99,7 @@ jobs:
               }
             }
 
-            // 2. Quét từ Releases (Ghi đè hoặc thêm mới)
+            // 2. Quét từ Releases
             try {
               const { data: releases } = await github.rest.repos.listReleases({
                 owner: context.repo.owner,
@@ -106,9 +114,9 @@ jobs:
                     
                     appMap.set(name.toLowerCase(), {
                       name: name,
-                      // Giữ lại bundleId/Permissions nếu app đã được quét sâu từ thư mục apps/
                       bundleIdentifier: existingApp ? existingApp.bundleIdentifier : "com.unknown.app",
                       appPermissions: existingApp ? existingApp.appPermissions : undefined,
+                      category: existingApp ? existingApp.category : "Utilities", // Kế thừa category nếu có
                       version: release.tag_name.replace(/^v/i, ''),
                       versionDate: release.published_at,
                       downloadURL: asset.browser_download_url,
@@ -128,7 +136,7 @@ jobs:
 
             const autoApps = Array.from(appMap.values());
 
-            // 3. App thủ công (Manual)
+            // 3. App thủ công (Manual) - Đã thêm trường category
             const manualApps = [
               {
                 "name": "Esign",
@@ -139,6 +147,7 @@ jobs:
                 "size": 7510000,
                 "developerName": "Kyic",
                 "subtitle": "Công cụ ký IPA mạnh mẽ",
+                "category": "Utilities",
                 "description": "Esign v5.0.2",
                 "localizedDescription": "Chức năng đã thêm: Hỗ trợ ký nhiều loại chứng chỉ • Tối ưu tốc độ • Giao diện mới.",
                 "iconURL": "https://2kgt.github.io/repo/icons/Esign.png"
@@ -152,6 +161,7 @@ jobs:
                 "size": 88900000,
                 "developerName": "Kyic",
                 "subtitle": "Ứng dụng Turrit",
+                "category": "Social",
                 "description": "Turrit - App Telegram bên thứ ba đa năng.",
                 "localizedDescription": "Turrit-TGEXtra 1.7.3.",
                 "iconURL": "https://2kgt.github.io/repo/icons/Turrit.png"
