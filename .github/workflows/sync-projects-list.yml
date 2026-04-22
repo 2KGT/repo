@@ -17,17 +17,19 @@ jobs:
       - name: "Checkout"
         uses: actions/checkout@v4
 
-      - name: "Update"
+      - name: "Sync Logic"
         run: |
-          # 1. Đảm bảo tên file build chính xác
           TARGET=".github/workflows/build-tweaks.yml"
           
-          # 2. Quét thư mục (Sửa đúng thành Build_Tweak viết hoa)
-          # Thêm || true để tránh script dừng lại nếu chưa có thư mục nào
-          PROJECTS=$(ls -d src/Build_Tweak/*/ 2>/dev/null | xargs -n 1 basename || echo "")
+          # Quét danh sách dự án (Giữ nguyên hoa thường AutoAC)
+          # Dùng find để an toàn hơn ls
+          PROJECTS=$(find src/Build_Tweak -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
           
-          # 3. Tạo danh sách (Mặc định có dòng hướng dẫn)
-          OPTIONS="          - \"--- Chọn dự án ---\""
+          echo "Tìm thấy: $PROJECTS"
+
+          # Tạo danh sách options
+          # Dòng đầu tiên là none (mặc định)
+          OPTIONS="          - none"
           
           if [ -n "$PROJECTS" ]; then
             ADD_PROJECTS=$(echo "$PROJECTS" | sed 's/^/          - /')
@@ -36,7 +38,7 @@ jobs:
             FINAL_LIST="$OPTIONS"
           fi
 
-          # 4. Ghi đè mục options trong file build
+          # Ghi đè: Xóa từ dòng 'options:' đến hết file và thay bằng list mới
           sed -i '/options:/q' "$TARGET"
           echo -e "$FINAL_LIST" >> "$TARGET"
 
