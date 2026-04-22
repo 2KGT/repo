@@ -14,23 +14,29 @@ jobs:
       workflows: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: "Checkout"
+        uses: actions/checkout@v4
 
       - name: "Update"
         run: |
+          # 1. Đảm bảo tên file build chính xác
           TARGET=".github/workflows/build-tweaks.yml"
           
-          # Lấy danh sách thư mục dự án (chỉ lấy thư mục có file bên trong)
-          PROJECTS=$(ls -d src/Build_Tweak/*/ | xargs -n 1 basename)
+          # 2. Quét thư mục (Sửa đúng thành Build_Tweak viết hoa)
+          # Thêm || true để tránh script dừng lại nếu chưa có thư mục nào
+          PROJECTS=$(ls -d src/Build_Tweak/*/ 2>/dev/null | xargs -n 1 basename || echo "")
           
-          # Tạo danh sách options
+          # 3. Tạo danh sách (Mặc định có dòng hướng dẫn)
           OPTIONS="          - \"--- Chọn dự án ---\""
-          ADD_PROJECTS=$(echo "$PROJECTS" | sed 's/^/          - /')
           
-          # Kết hợp lại thành nội dung YAML hoàn chỉnh
-          FINAL_LIST="$OPTIONS"$'\n'"$ADD_PROJECTS"
+          if [ -n "$PROJECTS" ]; then
+            ADD_PROJECTS=$(echo "$PROJECTS" | sed 's/^/          - /')
+            FINAL_LIST="$OPTIONS"$'\n'"$ADD_PROJECTS"
+          else
+            FINAL_LIST="$OPTIONS"
+          fi
 
-          # Ghi đè mục options trong file build
+          # 4. Ghi đè mục options trong file build
           sed -i '/options:/q' "$TARGET"
           echo -e "$FINAL_LIST" >> "$TARGET"
 
@@ -39,4 +45,4 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git diff --cached --quiet || git commit -m "sync list" && git push
+          git diff --cached --quiet || (git commit -m "sync list" && git push)
