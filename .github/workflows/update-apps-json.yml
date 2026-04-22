@@ -1,4 +1,4 @@
-name: Auto update apps.json from apps/ +Releases
+name: Auto update apps.json apps/ +Releases
 
 on:
   push:
