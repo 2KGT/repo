@@ -1,0 +1,12 @@
+Package: com.kyic.autoac
+Name: AutoAC
+Version: 1.0.1
+Architecture: iphoneos-arm64
+Section: Tweaks
+Priority: optional
+Maintainer: Kyic
+Depends: firmware (>= 14.0)
+Description: AutoAC - tự động xoá cache + xoá Ads, banner tag sản phẩm trong ứng dụng YouTube.
+Author: Kyic
+SileoDepiction: https://2kgt.github.io/repo/depictions/autoac.json
+Icon: https://2kgt.github.io/repo/icons/autoac.png
