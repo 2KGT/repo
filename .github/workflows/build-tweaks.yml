@@ -1,4 +1,4 @@
-name: 🧱 Build Multi Tweak (Fuzzy Search Edition)
+name: Build Multi Tweak (FS Edition)
 
 on:
   workflow_dispatch:
