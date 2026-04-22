@@ -1,0 +1,52 @@
+name: "Auto Sync Projects"
+
+on:
+  push:
+    paths:
+      - 'src/Build_Tweak/**'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      workflows: write # Cấp quyền để script có thể sửa file workflow khác
+
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v4
+
+      - name: "Scan and Sync Projects"
+        run: |
+          # ĐỊNH NGHĨA FILE BUILD CHÍNH (Đảm bảo tên file này đúng 100%)
+          TARGET=".github/workflows/build-tweaks.yml"
+          
+          if [ ! -f "$TARGET" ]; then
+            echo "❌ Không tìm thấy file $TARGET"
+            exit 1
+          fi
+
+          # Lấy danh sách các thư mục dự án bên trong src/Build_Tweak/
+          PROJECTS=$(ls -d src/Build_Tweak/*/ | xargs -n 1 basename)
+          
+          # Định dạng danh sách thành các dòng YAML (thụt lề 10 khoảng trắng)
+          OPTIONS_LIST=$(echo "$PROJECTS" | sed 's/^/          - /')
+
+          # Cập nhật danh sách sau dòng 'options:' trong file build chính
+          awk -v list="$OPTIONS_LIST" '
+            /options:/ { print; print list; exit }
+            { print }
+          ' "$TARGET" > temp.yml && mv temp.yml "$TARGET"
+
+      - name: "Commit and Push"
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: auto-sync project list [skip ci]"
+            git push origin main
+          else
+            echo "ℹ️ Không có thay đổi nào để cập nhật."
+          fi
