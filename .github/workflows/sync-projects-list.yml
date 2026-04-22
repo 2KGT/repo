@@ -1,18 +1,42 @@
-      - name: "Sync List"
+name: "Sync List"
+
+on:
+  push:
+    paths:
+      - 'src/Build_Tweak/**'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      workflows: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Update"
         run: |
           TARGET=".github/workflows/build-tweaks.yml"
           
-          # 1. Lấy danh sách thư mục thực tế
+          # Lấy danh sách thư mục dự án (chỉ lấy thư mục có file bên trong)
           PROJECTS=$(ls -d src/Build_Tweak/*/ | xargs -n 1 basename)
           
-          # 2. Tạo nội dung options mới (Luôn có dòng hướng dẫn ở đầu)
-          # Lưu ý: Thụt lề 10 khoảng trắng để khớp với cấu trúc YAML
-          NEW_OPTIONS="          - \"--- Vui lòng chọn dự án ---\"\n"
-          NEW_OPTIONS+=$(echo "$PROJECTS" | sed 's/^/          - /')
+          # Tạo danh sách options
+          OPTIONS="          - \"--- Chọn dự án ---\""
+          ADD_PROJECTS=$(echo "$PROJECTS" | sed 's/^/          - /')
+          
+          # Kết hợp lại thành nội dung YAML hoàn chỉnh
+          FINAL_LIST="$OPTIONS"$'\n'"$ADD_PROJECTS"
 
-          # 3. Ghi đè vào file build
-          # Tìm đến dòng 'options:', giữ lại nó và chèn danh sách mới ngay dưới
-          awk -v list="$NEW_OPTIONS" '
-            /options:/ { print; print list; exit }
-            { print }
-          ' "$TARGET" > temp.yml && mv temp.yml "$TARGET"
+          # Ghi đè mục options trong file build
+          sed -i '/options:/q' "$TARGET"
+          echo -e "$FINAL_LIST" >> "$TARGET"
+
+      - name: "Push"
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --cached --quiet || git commit -m "sync list" && git push
