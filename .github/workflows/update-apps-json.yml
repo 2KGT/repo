@@ -1,8 +1,11 @@
-name: Auto Update apps.json from Releases
+name: Auto Update apps.json
 
 on:
+  push:
+    paths:
+      - 'apps/*.ipa'
   release:
-    types: [published, edited, released]
+    types: [published, edited]
   workflow_dispatch:
 
 jobs:
@@ -12,95 +15,85 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v4
 
-      - name: Generate apps.json from Releases
+      - name: Generate apps.json from apps/ folder and Releases
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
+            let apps = [];
 
-            // Lấy tất cả Releases
-            const { data: releases } = await github.rest.repos.listReleases({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            });
+            // 1. Quét từ thư mục apps/
+            try {
+              const appFiles = await github.rest.repos.getContent({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                path: 'apps'
+              });
 
-            const autoApps = [];
-
-            for (const release of releases) {
-              for (const asset of release.assets) {
-                if (asset.name.toLowerCase().endsWith('.ipa')) {
-                  const fileName = asset.name.replace(/\.ipa$/i, '');
-                  let appName = fileName.split(/[-_]/)[0] || release.name || "Unknown App";
-                  appName = appName.trim();
-
-                  // Tự động đoán bundleIdentifier
-                  let bundleId = "com.unknown.app";
-                  const lower = appName.toLowerCase();
-                  if (lower.includes("zebra")) bundleId = "com.getzbra.zebra";
-                  else if (lower.includes("youtube")) bundleId = "com.google.ios.youtube";
-                  else if (lower.includes("esign")) bundleId = "com.esign.installer";
-                  else if (lower.includes("turrit")) bundleId = "com.turrit.app";
-
-                  autoApps.push({
-                    name: appName,
-                    bundleIdentifier: bundleId,
-                    version: release.tag_name.replace(/^v/i, ''),
-                    downloadURL: asset.browser_download_url,
-                    size: asset.size,
+              for (const file of appFiles.data) {
+                if (file.name.toLowerCase().endsWith('.ipa')) {
+                  const name = file.name.replace(/\.ipa$/i, '').replace(/_/g, ' ');
+                  apps.push({
+                    name: name,
+                    bundleIdentifier: "com.unknown.app",
+                    version: "1.0",
+                    downloadURL: `https://2kgt.github.io/repo/apps/${file.name}`,
+                    size: file.size || 0,
                     developerName: "Kyic",
-                    subtitle: `${appName} ${release.tag_name.replace(/^v/i, '')}`,
-                    description: `${appName} ${release.tag_name.replace(/^v/i, '')}`,
-                    localizedDescription: release.body ? release.body.substring(0, 300) : `${appName} đã được kiểm tra và tổng hợp bởi Kyic.`,
-                    versionDate: release.published_at ? release.published_at.split('T')[0] : new Date().toISOString().split('T')[0],
-                    iconURL: `https://2kgt.github.io/repo/icons/${appName.replace(/\s+/g, '')}.png`
+                    subtitle: name,
+                    description: `${name} IPA`,
+                    localizedDescription: `${name} đã được kiểm tra và tổng hợp bởi Kyic.`,
+                    versionDate: new Date().toISOString().split('T')[0],
+                    iconURL: `https://2kgt.github.io/repo/icons/${name.replace(/\s+/g, '')}.png`
                   });
                 }
               }
+            } catch (e) {
+              console.log("No apps folder or no .ipa files");
             }
 
-            // Các app thủ công (Esign, Turrit, ...)
-            const manualApps = [
-              {
-                "name": "Esign",
-                "bundleIdentifier": "com.esign.installer",
-                "version": "5.0.2",
-                "downloadURL": "https://2kgt.github.io/repo/apps/esign.ipa",
-                "size": 7510000,
-                "developerName": "Kyic",
-                "subtitle": "Công cụ ký IPA mạnh mẽ",
-                "description": "Esign v5.0.2",
-                "localizedDescription": "Chức năng đã thêm: Hỗ trợ ký nhiều loại chứng chỉ • Tối ưu tốc độ • Giao diện mới.\nIPA đã được kiểm tra và tổng hợp bởi Kyic.",
-                "versionDate": "2026-04-21",
-                "iconURL": "https://2kgt.github.io/repo/icons/Esign.png"
-              },
-              {
-                "name": "Turrit",
-                "bundleIdentifier": "com.turrit.app",
-                "version": "1.4.6",
-                "downloadURL": "https://2kgt.github.io/repo/apps/turrit.ipa",
-                "size": 88900000,
-                "developerName": "Kyic",
-                "subtitle": "Ứng dụng Turrit",
-                "description": "Turrit - App Telegram bên thứ ba đa năng.",
-                "localizedDescription": "Turrit-TGEXtra 1.7.3.\nIPA đã được kiểm tra và tổng hợp bởi Kyic Team.",
-                "versionDate": "2026-04-21",
-                "iconURL": "https://2kgt.github.io/repo/icons/Turrit.png"
+            // 2. Quét từ Releases (ưu tiên nếu có)
+            try {
+              const { data: releases } = await github.rest.repos.listReleases({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              });
+
+              for (const release of releases) {
+                for (const asset of release.assets) {
+                  if (asset.name.toLowerCase().endsWith('.ipa')) {
+                    const name = asset.name.replace(/\.ipa$/i, '').replace(/_/g, ' ');
+                    apps.push({
+                      name: name,
+                      bundleIdentifier: "com.unknown.app",
+                      version: release.tag_name.replace(/^v/i, ''),
+                      downloadURL: asset.browser_download_url,
+                      size: asset.size,
+                      developerName: "Kyic",
+                      subtitle: name,
+                      description: `${name} ${release.tag_name.replace(/^v/i, '')}`,
+                      localizedDescription: release.body || `${name} đã được kiểm tra và tổng hợp bởi Kyic.`,
+                      versionDate: release.published_at ? release.published_at.split('T')[0] : new Date().toISOString().split('T')[0],
+                      iconURL: `https://2kgt.github.io/repo/icons/${name.replace(/\s+/g, '')}.png`
+                    });
+                  }
+                }
               }
-            ];
+            } catch (e) {
+              console.log("No releases or error fetching releases");
+            }
 
-            const finalApps = [...manualApps, ...autoApps];
+            // Giữ lại app thủ công
+            const manual = [ /* Esign, Turrit, Zebra... bạn có thể thêm vào đây */ ];
 
-            const jsonContent = {
+            const finalJson = {
               "name": "Kyic IPA Repository",
               "identifier": "com.kyic.iparepo",
               "iconURL": "https://2kgt.github.io/repo/icons/Kyic.png",
-              "apps": finalApps
+              "apps": [...manual, ...apps]
             };
 
-            fs.writeFileSync('apps.json', JSON.stringify(jsonContent, null, 2));
-            console.log(`✅ apps.json đã được tự động cập nhật với ${finalApps.length} ứng dụng!`);
+            fs.writeFileSync('apps.json', JSON.stringify(finalJson, null, 2));
+            console.log(`✅ Updated apps.json with ${apps.length} apps from folder and releases`);
