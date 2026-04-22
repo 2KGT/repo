@@ -1,0 +1,53 @@
+name: "Sync Projects List"
+
+on:
+  push:
+    paths:
+      - 'src/Build_Tweak/**'
+  workflow_dispatch: # Cho phép bạn bấm nút chạy tay bất cứ lúc nào
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      workflows: write # Quyền bắt buộc để sửa file build-tweaks.yml
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+
+      - name: "Sync List"
+        run: |
+          # 1. Xác định file build chính cần cập nhật danh sách
+          TARGET=".github/workflows/build-tweaks.yml"
+          
+          if [ ! -f "$TARGET" ]; then
+            echo "❌ Không tìm thấy file $TARGET"
+            exit 1
+          fi
+
+          # 2. Quét các thư mục dự án hiện có
+          PROJECTS=$(ls -d src/Build_Tweak/*/ | xargs -n 1 basename)
+          
+          # 3. Tạo danh sách YAML (thụt lề chính xác 10 khoảng trắng cho options)
+          OPTIONS=$(echo "$PROJECTS" | sed 's/^/          - /')
+
+          # 4. Ghi đè danh sách vào sau dòng 'options:'
+          awk -v list="$OPTIONS" '
+            /options:/ { print; print list; exit }
+            { print }
+          ' "$TARGET" > temp.yml && mv temp.yml "$TARGET"
+
+      - name: "Push Changes"
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: sync project list [skip ci]"
+            git push origin main
+            echo "✅ Danh sách dự án đã được đồng bộ!"
+          else
+            echo "ℹ️ Không có thay đổi nào."
+          fi
