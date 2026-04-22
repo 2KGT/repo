@@ -11,23 +11,10 @@
       "size": 7510000,
       "developerName": "Kyic",
       "subtitle": "Công cụ ký IPA mạnh mẽ",
-      "description": "Esign v5.0.2 - Tool ký và sideload IPA không cần máy tính. Hỗ trợ nhiều chứng chỉ.",
-      "localizedDescription": "Chức năng đã thêm: Hỗ trợ ký nhiều loại chứng chỉ • Tối ưu tốc độ • Giao diện mới.\nIPA đã được kiểm tra và tổng hợp bởi Kyic.",
+      "description": "Esign v5.0.2",
+      "localizedDescription": "Chức năng đã thêm: Hỗ trợ ký nhiều loại chứng chỉ • Tối ưu tốc độ • Giao diện mới.",
       "versionDate": "2026-04-21",
       "iconURL": "https://2kgt.github.io/repo/icons/Esign.png"
-    },
-    {
-      "name": "YouTube",
-      "bundleIdentifier": "com.google.ios.youtube",
-      "version": "21.16.2",
-      "downloadURL": "https://github.com/2KGT/repo/releases/download/youtube-21.16.2/YouTube_21.16.2_ytx.ipa",
-      "size": 127926272,
-      "developerName": "Kyic",
-      "subtitle": "YouTube 21.16.2",
-      "description": "YouTube phiên bản 21.16.2",
-      "localizedDescription": "YouTube chính thức phiên bản 21.16.2 (122 MB).\nĐã kiểm tra và tổng hợp bởi Kyic.",
-      "versionDate": "2026-04-21",
-      "iconURL": "https://2kgt.github.io/repo/icons/Youtube.png"
     },
     {
       "name": "Turrit",
@@ -38,9 +25,61 @@
       "developerName": "Kyic",
       "subtitle": "Ứng dụng Turrit",
       "description": "Turrit - App Telegram bên thứ ba đa năng.",
-      "localizedDescription": "Turrit-TGEXtra 1.7.3.\nIPA đã được kiểm tra và tổng hợp bởi Kyic Team.",
+      "localizedDescription": "Turrit-TGEXtra 1.7.3.",
       "versionDate": "2026-04-21",
       "iconURL": "https://2kgt.github.io/repo/icons/Turrit.png"
+    },
+    {
+      "name": "1842",
+      "bundleIdentifier": "com.unknown.app",
+      "version": "1.0",
+      "downloadURL": "https://2kgt.github.io/repo/apps/1842.ipa",
+      "size": 7522792,
+      "developerName": "Kyic",
+      "subtitle": "1842",
+      "description": "1842 v1.0",
+      "localizedDescription": "1842 đã được kiểm tra và tổng hợp bởi Kyic.",
+      "versionDate": "2026-04-22",
+      "iconURL": "https://2kgt.github.io/repo/icons/1842.png"
+    },
+    {
+      "name": "Zebra",
+      "bundleIdentifier": "com.unknown.app",
+      "version": "Zebra",
+      "downloadURL": "https://github.com/2KGT/repo/releases/download/Zebra/Zebra_1.1.28.ipa",
+      "size": 9592698,
+      "developerName": "Kyic",
+      "subtitle": "Zebra",
+      "description": "Zebra Zebra",
+      "localizedDescription": "Zebra 1.1.28",
+      "versionDate": "2026-04-22",
+      "iconURL": "https://2kgt.github.io/repo/icons/Zebra.png"
+    },
+    {
+      "name": "YouTube",
+      "bundleIdentifier": "com.unknown.app",
+      "version": "YouTube",
+      "downloadURL": "https://github.com/2KGT/repo/releases/download/YouTube/YouTube_21.16.2_ytx.ipa",
+      "size": 127948186,
+      "developerName": "Kyic",
+      "subtitle": "YouTube",
+      "description": "YouTube YouTube",
+      "localizedDescription": "YouTube 21.16.2 ytxpip",
+      "versionDate": "2026-04-21",
+      "iconURL": "https://2kgt.github.io/repo/icons/YouTube.png"
+    },
+    {
+      "name": "Telegram",
+      "bundleIdentifier": "com.unknown.app",
+      "version": "Telegram",
+      "downloadURL": "https://github.com/2KGT/repo/releases/download/Telegram/Telegram_12.6.3.ipa",
+      "size": 74074696,
+      "developerName": "Kyic",
+      "subtitle": "Telegram",
+      "description": "Telegram Telegram",
+      "localizedDescription": "TGExtra v1.7.4",
+      "versionDate": "2026-04-22",
+      "iconURL": "https://2kgt.github.io/repo/icons/Telegram.png"
     }
   ]
 }
