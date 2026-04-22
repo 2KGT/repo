@@ -13,3 +13,33 @@
 <p align="center">
   Repo chuyên cung cấp tweak & IPA chất lượng cao cho iOS
 </p>
+
+---
+
+## 📦 Các tweak hiện có
+
+### AutoAC
+**Tweak YouTube mạnh mẽ**
+
+- Xoá bộ nhớ đệm YouTube thông minh (tự động dọn cache cũ và file lớn)
+- Ẩn ghim sản phẩm, banner quảng cáo bán hàng, product stickers trong Video & Shorts
+- Hoạt động tốt trên cả Jailbreak và Non-Jailbreak (TrollStore / E-Sign)
+
+**Cách cài đặt:**
+- **Jailbreak**: Cài file `.deb` từ thư mục `debs/`
+- **Non-Jailbreak**: Tải `.ipa` từ Release và cài bằng TrollStore / E-Sign
+
+---
+
+## 📂 Cấu trúc repo
+
+- `debs/` → File `.deb` cho Sileo/Zebra
+- `depictions/` → Trang mô tả tweak
+- `src/autoac/` → Mã nguồn của AutoAC (dành cho developer)
+- `apps.json` → Dùng cho repo IPA
+
+---
+
+**Cập nhật thường xuyên** | **Chất lượng cao**
+
+Made with ❤️ by Kyic
