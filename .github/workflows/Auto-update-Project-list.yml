@@ -3,15 +3,15 @@ name: "Auto Update Project List"
 on:
   push:
     paths:
-      - 'src/Build_Tweak/**' # Tự động chạy khi bạn thêm/xóa thư mục trong Build_Tweak
-  workflow_dispatch: # Cho phép bạn bấm nút chạy tay để cập nhật danh sách ngay lập tức
+      - 'src/Build_Tweak/**'
+  workflow_dispatch: # Dòng này phải thẳng hàng với 'push:'
 
 jobs:
   update:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      workflows: write # QUAN TRỌNG: Cấp quyền sửa đổi các file workflow khác
+      workflows: write
 
     steps:
       - name: Checkout code
@@ -19,27 +19,19 @@ jobs:
 
       - name: Scan and Update Build Workflow
         run: |
-          # 1. Định nghĩa file build chính
+          # Đảm bảo tên file này khớp với file build chính của bạn
           TARGET_FILE=".github/workflows/build-tweaks.yml"
 
-          # Kiểm tra nếu file mục tiêu không tồn tại thì dừng lại để tránh lỗi
           if [ ! -f "$TARGET_FILE" ]; then
-            echo "❌ Không tìm thấy file $TARGET_FILE. Vui lòng kiểm tra lại tên file."
+            echo "❌ Không tìm thấy file $TARGET_FILE"
             exit 1
           fi
 
-          # 2. Quét danh sách các thư mục dự án hiện có trong src/Build_Tweak/
-          # Lấy tên thư mục, loại bỏ đường dẫn và dấu xẹt
+          # Lấy danh sách thư mục dự án
           PROJECTS=$(ls -d src/Build_Tweak/*/ | xargs -n 1 basename)
-          
-          echo "📂 Tìm thấy các dự án: "
-          echo "$PROJECTS"
-
-          # 3. Tạo danh sách định dạng YAML options (thêm khoảng trắng và dấu gạch đầu dòng)
-          # Lưu ý: Script sẽ tìm dòng 'options:' và thay thế toàn bộ phần bên dưới nó
           OPTIONS_LIST=$(echo "$PROJECTS" | sed 's/^/          - /')
 
-          # 4. Sử dụng AWK để ghi đè danh sách dự án vào mục options của file build chính
+          # Cập nhật danh sách vào file build
           awk -v new_list="$OPTIONS_LIST" '
             /options:/ { print; print new_list; exit }
             { print }
@@ -50,12 +42,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          
-          # Chỉ commit nếu có sự thay đổi thực sự trong danh sách dự án
           if ! git diff --cached --quiet; then
             git commit -m "chore: auto-update projects list [skip ci]"
             git push origin main
-            echo "✅ Hệ thống đã cập nhật danh sách dự án mới thành công!"
-          else
-            echo "ℹ️ Không có dự án mới nào được phát hiện. Danh sách đã được cập nhật trước đó."
           fi
