@@ -4,80 +4,150 @@
   "iconURL": "https://2kgt.github.io/repo/icons/Kyic.png",
   "apps": [
     {
-      "name": "Esign",
-      "bundleIdentifier": "com.esign.installer",
-      "version": "5.0.2",
-      "versionDate": "2026-04-21T00:00:00Z",
-      "downloadURL": "https://2kgt.github.io/repo/apps/esign.ipa",
-      "size": 7510000,
+      "name": "ESign",
+      "bundleIdentifier": "p3.xyz.yyyue.esign",
       "developerName": "Kyic",
-      "subtitle": "Công cụ ký IPA mạnh mẽ",
+      "subtitle": "ESign",
       "category": "Utilities",
-      "description": "Esign v5.0.2",
-      "localizedDescription": "Chức năng đã thêm: Hỗ trợ ký nhiều loại chứng chỉ • Tối ưu tốc độ • Giao diện mới.",
-      "iconURL": "https://2kgt.github.io/repo/icons/Esign.png"
+      "iconURL": "https://2kgt.github.io/repo/icons/ESign.png",
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSAppleMusicUsageDescription": "点允许，才能使用。",
+          "NSCameraUsageDescription": "授权后才能使用您的相机进行扫一扫",
+          "NSLocationWhenInUseUsageDescription": "开启定位服务，我们将根据您的位置,为您提供当前城市的相关企业信息。在未经许可前不会开启定位服务，请放心使用。",
+          "NSPhotoLibraryAddUsageDescription": "授权后才能将图片保存到本地相册",
+          "NSPhotoLibraryUsageDescription": "授权后才能访问您的手机相册，您才能上传对应的图片",
+          "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you"
+        }
+      },
+      "versions": [
+        {
+          "version": "5.0.2",
+          "date": "2026-04-22T08:49:34.026Z",
+          "size": 7473847,
+          "downloadURL": "https://2kgt.github.io/repo/apps/ESign_5.0.2.ipa",
+          "localizedDescription": "Phiên bản 5.0.2 tổng hợp bởi Kyic."
+        },
+        {
+          "version": "4.8.1",
+          "date": "2026-04-22T08:49:34.010Z",
+          "size": 9115820,
+          "downloadURL": "https://2kgt.github.io/repo/apps/ESign_4.8.1.ipa",
+          "localizedDescription": "Phiên bản 4.8.1 tổng hợp bởi Kyic."
+        }
+      ],
+      "version": "5.0.2",
+      "versionDate": "2026-04-22T08:49:34.026Z",
+      "size": 7473847,
+      "downloadURL": "https://2kgt.github.io/repo/apps/ESign_5.0.2.ipa",
+      "description": "ESign v5.0.2",
+      "localizedDescription": "Phiên bản 5.0.2 tổng hợp bởi Kyic."
     },
     {
       "name": "Turrit",
       "bundleIdentifier": "com.turrit.app",
-      "version": "1.4.6",
-      "versionDate": "2026-04-21T00:00:00Z",
-      "downloadURL": "https://2kgt.github.io/repo/apps/turrit.ipa",
-      "size": 88900000,
       "developerName": "Kyic",
       "subtitle": "Ứng dụng Turrit",
       "category": "Social",
-      "description": "Turrit - App Telegram bên thứ ba đa năng.",
-      "localizedDescription": "Turrit-TGEXtra 1.7.3.",
-      "iconURL": "https://2kgt.github.io/repo/icons/Turrit.png"
+      "iconURL": "https://2kgt.github.io/repo/icons/Turrit.png",
+      "versions": [
+        {
+          "version": "1.4.6",
+          "date": "2026-04-21T00:00:00Z",
+          "size": 88900000,
+          "downloadURL": "https://2kgt.github.io/repo/apps/turrit.ipa",
+          "localizedDescription": "Turrit - App Telegram bên thứ ba đa năng."
+        }
+      ],
+      "version": "1.4.6",
+      "versionDate": "2026-04-21T00:00:00Z",
+      "size": 88900000,
+      "downloadURL": "https://2kgt.github.io/repo/apps/turrit.ipa",
+      "description": "Turrit v1.4.6",
+      "localizedDescription": "Turrit - App Telegram bên thứ ba đa năng."
     },
     {
       "name": "Zebra",
       "bundleIdentifier": "xyz.willy.Zebra",
+      "developerName": "Kyic",
+      "subtitle": "Zebra",
+      "category": "Utilities",
+      "iconURL": "https://2kgt.github.io/repo/icons/Zebra.png",
       "appPermissions": {
         "entitlements": [],
         "privacy": {
           "NSFaceIDUsageDescription": "Zebra uses Face ID to authenticate purchases."
         }
       },
-      "category": "Utilities",
+      "versions": [
+        {
+          "version": "Zebra",
+          "date": "2026-04-22T07:11:47Z",
+          "size": 9592698,
+          "downloadURL": "https://github.com/2KGT/repo/releases/download/Zebra/Zebra_1.1.28.ipa",
+          "localizedDescription": "Zebra 1.1.28"
+        },
+        {
+          "version": "1.1.28",
+          "date": "2026-04-22T08:49:34.040Z",
+          "size": 9592698,
+          "downloadURL": "https://2kgt.github.io/repo/apps/Zebra_1.1.28.ipa",
+          "localizedDescription": "Phiên bản 1.1.28 tổng hợp bởi Kyic."
+        }
+      ],
       "version": "Zebra",
       "versionDate": "2026-04-22T07:11:47Z",
-      "downloadURL": "https://github.com/2KGT/repo/releases/download/Zebra/Zebra_1.1.28.ipa",
       "size": 9592698,
-      "developerName": "Kyic",
-      "subtitle": "Zebra",
-      "description": "Zebra Zebra",
-      "localizedDescription": "Zebra 1.1.28",
-      "iconURL": "https://2kgt.github.io/repo/icons/Zebra.png"
+      "downloadURL": "https://github.com/2KGT/repo/releases/download/Zebra/Zebra_1.1.28.ipa",
+      "description": "Zebra vZebra",
+      "localizedDescription": "Zebra 1.1.28"
     },
     {
       "name": "YouTube",
       "bundleIdentifier": "com.unknown.app",
-      "category": "Utilities",
-      "version": "YouTube",
-      "versionDate": "2026-04-21T10:43:36Z",
-      "downloadURL": "https://github.com/2KGT/repo/releases/download/YouTube/YouTube_21.16.2_ytx.ipa",
-      "size": 127948186,
       "developerName": "Kyic",
       "subtitle": "YouTube",
-      "description": "YouTube YouTube",
-      "localizedDescription": "YouTube 21.16.2 ytxpip",
-      "iconURL": "https://2kgt.github.io/repo/icons/YouTube.png"
+      "category": "Utilities",
+      "iconURL": "https://2kgt.github.io/repo/icons/YouTube.png",
+      "versions": [
+        {
+          "version": "YouTube",
+          "date": "2026-04-21T10:43:36Z",
+          "size": 127948186,
+          "downloadURL": "https://github.com/2KGT/repo/releases/download/YouTube/YouTube_21.16.2_ytx.ipa",
+          "localizedDescription": "YouTube 21.16.2 ytxpip"
+        }
+      ],
+      "version": "YouTube",
+      "versionDate": "2026-04-21T10:43:36Z",
+      "size": 127948186,
+      "downloadURL": "https://github.com/2KGT/repo/releases/download/YouTube/YouTube_21.16.2_ytx.ipa",
+      "description": "YouTube vYouTube",
+      "localizedDescription": "YouTube 21.16.2 ytxpip"
     },
     {
       "name": "Telegram",
       "bundleIdentifier": "com.unknown.app",
-      "category": "Utilities",
-      "version": "Telegram",
-      "versionDate": "2026-04-22T07:07:47Z",
-      "downloadURL": "https://github.com/2KGT/repo/releases/download/Telegram/Telegram_12.6.3.ipa",
-      "size": 74074696,
       "developerName": "Kyic",
       "subtitle": "Telegram",
-      "description": "Telegram Telegram",
-      "localizedDescription": "TGExtra v1.7.4",
-      "iconURL": "https://2kgt.github.io/repo/icons/Telegram.png"
+      "category": "Utilities",
+      "iconURL": "https://2kgt.github.io/repo/icons/Telegram.png",
+      "versions": [
+        {
+          "version": "Telegram",
+          "date": "2026-04-22T07:07:47Z",
+          "size": 74074696,
+          "downloadURL": "https://github.com/2KGT/repo/releases/download/Telegram/Telegram_12.6.3.ipa",
+          "localizedDescription": "TGExtra v1.7.4"
+        }
+      ],
+      "version": "Telegram",
+      "versionDate": "2026-04-22T07:07:47Z",
+      "size": 74074696,
+      "downloadURL": "https://github.com/2KGT/repo/releases/download/Telegram/Telegram_12.6.3.ipa",
+      "description": "Telegram vTelegram",
+      "localizedDescription": "TGExtra v1.7.4"
     }
   ]
 }
