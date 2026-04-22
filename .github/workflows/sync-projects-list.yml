@@ -3,7 +3,7 @@ name: "Sync List"
 on:
   push:
     paths:
-      - 'src/Build_Tweak/**'
+      - 'src/build-tweaks/**/control'
   workflow_dispatch:
 
 jobs:
@@ -17,34 +17,43 @@ jobs:
       - name: "Checkout"
         uses: actions/checkout@v4
 
-      - name: "Sync Logic"
+      - name: "Scan Control Files"
         run: |
           TARGET=".github/workflows/build-tweaks.yml"
           
-          # Quét danh sách dự án (Giữ nguyên hoa thường AutoAC)
-          # Dùng find để an toàn hơn ls
-          PROJECTS=$(find src/Build_Tweak -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
+          # Tạo file tạm chứa danh sách mặc định
+          echo "          - none" > new_options.txt
           
-          echo "Tìm thấy: $PROJECTS"
+          # Quét tất cả file 'control' trong src/build-tweaks/
+          # -maxdepth 3 để tìm sâu vào: src -> build-tweaks -> tên_dự_án -> control
+          find src/build-tweaks -maxdepth 3 -name "control" | while read -r control_file; do
+            # Đọc dòng Name: từ file control
+            PROJECT_NAME=$(grep "^Name:" "$control_file" | cut -d':' -f2- | xargs)
+            
+            if [ -n "$PROJECT_NAME" ]; then
+              echo "          - \"$PROJECT_NAME\"" >> new_options.txt
+              echo "✅ Đã tìm thấy tên: $PROJECT_NAME"
+            else
+              # Nếu không có dòng Name, lấy tạm tên thư mục
+              DIR_NAME=$(basename $(dirname "$control_file"))
+              echo "          - \"$DIR_NAME\"" >> new_options.txt
+              echo "⚠️ Không có Name, dùng tên thư mục: $DIR_NAME"
+            fi
+          done
 
-          # Tạo danh sách options
-          # Dòng đầu tiên là none (mặc định)
-          OPTIONS="          - none"
-          
-          if [ -n "$PROJECTS" ]; then
-            ADD_PROJECTS=$(echo "$PROJECTS" | sed 's/^/          - /')
-            FINAL_LIST="$OPTIONS"$'\n'"$ADD_PROJECTS"
-          else
-            FINAL_LIST="$OPTIONS"
+          # Kiểm tra file build đích
+          if [ ! -f "$TARGET" ]; then
+            echo "❌ Không tìm thấy file $TARGET"
+            exit 1
           fi
 
-          # Ghi đè: Xóa từ dòng 'options:' đến hết file và thay bằng list mới
+          # Ghi đè mục options: (Xóa phần cũ sau dòng options: và dán phần mới)
           sed -i '/options:/q' "$TARGET"
-          echo -e "$FINAL_LIST" >> "$TARGET"
+          cat new_options.txt >> "$TARGET"
 
-      - name: "Push"
+      - name: "Commit & Push"
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git diff --cached --quiet || (git commit -m "sync list" && git push)
+          git diff --cached --quiet || (git commit -m "chore: sync names from control in build-tweaks" && git push)
