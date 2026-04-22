@@ -35,7 +35,7 @@
 
 - `debs/` → File `.deb` cho Sileo/Zebra
 - `depictions/` → Trang mô tả tweak
-- `src/autoac/` → Mã nguồn của AutoAC (dành cho developer)
+- `src/… ` → Mã nguồn của (dành cho developer)
 - `apps.json` → Dùng cho repo IPA
 
 ---
