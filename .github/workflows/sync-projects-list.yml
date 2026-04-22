@@ -1,21 +1,12 @@
-      - name: "Sync List"
+      - name: "Sync List to Description"
         run: |
           TARGET=".github/workflows/build-tweaks.yml"
           
-          # Quét trực tiếp thư mục, giữ nguyên hoa thường
-          # Lệnh này sẽ lấy chính xác tên: AutoAc, MyTweak, v.v.
-          PROJECTS=$(cd src/Build_Tweak && ls -d */ | sed 's/\///')
+          # Quét danh sách dự án
+          PROJECTS=$(ls -d src/Build_Tweak/*/ | xargs -n 1 basename | tr '\n' ', ')
           
-          if [ -z "$PROJECTS" ]; then
-            echo "⚠️ Không tìm thấy dự án."
-            exit 0
-          fi
+          # Tạo dòng mô tả mới kèm danh sách dự án
+          NEW_DESC="description: '⌨️ Nhập tên dự án (Gợi ý: $PROJECTS)'"
 
-          # Tạo danh sách options cho YAML
-          OPTIONS=$(echo "$PROJECTS" | sed 's/^/          - /')
-
-          # Cập nhật vào file build
-          awk -v list="$OPTIONS" '
-            /options:/ { print; print list; exit }
-            { print }
-          ' "$TARGET" > temp.yml && mv temp.yml "$TARGET"
+          # Dùng sed để cập nhật dòng description trong file build
+          sed -i "s|description: '⌨️ Nhập tên dự án.*|$NEW_DESC|" $TARGET
