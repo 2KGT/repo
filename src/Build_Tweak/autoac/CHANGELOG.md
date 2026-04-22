@@ -1,10 +1,21 @@
+
 ### ✨ Tính năng mới
-- [Tự động cập nhật từ script]
+
+
 ### 🐛 Sửa lỗi & Cải thiện
-- [Tự động cập nhật từ script]
+
+
+
 ---
 ### 📜 Lịch sử phiên bản cũ
-... các nội dung cũ hơn sẽ được đẩy xuống đây ...
+
+
+### ✨ Tính năng mới
+
+
+### 🐛 Sửa lỗi & Cải thiện
+ (v1.0.1)
+
 ---
 ### ⚠️ Lưu ý
 - Yêu cầu iOS 14.0 trở lên.
