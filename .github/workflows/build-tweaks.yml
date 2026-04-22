@@ -1,29 +1,17 @@
-name: Build Multi Tweak src/ + Release
+name: Build Multi Tweak (Professional Edition)
 
 on:
-  push:
-    branches: [ main ]
-    tags: [ 'v*' ]
   workflow_dispatch:
     inputs:
       project:
-        description: 'Chọn dự án build src/'
+        description: '🚀 Chọn dự án cần build (trong thư mục src/)'
         required: true
         default: 'autoac'
         type: choice
         options:
-        - autoac
-        - autodl
-        - all
-      bump_type:
-        description: 'Chọn loại tăng versions'
-        required: true
-        default: 'patch'
-        type: choice
-        options:
-        - patch
-        - minor
-        - major
+          - autoac
+          - autodl
+          # Thêm các thư mục dự án khác của bạn tại đây
 
 jobs:
   build:
@@ -35,87 +23,104 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-
-      - name: Bump version and push tag
-        id: tag_version
-        if: github.event_name == 'workflow_dispatch'
-        uses: mathieudutour/github-tag-action@v6.2
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          default_bump: ${{ inputs.bump_type }}
 
       - name: Setup Theos
         uses: Randomblock1/theos-action@v1
 
-      - name: Clone YouTubeHeader
+      - name: Build and Process Metadata
+        id: metadata
         run: |
-          git clone https://github.com/PoomSmart/YouTubeHeader $THEOS/include/YouTubeHeader || echo "YouTubeHeader already exists"
-
-      - name: Build Selected Project & Collect Debs
-        run: |
-          PROJECT="${{ inputs.project || 'all' }}"
-          echo "🔨 Đang build: $PROJECT"
+          PROJECT_NAME="${{ github.event.inputs.project }}"
+          DIR="src/$PROJECT_NAME"
+          CONTROL="$DIR/control"
+          CHANGELOG="$DIR/CHANGELOG.md"
+          SOURCE="$DIR/Tweak.xm"
           
-          # Tạo thư mục tạm để chứa toàn bộ deb sau khi build
           mkdir -p deb_output
 
-          if [ "$PROJECT" = "all" ]; then
-            for dir in src/*/ ; do
-              if [ -f "$dir/Makefile" ]; then
-                proj=$(basename "$dir")
-                echo "→ Building $proj ..."
-                # Bỏ "|| echo" để bắt lỗi nếu code sai
-                make -C "$dir" package FINALPACKAGE=1
-                find "$dir" -name "*.deb" -exec cp {} deb_output/ \;
-              fi
-            done
-          else
-            echo "→ Building $PROJECT ..."
-            # Bỏ "|| echo" để bắt lỗi nếu code sai
-            make -C "src/$PROJECT" package FINALPACKAGE=1
-            find "src/$PROJECT" -name "*.deb" -exec cp {} deb_output/ \;
+          if [ ! -f "$CONTROL" ]; then
+            echo "❌ Không tìm thấy file control tại $DIR"
+            exit 1
           fi
+
+          # --- 1. TỰ ĐỘNG TĂNG VERSION (Bản vá - Patch) ---
+          current_ver=$(grep "^Version:" "$CONTROL" | cut -d' ' -f2)
+          IFS='.' read -r major minor patch <<< "$current_ver"
+          new_ver="$major.$minor.$((patch + 1))"
+          sed -i '' "s/Version: $current_ver/Version: $new_ver/" "$CONTROL"
+
+          # --- 2. QUÉT CODE TRÍCH XUẤT CHỨC NĂNG ---
+          news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || echo "- Cập nhật tính năng hệ thống")
+          fixes=$(grep "// FIX:" "$SOURCE" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || echo "- Sửa các lỗi nhỏ và tối ưu hóa")
           
-          echo "🔎 Các file .deb đã tạo thành công:"
-          ls -la deb_output/
+          # Xóa comment trong code để tránh lặp lại lần sau
+          sed -i '' '/\/\/ NEW:/d' "$SOURCE"
+          sed -i '' '/\/\/ FIX:/d' "$SOURCE"
+          
+          latest_content="### ✨ Tính năng mới\n$news\n\n### 🐛 Sửa lỗi & Cải thiện\n$fixes"
 
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Build-${{ inputs.project || 'all' }}
-          path: deb_output/*.deb # Lấy trực tiếp từ thư mục tạm
-          if-no-files-found: warn
+          # --- 3. CẬP NHẬT CHANGELOG.MD ---
+          note_section="---\n### ⚠️ Lưu ý\n- Yêu cầu iOS 14.0 trở lên.\n- Xóa phiên bản cũ trước khi cài đặt bản mới này."
+          
+          if [ -f "$CHANGELOG" ]; then
+              # Lấy tối đa 30 dòng lịch sử cũ
+              old_history=$(sed -n '/### 📜 Lịch sử/,/---/p' "$CHANGELOG" | grep -v "### 📜 Lịch sử" | grep -v "---" | head -n 30)
+              
+              echo -e "\n$latest_content\n\n" > "$CHANGELOG"
+              echo -e "---\n### 📜 Lịch sử phiên bản cũ\n$old_history" >> "$CHANGELOG"
+              echo -e "\n$latest_content (v$current_ver)" >> "$CHANGELOG"
+              echo -e "\n$note_section" >> "$CHANGELOG"
+          else
+              echo -e "\n$latest_content\n\n\n---\n### 📜 Lịch sử phiên bản cũ\n(Chưa có lịch sử)\n\n$note_section" > "$CHANGELOG"
+          fi
 
-      - name: Copy to debs/ and Commit
-        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+          # --- 4. BUILD DEB ---
+          echo "🔨 Đang build $PROJECT_NAME v$new_ver..."
+          make -C "$DIR" clean package FINALPACKAGE=1
+          find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
+
+          # Xuất biến môi trường cho các bước sau
+          echo "proj_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
+          echo "proj_ver=$new_ver" >> $GITHUB_OUTPUT
+          echo "proj_desc=$(grep "^Description:" "$CONTROL" | cut -d' ' -f2-)" >> $GITHUB_OUTPUT
+          echo "proj_changelog<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$latest_content" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Commit & Push Auto-Updates
         run: |
-          git checkout main
-          
-          mkdir -p debs
-          cp deb_output/*.deb debs/ 2>/dev/null || true
-          echo "✅ Copied .deb files to debs/"
-
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add debs/
+          git fetch origin main
+          git checkout main
           
-          if git diff-index --quiet HEAD; then
-            echo "No new .deb to commit"
-          else
-            git commit -m "chore: add official .deb files to debs/ [skip ci]"
+          # Cập nhật thư mục debs tập trung
+          mkdir -p debs
+          cp -v deb_output/*.deb debs/ 2>/dev/null || true
+          
+          git add .
+          if ! git diff --cached --quiet; then
+            git commit -m "build(${{ steps.metadata.outputs.proj_name }}): v${{ steps.metadata.outputs.proj_ver }} [skip ci]"
             git push origin main
-            echo "✅ Committed debs/ folder"
           fi
 
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag_version.outputs.new_tag || github.ref_name }}
-          name: Release ${{ steps.tag_version.outputs.new_tag || github.ref_name }}
+          tag_name: ${{ steps.metadata.outputs.proj_name }}-v${{ steps.metadata.outputs.proj_ver }}
+          name: "${{ steps.metadata.outputs.proj_name }} - v${{ steps.metadata.outputs.proj_ver }}"
           files: deb_output/*.deb
-          generate_release_notes: true
+          body: |
+            ## 📝 Mô tả
+            > ${{ steps.metadata.outputs.proj_desc }}
+
+            ${{ steps.metadata.outputs.proj_changelog }}
+
+            ---
+            ### ⚠️ Lưu ý
+            - Yêu cầu iOS 14.0 trở lên.
+            - Xóa phiên bản cũ trước khi cài đặt bản mới này.
+          generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
