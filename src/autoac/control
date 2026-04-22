@@ -1,0 +1,11 @@
+Package: com.kyic.autoac
+Name: autoac
+Version: 1.0.8
+Architecture: iphoneos-arm64
+Section: Tweaks
+Priority: optional
+Maintainer: Kyic
+Depends: firmware (>= 14.0)
+Description: autoc tweak by Kyic.
+SileoDepiction: https://2kgt.github.io/repo/depictions/autoac.json
+Icon: https://2kgt.github.io/repo/icons/autoac.png
