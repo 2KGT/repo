@@ -3,6 +3,7 @@ name: Build AutoAC + Release
 on:
   push:
     branches: [ main ]
+    tags: [ 'v*' ]                    # Trigger khi tạo tag chính thức
   workflow_dispatch:
     inputs:
       bump_type:
@@ -27,14 +28,13 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # === DI CHUYỂN MÃ NGUỒN TỪ src/autoac/ RA GỐC ĐỂ BUILD ===
+      # Di chuyển mã nguồn từ src/autoac/
       - name: Prepare AutoAC source
         run: |
-          echo "Di chuyển mã nguồn từ src/autoac/ ra gốc repo để build..."
           cp -r src/autoac/* . || true
           ls -la
 
-      # Tăng version tự động
+      # Tăng version tự động (luôn chạy)
       - name: Bump Version Automatically
         id: bump
         run: |
@@ -64,28 +64,33 @@ jobs:
           sed -i '' "s/^Version: .*/Version: $NEW_VERSION/" control
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-      # Cài Theos
       - name: Setup Theos
         uses: Randomblock1/theos-action@v1
 
-      # Clone YouTubeHeader
       - name: Clone YouTubeHeader
         run: |
           git clone https://github.com/PoomSmart/YouTubeHeader $THEOS/include/YouTubeHeader || echo "YouTubeHeader already exists or clone failed"
 
-      # Build DEB
       - name: Build DEB
         run: |
           make package FINALPACKAGE=1
 
-      # Upload Artifact
+      # Upload artifact để tải (luôn có cho cả test và chính thức)
       - name: Upload DEB Artifact
         uses: actions/upload-artifact@v4
         with:
           name: AutoAC-v${{ steps.bump.outputs.version }}
           path: packages/*.deb
 
-      # Commit version & Tag
+      # ==================== CHỈ COPY VÀO debs/ KHI LÀ BẢN CHÍNH THỨC ====================
+      - name: Copy DEB to debs/ (Chỉ bản chính thức)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          mkdir -p debs
+          cp packages/*.deb debs/
+          echo "✅ Đã copy .deb vào thư mục debs/ cho bản chính thức v${{ steps.bump.outputs.version }}"
+
+      # Commit version & Tag (chỉ chạy trên main)
       - name: Commit new version & Create Tag
         if: github.ref == 'refs/heads/main'
         run: |
@@ -96,8 +101,9 @@ jobs:
           git tag "v${{ steps.bump.outputs.version }}" || true
           git push origin main --tags || true
 
-      # Tạo GitHub Release
+      # Tạo GitHub Release (chỉ khi có tag v*)
       - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.bump.outputs.version }}
