@@ -10,18 +10,30 @@
         {
           "class": "DepictionHeaderView",
           "title": "AutoAC",
-          "subtitle": "Tweak AutoAC 1.0.1",
+          "subtitle": "Tweak AutoAC 1.0.5",
           "alignment": 1
         },
         {
           "class": "DepictionScreenshotsView",
           "screenshots": [
             {
-              "url": "https://2kgt.github.io/repo/depictions/images/autoac-1.png",
-              "fullSizeURL": "https://2kgt.github.io/repo/depictions/images/autoac-1.png",
-              "accessibilityText": "Screenshot 1"
-            }
-          ]
+              "screenshots": [
+  {
+    "url": "https://2kgt.github.io/repo/depictions/images/autoac-1.png",
+    "fullSizeURL": "https://2kgt.github.io/repo/depictions/images/autoac-1.png",
+    "accessibilityText": "Screenshot 1"
+  },
+  {
+    "url": "https://2kgt.github.io/repo/depictions/images/autoac-2.png",
+    "fullSizeURL": "https://2kgt.github.io/repo/depictions/images/autoac-2.png",
+    "accessibilityText": "Screenshot 2"
+  },
+  {
+    "url": "https://2kgt.github.io/repo/depictions/images/autoac-3.png",
+    "fullSizeURL": "https://2kgt.github.io/repo/depictions/images/autoac-3.png",
+    "accessibilityText": "Screenshot 3"
+  }
+]
         },
         {
           "class": "DepictionMarkdownView",
