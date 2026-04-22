@@ -16,7 +16,7 @@ on:
         - autodl
         - all
       bump_type:
-        description: 'Chọn loại tăng version'
+        description: 'Chọn loại tăng versions'
         required: true
         default: 'patch'
         type: choice
@@ -63,19 +63,24 @@ jobs:
               if [ -f "$dir/Makefile" ]; then
                 proj=$(basename "$dir")
                 echo "→ Building $proj ..."
+                mkdir -p "$dir/packages" # Tự động tạo thư mục packages
                 make -C "$dir" package FINALPACKAGE=1 || echo "Build $proj failed"
               fi
             done
           else
             echo "→ Building $PROJECT ..."
+            mkdir -p "src/$PROJECT/packages" # Tự động tạo thư mục packages
             make -C "src/$PROJECT" package FINALPACKAGE=1 || echo "Build failed"
           fi
+          
+          echo "🔎 Các file .deb đã tạo:"
+          find . -name "*.deb"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Build-${{ inputs.project || 'all' }}
-          path: src/**/packages/*.deb
+          path: '**/*.deb' # Quét toàn bộ để không bỏ sót file
           if-no-files-found: warn
 
       - name: Copy to debs/ and Commit
@@ -84,7 +89,8 @@ jobs:
           git checkout main
           
           mkdir -p debs
-          cp src/**/packages/*.deb debs/ 2>/dev/null || echo "No .deb file found"
+          # Tìm tất cả file .deb (ngoại trừ trong debs/) và copy vào debs/
+          find . -name "*.deb" -not -path "./debs/*" -exec cp {} debs/ \;
           echo "✅ Copied .deb files to debs/"
 
           git config user.name "github-actions[bot]"
@@ -105,7 +111,7 @@ jobs:
         with:
           tag_name: ${{ steps.tag_version.outputs.new_tag || github.ref_name }}
           name: Release ${{ steps.tag_version.outputs.new_tag || github.ref_name }}
-          files: src/**/packages/*.deb
+          files: debs/*.deb # Lấy trực tiếp từ thư mục debs/ đã copy
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
