@@ -1,0 +1,55 @@
+name: "🔄 Auto Update Project List"
+
+on:
+  push:
+    paths:
+      - 'src/Build_Tweak/**' # Tự động chạy khi bạn thêm/xóa thư mục trong Build_Tweak
+  workflow_dispatch: # Cho phép bạn bấm nút chạy tay nếu muốn cập nhật ngay lập tức
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Scan and Update Build Workflow
+        run: |
+          # 1. Định nghĩa file build chính (Hãy đảm bảo tên file này khớp với file build tweak của bạn)
+          # Ví dụ nếu file build của bạn là 'build-tweaks.yml', hãy giữ nguyên.
+          TARGET_FILE=".github/workflows/build-tweaks.yml"
+
+          # 2. Quét danh sách các thư mục dự án hiện có
+          # Lấy tên thư mục, loại bỏ đường dẫn và dấu xẹt
+          PROJECTS=$(ls -d src/Build_Tweak/*/ | xargs -n 1 basename)
+          
+          echo "📂 Tìm thấy các dự án: "
+          echo "$PROJECTS"
+
+          # 3. Tạo danh sách định dạng YAML (thêm khoảng trắng và dấu gạch đầu dòng)
+          # Lưu ý: 'options:' phải là từ khóa duy nhất để script nhận diện chỗ cần thay thế
+          OPTIONS_LIST=$(echo "$PROJECTS" | sed 's/^/          - /')
+
+          # 4. Sử dụng AWK để thay thế toàn bộ nội dung sau dòng 'options:'
+          # Script này sẽ giữ nguyên phần đầu file và chỉ thay thế danh sách dự án
+          awk -v new_list="$OPTIONS_LIST" '
+            /options:/ { print; print new_list; exit }
+            { print }
+          ' "$TARGET_FILE" > temp.yml && mv temp.yml "$TARGET_FILE"
+
+      - name: Commit and Push update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          # Chỉ commit nếu có sự thay đổi thực sự trong danh sách dự án
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: auto-update projects list [skip ci]"
+            git push origin main
+            echo "✅ Đã cập nhật danh sách dự án mới!"
+          else
+            echo "static: Không có dự án mới nào được thêm vào."
+          fi
