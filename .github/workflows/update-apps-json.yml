@@ -46,7 +46,6 @@ jobs:
               return lastPart.charAt(0).toUpperCase() + lastPart.slice(1);
             };
 
-            // Hàm gom nhóm app
             const addAppVersion = (name, bundleId, category, permissions, versionData) => {
               const key = name.toLowerCase();
               if (!appsMap[key]) {
@@ -58,16 +57,14 @@ jobs:
                   category: category,
                   iconURL: `https://2kgt.github.io/repo/icons/${name.replace(/\s+/g, '')}.png`,
                   appPermissions: permissions,
-                  versions: [] // Mảng chứa các phiên bản
+                  versions: []
                 };
               }
-              // Tránh trùng lặp phiên bản giống hệt nhau
               if (!appsMap[key].versions.find(v => v.version === versionData.version)) {
                 appsMap[key].versions.push(versionData);
               }
             };
 
-            // 1. Quét từ apps/
             if (fs.existsSync('apps')) {
               const files = fs.readdirSync('apps').filter(f => f.toLowerCase().endsWith('.ipa'));
               for (const file of files) {
@@ -98,7 +95,6 @@ jobs:
               }
             }
 
-            // 2. Quét từ Releases
             try {
               const { data: releases } = await github.rest.repos.listReleases({ owner: context.repo.owner, repo: context.repo.repo });
               for (const release of releases) {
@@ -119,7 +115,6 @@ jobs:
               }
             } catch (e) { console.log("No releases found"); }
 
-            // Xử lý app thủ công
             const manualApps = [
               {
                 "name": "Turrit",
@@ -141,12 +136,10 @@ jobs:
             ];
 
             manualApps.forEach(app => {
-               appsMap[app.name.toLowerCase()] = app; // Ghi đè tự động bằng thủ công nếu trùng tên
+               appsMap[app.name.toLowerCase()] = app;
             });
 
-            // Sắp xếp phiên bản & đưa bản mới nhất ra ngoài (Chuẩn AltStore)
             const finalApps = Object.values(appsMap).map(app => {
-              // Sắp xếp version giảm dần (5.0.2 -> 4.8.1)
               app.versions.sort((a, b) => b.version.localeCompare(a.version, undefined, { numeric: true, sensitivity: 'base' }));
               
               const latest = app.versions[0];
@@ -170,7 +163,7 @@ jobs:
             fs.writeFileSync('apps.json', JSON.stringify(finalJson, null, 2));
             console.log(`✅ Đã xuất apps.json với ${finalApps.length} ứng dụng.`);
 
-            - name: Commit and push apps.json
+      - name: Commit and push apps.json
         run: |
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
