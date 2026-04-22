@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       project:
-        description: '🧱Chọn dự án build (src/)'
+        description: '🧱Chọn dự án src/ build'
         required: true
         default: 'autoac'
         type: choice
