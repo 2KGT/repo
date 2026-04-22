@@ -1,12 +1,18 @@
-      - name: "Sync List to Description"
+      - name: "Sync List"
         run: |
           TARGET=".github/workflows/build-tweaks.yml"
           
-          # Quét danh sách dự án
-          PROJECTS=$(ls -d src/Build_Tweak/*/ | xargs -n 1 basename | tr '\n' ', ')
+          # 1. Lấy danh sách thư mục thực tế
+          PROJECTS=$(ls -d src/Build_Tweak/*/ | xargs -n 1 basename)
           
-          # Tạo dòng mô tả mới kèm danh sách dự án
-          NEW_DESC="description: '⌨️ Nhập tên dự án (Gợi ý: $PROJECTS)'"
+          # 2. Tạo nội dung options mới (Luôn có dòng hướng dẫn ở đầu)
+          # Lưu ý: Thụt lề 10 khoảng trắng để khớp với cấu trúc YAML
+          NEW_OPTIONS="          - \"--- Vui lòng chọn dự án ---\"\n"
+          NEW_OPTIONS+=$(echo "$PROJECTS" | sed 's/^/          - /')
 
-          # Dùng sed để cập nhật dòng description trong file build
-          sed -i "s|description: '⌨️ Nhập tên dự án.*|$NEW_DESC|" $TARGET
+          # 3. Ghi đè vào file build
+          # Tìm đến dòng 'options:', giữ lại nó và chèn danh sách mới ngay dưới
+          awk -v list="$NEW_OPTIONS" '
+            /options:/ { print; print list; exit }
+            { print }
+          ' "$TARGET" > temp.yml && mv temp.yml "$TARGET"
