@@ -1,0 +1,24 @@
+# Ẩn toàn bộ mã nguồn tweak
+src/*/.theos/
+src/*/packages/
+src/*/build/
+
+# Ẩn file tạm thời
+*.deb
+.DS_Store
+*.o
+*.dylib
+.theos/
+
+# Giữ lại những thứ công khai
+!.github/
+!debs/
+!depictions/
+!icons/
+!apps/
+!README.md
+!LICENSE
+!Packages
+!Packages.bz2
+!apps.json
+!index.html
