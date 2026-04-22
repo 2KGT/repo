@@ -1,11 +1,20 @@
-name: Build AutoAC + Release
+name: Build Multi Tweak src/ + Release
 
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*' ]                    # Trigger khi tạo tag chính thức
+    tags: [ 'v*' ]
   workflow_dispatch:
     inputs:
+      project:
+        description: 'Chọn dự án cần build (tên thư mục trong src/)'
+        required: true
+        default: 'autoac'
+        type: choice
+        options:
+        - autoac
+        - autodl
+        - all
       bump_type:
         description: 'Loại tăng version (patch / minor / major)'
         required: true
@@ -17,7 +26,7 @@ on:
         - major
 
 jobs:
-  build-and-release:
+  build:
     runs-on: macos-latest
     permissions:
       contents: write
@@ -28,80 +37,57 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Di chuyển mã nguồn từ src/autoac/
-      - name: Prepare AutoAC source
-        run: |
-          cp -r src/autoac/* . || true
-          ls -la
-
-      # Tăng version tự động (luôn chạy)
-      - name: Bump Version Automatically
-        id: bump
-        run: |
-          CURRENT_VERSION=$(grep "^Version:" control | awk '{print $2}')
-          echo "Current version: $CURRENT_VERSION"
-          
-          MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
-          MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
-          PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
-          
-          BUMP_TYPE=${{ github.event.inputs.bump_type || 'patch' }}
-          
-          if [ "$BUMP_TYPE" = "major" ]; then
-            MAJOR=$((MAJOR + 1))
-            MINOR=0
-            PATCH=0
-          elif [ "$BUMP_TYPE" = "minor" ]; then
-            MINOR=$((MINOR + 1))
-            PATCH=0
-          else
-            PATCH=$((PATCH + 1))
-          fi
-          
-          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
-          echo "New version: $NEW_VERSION"
-          
-          sed -i '' "s/^Version: .*/Version: $NEW_VERSION/" control
-          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-
       - name: Setup Theos
         uses: Randomblock1/theos-action@v1
 
       - name: Clone YouTubeHeader
         run: |
-          git clone https://github.com/PoomSmart/YouTubeHeader $THEOS/include/YouTubeHeader || echo "YouTubeHeader already exists or clone failed"
+          git clone https://github.com/PoomSmart/YouTubeHeader $THEOS/include/YouTubeHeader || echo "YouTubeHeader already exists"
 
-      - name: Build DEB
+      # Build dự án được chọn
+      - name: Build Selected Project(s)
         run: |
-          make package FINALPACKAGE=1
+          PROJECT="${{ github.event.inputs.project }}"
+          echo "🔨 Đang build dự án: $PROJECT"
 
-      # Upload artifact để tải (luôn có cho cả test và chính thức)
-      - name: Upload DEB Artifact
+          if [ "$PROJECT" = "all" ]; then
+            for dir in src/*/ ; do
+              if [ -f "$dir/Makefile" ]; then
+                proj=$(basename "$dir")
+                echo "→ Building $proj ..."
+                cp -r "$dir"/* . 2>/dev/null || true
+                make package FINALPACKAGE=1 || echo "Build $proj failed"
+              fi
+            done
+          else
+            echo "→ Building $PROJECT ..."
+            cp -r "src/$PROJECT"/* . 2>/dev/null || true
+            make package FINALPACKAGE=1
+          fi
+
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: AutoAC-v${{ steps.bump.outputs.version }}
+          name: Builds-${{ github.event.inputs.project }}
           path: packages/*.deb
 
-      # ==================== CHỈ COPY VÀO debs/ KHI LÀ BẢN CHÍNH THỨC ====================
-      - name: Copy DEB to debs/ (Chỉ bản chính thức)
+      # ==================== TỰ ĐỘNG COPY VÀ COMMIT VÀO debs/ (CHỈ BẢN CHÍNH THỨC) ====================
+      - name: Copy DEB to debs/ and Commit (Official Release Only)
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           mkdir -p debs
           cp packages/*.deb debs/
-          echo "✅ Đã copy .deb vào thư mục debs/ cho bản chính thức v${{ steps.bump.outputs.version }}"
+          echo "✅ Đã copy .deb vào thư mục debs/"
 
-      # Commit version & Tag (chỉ chạy trên main)
-      - name: Commit new version & Create Tag
-        if: github.ref == 'refs/heads/main'
-        run: |
+          # Tự động commit thư mục debs/
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add control
-          git commit -m "chore: bump version to ${{ steps.bump.outputs.version }} [skip ci]" || echo "No changes to commit"
-          git tag "v${{ steps.bump.outputs.version }}" || true
-          git push origin main --tags || true
+          git add debs/
+          git commit -m "chore: add built .deb files to debs/ [skip ci]" || echo "No new .deb files to commit"
+          git push origin main || echo "Nothing to push"
+          echo "✅ Đã commit file .deb vào thư mục debs/"
 
-      # Tạo GitHub Release (chỉ khi có tag v*)
+      # Tạo GitHub Release
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
