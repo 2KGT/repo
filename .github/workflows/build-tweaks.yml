@@ -4,9 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       project:
-        description: '⌨️ Nhập tên dự án (Gợi ý gần đúng: auto, dl...)'
+        description: '🧱 Chọn dự án src/'
         required: true
-        type: string
+        type: choice
+        options:
+          - autoac # Danh sách này sẽ được Workflow phụ tự động điền
 
 jobs:
   build:
