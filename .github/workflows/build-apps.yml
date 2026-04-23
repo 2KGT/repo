@@ -1,6 +1,6 @@
 # Credits to https://github.com/YTLitePlus/YTLitePlus/blob/main/.github/workflows/buildapp.yml
 
-name: Build Multi apps
+name: Build Multi Apps
 
 on:
   workflow_dispatch:
