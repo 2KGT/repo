@@ -1,30 +1,60 @@
-      - name: Auto Detect & Sync All Projects
+name: Auto Sync Projects
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/build-tweaks/**/control'
+
+permissions:
+  contents: write
+  workflows: write # Cấp quyền ghi đè thư mục .github/workflows
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate Options
         run: |
-          # 1. Thu thập dữ liệu bằng jq (Không bao giờ lỗi ký tự đặc biệt)
-          PROJECTS_JSON="[]"
-          for dir in src/build-tweaks/*/; do
-            if [ -f "$dir/control" ]; then
-              NAME=$(grep "^Name:" "$dir/control" | cut -d':' -f2- | xargs)
-              VER=$(grep "^Version:" "$dir/control" | cut -d':' -f2- | xargs)
-              URL="https://github.com/${{ github.repository }}/tree/main/$dir"
-              PROJECTS_JSON=$(echo "$PROJECTS_JSON" | jq --arg n "$NAME" --arg v "$VER" --arg u "$URL" '. + [{name: $n, version: $v, url: $u}]')
-            fi
-          done
-          echo "$PROJECTS_JSON" > PROJECTS.json
+          # 1. Quét danh sách projects
+          PROJECTS=$(find src/build-tweaks -name control -exec awk -F': ' '/^Name:/ {print $2}' {} \; | sort)
+          
+          # 2. Ghi options ra file tạm (chuẩn 10 khoảng trắng thụt lề)
+          > new_opts.txt
+          while IFS= read -r p; do
+            [ -n "$p" ] && echo "          - $p" >> new_opts.txt
+          done <<< "$PROJECTS"
 
-          # 2. Tạo PROJECTS.md
-          echo -e "# 📦 Danh sách Dự án Tweak\n> Cập nhật: $(date -u)\n\n| Tên | Phiên bản | Link |\n|---|---|---|" > PROJECTS.md
-          echo "$PROJECTS_JSON" | jq -r '.[] | "| \(.name) | \(.version) | [📁 Xem](\(.url)) |"' >> PROJECTS.md
-
-          # 3. Cập nhật YAML (Regex linh hoạt, không phụ thuộc khoảng trắng)
-          OPTS=$(echo "$PROJECTS_JSON" | jq -r '.[] | "          - \(.name)"')
-          python3 -c "
-          import re, os
+      - name: Update Target Workflow
+        run: |
+          # 3. Dùng EOF để tách hẳn code Python (Chống 100% lỗi Syntax YAML)
+          cat << 'EOF' > update_yaml.py
+          import re
+          
           path = '.github/workflows/build-tweaks.yml'
-          if os.path.exists(path):
-              opts = '''$OPTS'''
-              with open(path, 'r') as f: txt = f.read()
-              # Tìm đoạn từ 'options:' đến chữ 'jobs:' gần nhất và thay thế
-              txt = re.sub(r'(options:).*?(?=\n\s*jobs:)', r'\1\n' + opts, txt, flags=re.DOTALL)
-              with open(path, 'w') as f: f.write(txt)
-          "
+          with open('new_opts.txt', 'r') as f:
+              opts = f.read().rstrip()
+              
+          with open(path, 'r') as f:
+              content = f.read()
+              
+          # Thay thế toàn bộ nội dung dưới "options:" cho đến "jobs:"
+          pattern = r'( {8}options:\n).*?(?=\njobs:)'
+          new_content = re.sub(pattern, f"\\1{opts}", content, flags=re.DOTALL)
+          
+          with open(path, 'w') as f:
+              f.write(new_content)
+          EOF
+          
+          python3 update_yaml.py
+
+      - name: Commit & Push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/build-tweaks.yml
+          git diff --cached --quiet || (git commit -m "docs: auto update options" && git push)
