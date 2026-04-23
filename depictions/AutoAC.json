@@ -1,43 +1,18 @@
 {
-  "$schema": "https://raw.githubusercontent.com/Sileo/Sileo/master/docs/depiction.schema.json",
-  "minVersion": "0.1",
-  "headerImage": "https://2kgt.github.io/repo/depictions/images/autoac-banner.png",
-  "tintColor": "#007AFF",
-  "tabs": [
-    {
-      "tabname": "Chi tiết",
-      "views": [
-        {
-          "class": "DepictionHeaderView",
-          "title": "AutoAC",
-          "subtitle": "Tweak AutoAC 1.0.6",
-          "alignment": 1
-        },
-        {
-          "class": "DepictionScreenshotsView",
-          "screenshots": [
-            {
-              "url": "https://2kgt.github.io/repo/depictions/images/autoac-1.png",
-              "fullSizeURL": "https://2kgt.github.io/repo/depictions/images/autoac-1.png",
-              "accessibilityText": "Screenshot 1"
-            },
-            {
-              "url": "https://2kgt.github.io/repo/depictions/images/autoac-2.png",
-              "fullSizeURL": "https://2kgt.github.io/repo/depictions/images/autoac-2.png",
-              "accessibilityText": "Screenshot 2"
-            },
-            {
-              "url": "https://2kgt.github.io/repo/depictions/images/autoac-3.png",
-              "fullSizeURL": "https://2kgt.github.io/repo/depictions/images/autoac-3.png",
-              "accessibilityText": "Screenshot 3"
-            }
-          ]
-        },
-        {
-          "class": "DepictionMarkdownView",
-          "markdown": "**AutoAC 1.0.6**\n\nTweak tự động hóa một số tính năng trên YouTube.\n\n**Chức năng chính:**\n• Tự động thực hiện một số tác vụ\n• Tối ưu trải nghiệm sử dụng\n\n**Tác giả:** Kyic\n**Đã kiểm tra và tổng hợp bởi Kyic**"
-        }
-      ]
-    }
-  ]
+  "name": "AutoAC",
+  "version": "1.0.7",
+  "description": "AutoAC - tự động xoá cache + xoá Ads, banner tag sản phẩm trong ứng dụng YouTube.",
+  "changelog": ""### ✨ Tính năng mới\n- Cập nhật hệ thống\n\n### 🐛 Sửa lỗi\n- Tối ưu hóa"",
+  
+  "icon": "https://raw.githubusercontent.com/2KGT/repo/main/icons/AutoAC.png",
+  "banner": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC-banner.png",
+  
+  "screenshots": [
+    "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC1.png",
+    "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC2.png",
+    "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC3.png",
+    "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC4.png"
+  ],
+  
+  "updated": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 }
