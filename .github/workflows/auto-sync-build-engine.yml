@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       project_name:
-        description: 'Tên thư mục dự án (vd: autoac)'
+        description: 'Tên thư mục dự án'
         required: true
 
 jobs:
