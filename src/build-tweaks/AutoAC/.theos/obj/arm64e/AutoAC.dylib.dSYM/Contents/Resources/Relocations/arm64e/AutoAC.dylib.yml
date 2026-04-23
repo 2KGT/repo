@@ -1,0 +1,13 @@
+---
+triple:          'arm64e-apple-darwin'
+binary-path:     '/Users/runner/work/repo/repo/src/build-tweaks/AutoAC/.theos/obj/arm64e/AutoAC.dylib'
+relocations:
+  - { offset: 0x1E, size: 0x8, addend: 0x0, symName: __logosLocalInit, symObjAddr: 0x0, symBinAddr: 0x4000, symSize: 0xE4 }
+  - { offset: 0x45, size: 0x8, addend: 0x0, symName: '__logos_orig$_ungrouped$YTAppDelegate$application$didFinishLaunchingWithOptions$', symObjAddr: 0x7998, symBinAddr: 0xC0A8, symSize: 0x0 }
+  - { offset: 0x1EB0, size: 0x8, addend: 0x0, symName: '__logos_orig$_ungrouped$UIView$didMoveToWindow', symObjAddr: 0x79A0, symBinAddr: 0xC0B0, symSize: 0x0 }
+  - { offset: 0x1FC1, size: 0x8, addend: 0x0, symName: __logosLocalInit, symObjAddr: 0x0, symBinAddr: 0x4000, symSize: 0xE4 }
+  - { offset: 0x20C8, size: 0x8, addend: 0x0, symName: '__logos_method$_ungrouped$YTAppDelegate$application$didFinishLaunchingWithOptions$', symObjAddr: 0xE4, symBinAddr: 0x40E4, symSize: 0xB4 }
+  - { offset: 0x2247, size: 0x8, addend: 0x0, symName: '__logos_method$_ungrouped$YTAppDelegate$smartClearYouTubeCache', symObjAddr: 0x198, symBinAddr: 0x4198, symSize: 0x340 }
+  - { offset: 0x2368, size: 0x8, addend: 0x0, symName: '__logos_method$_ungrouped$UIView$didMoveToWindow', symObjAddr: 0x4D8, symBinAddr: 0x44D8, symSize: 0x130 }
+  - { offset: 0x23E4, size: 0x8, addend: 0x0, symName: '____logos_method$_ungrouped$YTAppDelegate$application$didFinishLaunchingWithOptions$_block_invoke', symObjAddr: 0x608, symBinAddr: 0x4608, symSize: 0x8 }
+...
