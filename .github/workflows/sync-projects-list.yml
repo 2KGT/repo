@@ -19,22 +19,20 @@ jobs:
         run: |
           TARGET=".github/workflows/build-tweaks.yml"
           
-          # 1. Quét file control trong src/build-tweaks và lấy Name
-          LIST="          - none"
-          while read -r file; do
+          # 1. Quét control và tạo danh sách
+          echo "          - none" > new_opts.txt
+          find src/build-tweaks -name "control" | while read -r file; do
             NAME=$(grep "^Name:" "$file" | cut -d':' -f2- | xargs)
             if [ -n "$NAME" ]; then
-              LIST="$LIST\n          - $NAME"
+              echo "          - $NAME" >> new_opts.txt
             fi
-          done < <(find src/build-tweaks -name "control" 2>/dev/null)
-          
-          # 2. Thay thế chính xác phần giữa 'options:' và 'jobs:'
-          awk -v new_opts="$LIST" '
-            /^ *options:/ { print; printf "%s\n", new_opts; in_opts=1; next }
-            /^ *jobs:/ { in_opts=0 }
-            in_opts { next }
-            { print }
-          ' "$TARGET" > temp.yml && mv temp.yml "$TARGET"
+          done
+
+          # 2. Xóa sạch các dòng cũ nằm giữa 'options:' và 'jobs:'
+          sed -i '/^ *options:/,/^jobs:/{ /^ *options:/!{ /^jobs:/!d } }' "$TARGET"
+
+          # 3. Chèn danh sách mới vào ngay bên dưới 'options:'
+          sed -i '/^ *options:/r new_opts.txt' "$TARGET"
 
       - name: Push changes
         run: |
