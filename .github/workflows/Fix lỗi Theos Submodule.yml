@@ -1,4 +1,4 @@
-name: "Fix lỗi Theos Submodule"
+name: "Fix Theos Submodule"
 
 on: 
   workflow_dispatch:
