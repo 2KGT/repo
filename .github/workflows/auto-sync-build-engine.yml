@@ -1,4 +1,4 @@
-name: "Optimized Build System"
+name: "Tôí ưu hoá Build System"
 
 on:
   workflow_dispatch:
