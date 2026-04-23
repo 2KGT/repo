@@ -1,0 +1,62 @@
+name: "Smart Submodule Manager"
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 1' # Tự động chạy mỗi thứ 2 hàng tuần
+
+permissions:
+  contents: write
+
+jobs:
+  manage-submodules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive # Thử lấy cả submodules
+          fetch-depth: 0
+
+      - name: Set up Git identity
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      - name: Try Update Submodules
+        id: update
+        run: |
+          echo "🚀 Đang thử cập nhật submodules..."
+          git submodule update --init --recursive --remote
+        continue-on-error: true # Nếu lỗi bước này sẽ không dừng workflow
+
+      - name: Auto Fix if Failed
+        if: steps.update.outcome == 'failure'
+        run: |
+          echo "⚠️ Phát hiện lỗi Submodule! Đang triển khai quy trình sửa lỗi triệt để..."
+          
+          # 1. Xóa rác
+          git rm --cached theos || true
+          rm -rf theos
+          rm -f .gitmodules
+          
+          # 2. Add lại từ đầu (Sử dụng link repo chuẩn của bạn)
+          git submodule add --force https://github.com/theos/theos.git theos
+          
+          # 3. Commit trạng thái sạch
+          git add .
+          git commit -m "fix(submodule): auto fixed and re-added theos"
+          echo "FIX_SUCCESS=true" >> $GITHUB_ENV
+
+      - name: Regular Update & Push
+        if: steps.update.outcome == 'success'
+        run: |
+          echo "✅ Cập nhật bình thường thành công. Đang kiểm tra thay đổi để push..."
+          git add .
+          git diff --cached --quiet || (git commit -m "chore: auto update submodules" && git push origin main)
+
+      - name: Final Push if Fixed
+        if: env.FIX_SUCCESS == 'true'
+        run: |
+          git push origin main
+          echo "🚀 Đã sửa lỗi và đẩy bản sạch lên repo!"
