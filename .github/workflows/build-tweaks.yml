@@ -1,10 +1,10 @@
-name: Build Multi Tweak (FS Edition)
+name: Build Multi Tweak
 
 on:
   workflow_dispatch:
     inputs:
       project:
-        description: '🧱 Chọn dự án src/'
+        description: '🧱 Chọn dự án'
         required: true
         type: choice
         options:
@@ -24,33 +24,26 @@ jobs:
       - name: Setup Theos
         uses: Randomblock1/theos-action@v1
 
-      - name: Map Name to Directory & Metadata
+      - name: Set Project Directory
         id: metadata
         run: |
-          INPUT_NAME="${{ github.event.inputs.project }}"
+          PROJECT_NAME="${{ github.event.inputs.project }}"
           
-          if [ "$INPUT_NAME" == "none" ]; then
-            echo "❌ LỖI: Bạn chưa chọn dự án từ danh sách!"
-            exit 1
-          fi
-          
-          echo "🔍 Đang tìm thư mục chứa dự án có Name: '$INPUT_NAME'..."
-          
-          # --- THUẬT TOÁN ÁNH XẠ MỚI ---
-          # Quét tất cả file control để tìm file nào có Name trùng với lựa chọn
-          MATCH_FILE=$(grep -rl "^Name: .*$INPUT_NAME" src/build-tweaks/*/control | head -n 1)
-
-          if [ -z "$MATCH_FILE" ]; then
-            echo "❌ Không tìm thấy thư mục nào chứa dự án tên: $INPUT_NAME."
+          if [ "$PROJECT_NAME" = "none" ]; then
+            echo "❌ Bạn chưa chọn dự án!"
             exit 1
           fi
 
-          # Nếu tìm thấy, lấy tên thư mục chứa file control đó
-          DIR=$(dirname "$MATCH_FILE")
-          PROJECT_NAME=$(basename "$DIR")
-          
-          echo "✅ Đã tìm thấy dự án! Nằm trong thư mục: $PROJECT_NAME"
+          DIR="src/build-tweaks/$PROJECT_NAME"
+
+          if [ ! -d "$DIR" ]; then
+            echo "❌ Không tìm thấy thư mục dự án: $DIR"
+            exit 1
+          fi
+
+          echo "✅ Đang build dự án: $PROJECT_NAME"
           echo "proj_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
+          echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
 
           CONTROL="$DIR/control"
           CHANGELOG="$DIR/CHANGELOG.md"
@@ -58,39 +51,27 @@ jobs:
           
           mkdir -p deb_output
 
-          # --- 1. TỰ ĐỘNG TĂNG VERSION ---
+          # --- TỰ ĐỘNG TĂNG VERSION ---
           current_ver=$(grep "^Version:" "$CONTROL" | cut -d' ' -f2)
           IFS='.' read -r major minor patch <<< "$current_ver"
           new_ver="$major.$minor.$((patch + 1))"
           sed -i '' "s/Version: $current_ver/Version: $new_ver/" "$CONTROL"
           echo "proj_ver=$new_ver" >> $GITHUB_OUTPUT
 
-          # --- 2. QUÉT CODE TRÍCH XUẤT CHỨC NĂNG ---
+          # --- QUÉT CHỨC NĂNG ---
           if [ -n "$SOURCE" ] && [ -f "$SOURCE" ]; then
-            news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || echo "- Cập nhật tính năng hệ thống")
-            fixes=$(grep "// FIX:" "$SOURCE" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || echo "- Sửa các lỗi nhỏ và tối ưu hóa")
+            news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || echo "- Cập nhật hệ thống")
+            fixes=$(grep "// FIX:" "$SOURCE" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || echo "- Tối ưu hóa")
             sed -i '' '/\/\/ NEW:/d' "$SOURCE"
             sed -i '' '/\/\/ FIX:/d' "$SOURCE"
           else
-            news="- Cập nhật tính năng mới"
-            fixes="- Tối ưu hóa hiệu năng"
+            news="- Cập nhật mới"
+            fixes="- Sửa lỗi nhỏ"
           fi
           
-          latest_content="### ✨ Tính năng mới\n$news\n\n### 🐛 Sửa lỗi & Cải thiện\n$fixes"
+          latest_content="### ✨ Tính năng mới\n$news\n\n### 🐛 Sửa lỗi\n$fixes"
 
-          # --- 3. CẬP NHẬT CHANGELOG.MD ---
-          note_section="---\n### ⚠️ Lưu ý\n- Yêu cầu iOS 14.0 trở lên.\n- Xóa phiên bản cũ trước khi cài đặt bản mới này."
-          if [ -f "$CHANGELOG" ]; then
-              old_history=$(sed -n '/### 📜 Lịch sử/,/---/p' "$CHANGELOG" | grep -v "### 📜 Lịch sử" | grep -v "---" | head -n 20)
-              echo -e "\n$latest_content\n\n" > "$CHANGELOG"
-              echo -e "---\n### 📜 Lịch sử phiên bản cũ\n$old_history" >> "$CHANGELOG"
-              echo -e "\n$latest_content (v$current_ver)" >> "$CHANGELOG"
-              echo -e "\n$note_section" >> "$CHANGELOG"
-          else
-              echo -e "\n$latest_content\n\n\n---\n### 📜 Lịch sử phiên bản cũ\n(Chưa có lịch sử)\n\n$note_section" > "$CHANGELOG"
-          fi
-
-          # --- 4. BUILD ---
+          # --- BUILD ---
           make -C "$DIR" clean package FINALPACKAGE=1
           find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
 
@@ -103,12 +84,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git checkout main
           mkdir -p debs
           cp -v deb_output/*.deb debs/ 2>/dev/null || true
           git add .
-          git diff --cached --quiet || git commit -m "build(${{ steps.metadata.outputs.proj_name }}): v${{ steps.metadata.outputs.proj_ver }} [skip ci]"
+          git diff --cached --quiet || git commit -m "build(${{ steps.metadata.outputs.proj_name }}): v${{ steps.metadata.outputs.proj_ver }}"
           git push origin main
 
       - name: Create Release
@@ -122,10 +101,5 @@ jobs:
             > ${{ steps.metadata.outputs.proj_desc }}
 
             ${{ steps.metadata.outputs.proj_changelog }}
-
-            ---
-            ### ⚠️ Lưu ý
-            - Yêu cầu iOS 14.0 trở lên.
-            - Xóa phiên bản cũ trước khi cài đặt bản mới này.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
