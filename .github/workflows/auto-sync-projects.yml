@@ -9,6 +9,10 @@ on:
   schedule:
     - cron: '0 0 * * 0'
 
+permissions:
+  contents: write
+  workflows: write
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -20,85 +24,92 @@ jobs:
 
       - name: Auto Detect & Sync All Projects
         run: |
-          echo "🔄 Đang đồng bộ hóa danh sách dự án..."
-
-          # 1. Quét dự án
+          echo "🔄 Đang quét danh sách dự án..."
+          
+          # 1. Quét dự án từ thư mục src/build-tweaks/
           PROJECT_LIST=()
           for dir in src/build-tweaks/*/; do
             if [ -f "$dir/control" ]; then
               NAME=$(grep "^Name:" "$dir/control" | head -n 1 | cut -d' ' -f2- | xargs)
-              [ -n "$NAME" ] && PROJECT_LIST+=("$NAME")
+              if [ -n "$NAME" ]; then
+                PROJECT_LIST+=("$NAME")
+              fi
             fi
           done
 
+          # Sắp xếp danh sách theo bảng chữ cái
           IFS=$'\n' SORTED=($(sort <<<"${PROJECT_LIST[*]}"))
           unset IFS
           echo "📋 Phát hiện: ${SORTED[*]}"
 
-          # 2. Cập nhật build-tweaks.yml (Sửa lỗi sed)
-          WORKFLOW_FILE=".github/workflows/build-tweaks.yml"
-          
-          # Tạo nội dung options mới vào file tạm
-          echo "        options:" > new_options.txt
+          # 2. Tạo nội dung options mới vào file tạm
+          echo "        options:" > new_opts.txt
           for proj in "${SORTED[@]}"; do
-            echo "          - $proj" >> new_options.txt
+            echo "          - $proj" >> new_opts.txt
           done
 
-          # Sử dụng sed để thay thế khối từ 'options:' đến trước 'jobs:'
-          # Lệnh này xóa đoạn cũ và chèn nội dung file tạm vào
-          sed -i -e '/        options:/,/      jobs:/{ /        options:/r new_options.txt' -e 'd }' "$WORKFLOW_FILE"
-          
-          # Fix lại dòng jobs: bị xóa nhầm ở bước trên
-          sed -i '$ a \ \ \ \ \ \ jobs:' "$WORKFLOW_FILE" 2>/dev/null || echo "      jobs:" >> "$WORKFLOW_FILE"
-          
-          # Dọn dẹp: Đảm bảo file không bị mất phần jobs (Cách an toàn nhất là dùng file tạm)
+          # 3. Sử dụng Python để ghi đè file workflow an toàn
           python3 -c "
-          import sys
-          content = open('$WORKFLOW_FILE').read()
-          start_marker = '        options:'
-          end_marker = '      jobs:'
-          new_options = open('new_options.txt').read().strip()
-          
-          import re
-          pattern = re.compile(f'{start_marker}.*?{end_marker}', re.DOTALL)
-          updated_content = pattern.sub(f'{new_options}\n      jobs:', content)
-          with open('$WORKFLOW_FILE', 'w') as f:
-              f.write(updated_content)
-          "
-          rm new_options.txt
+          import re, os
+          workflow_path = '.github/workflows/build-tweaks.yml'
+          if not os.path.exists(workflow_path):
+              print(f'❌ Không tìm thấy {workflow_path}')
+              exit(0)
 
-          # 3. Tạo PROJECTS.md & PROJECTS.json
+          with open(workflow_path, 'r', encoding='utf-8') as f:
+              content = f.read()
+          
+          with open('new_opts.txt', 'r', encoding='utf-8') as f:
+              new_opts = f.read().strip()
+          
+          # Regex tìm block từ 'options:' đến 'jobs:' (giữ nguyên thụt lề 8 space cho options)
+          pattern = re.compile(r'( {8}options:).*?(\n {6}jobs:)', re.DOTALL)
+          
+          if pattern.search(content):
+              updated_content = pattern.sub(f'\\1\n{new_opts}\\2', content)
+              with open(workflow_path, 'w', encoding='utf-8') as f:
+                  f.write(updated_content)
+              print('✅ Đã cập nhật options trong build-tweaks.yml')
+          else:
+              print('⚠️ Cảnh báo: Không tìm thấy block options: phù hợp trong build-tweaks.yml')
+          "
+
+          # 4. Cập nhật PROJECTS.md & PROJECTS.json
           cat > PROJECTS.md << EOF
           # 📦 Danh sách Dự án Tweak
-          > Cập nhật lúc: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          > Cập nhật tự động lúc: \$(date -u +"%Y-%m-%d %H:%M:%S UTC")
 
-          | Tên Dự án | Version | Mô tả | Trạng thái | Lần build cuối | Link |
-          |-----------|---------|-------|------------|----------------|------|
+          | Tên Dự án | Phiên bản | Trạng thái | Thư mục nguồn |
+          |-----------|-----------|------------|---------------|
           EOF
 
           echo "[" > PROJECTS.json
-          TOTAL=0
+          COUNT=0
           for dir in src/build-tweaks/*/; do
             if [ -f "$dir/control" ]; then
               NAME=$(grep "^Name:" "$dir/control" | head -n 1 | cut -d' ' -f2- | xargs)
-              VERSION=$(grep "^Version:" "$dir/control" | head -n 1 | cut -d' ' -f2- | xargs)
-              DESC=$(grep "^Description:" "$dir/control" | head -n 1 | cut -d' ' -f2- | xargs)
-              LAST_BUILD=$(git log -1 --format="%ci" -- "$dir" 2>/dev/null | cut -d' ' -f1 || echo "N/A")
-              REPO_URL="https://github.com/${{ github.repository }}/tree/main/$dir"
+              VER=$(grep "^Version:" "$dir/control" | head -n 1 | cut -d' ' -f2- | xargs)
+              REPO_URL="https://github.com/\${{ github.repository }}/tree/main/$dir"
               
-              echo "| $NAME | $VERSION | $DESC | ✅ Active | $LAST_BUILD | [📁 Xem]($REPO_URL) |" >> PROJECTS.md
-              
-              [ $TOTAL -gt 0 ] && echo "," >> PROJECTS.json
-              echo "{\"name\":\"$NAME\",\"version\":\"$VERSION\",\"path\":\"$dir\"}" >> PROJECTS.json
-              TOTAL=$((TOTAL + 1))
+              [ \$COUNT -gt 0 ] && echo "," >> PROJECTS.json
+              echo "{\"name\":\"$NAME\",\"version\":\"$VER\",\"url\":\"$REPO_URL\"}" >> PROJECTS.json
+              echo "| $NAME | $VER | ✅ Active | [📁 Xem]($REPO_URL) |" >> PROJECTS.md
+              COUNT=\$((COUNT + 1))
             fi
           done
           echo "]" >> PROJECTS.json
+          rm new_opts.txt
 
-      - name: Commit & Push
+      - name: Commit & Push Changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add PROJECTS.md PROJECTS.json .github/workflows/build-tweaks.yml
-          git diff --cached --quiet || git commit -m "docs: auto sync projects"
-          git push origin main
+          
+          git add .github/workflows/build-tweaks.yml PROJECTS.md PROJECTS.json
+          
+          if git diff --cached --quiet; then
+            echo "Nothings to commit"
+          else
+            git commit -m "docs: auto update project lists and build options"
+            git push origin main
+          fi
