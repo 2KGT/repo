@@ -8,7 +8,7 @@ on:
         required: true
         type: choice
         options:
-          - AutoAC
+          - 
 jobs:
   build:
     runs-on: macos-latest
@@ -119,13 +119,25 @@ jobs:
         run: |
           mkdir -p depictions
           
-          # Tạo/cập nhật file: depictions/<Tên dự án>.json
+          # Tự động tạo/cập nhật file depictions/<Tên dự án>.json
+          # Sử dụng raw.githubusercontent.com để hình ảnh hiển thị trực tiếp
           cat > depictions/${{ steps.metadata.outputs.proj_name }}.json << 'EOF'
           {
             "name": "${{ steps.metadata.outputs.proj_name }}",
             "version": "${{ steps.metadata.outputs.proj_ver }}",
             "description": "${{ steps.metadata.outputs.proj_desc }}",
             "changelog": ${{ steps.metadata.outputs.proj_changelog | toJson }},
+            
+            "icon": "https://raw.githubusercontent.com/2KGT/repo/main/icons/${{ steps.metadata.outputs.proj_name }}.png",
+            "banner": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/${{ steps.metadata.outputs.proj_name }}-banner.png",
+            
+            "screenshots": [
+              "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/${{ steps.metadata.outputs.proj_name }}1.png",
+              "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/${{ steps.metadata.outputs.proj_name }}2.png",
+              "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/${{ steps.metadata.outputs.proj_name }}3.png",
+              "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/${{ steps.metadata.outputs.proj_name }}4.png"
+            ],
+            
             "updated": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           }
           EOF
