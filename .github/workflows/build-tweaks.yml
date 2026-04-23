@@ -34,7 +34,7 @@ jobs:
             exit 1
           fi
 
-          # Đơn giản hóa: dùng trực tiếp tên project làm thư mục (không còn tự động grep tìm control)
+          # Đơn giản hóa: dùng trực tiếp tên project làm thư mục
           DIR="src/build-tweaks/$PROJECT_NAME"
           
           if [ ! -d "$DIR" ]; then
@@ -58,7 +58,7 @@ jobs:
           sed -i '' "s/Version: $current_ver/Version: $new_ver/" "$CONTROL"
           echo "proj_ver=$new_ver" >> $GITHUB_OUTPUT
 
-          # --- QUÉT CHỨC NĂNG (đã sửa lỗi default) ---
+          # --- QUÉT CHỨC NĂNG ---
           if [ -n "$SOURCE" ] && [ -f "$SOURCE" ]; then
             news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || true)
             [ -z "$news" ] && news="- Cập nhật hệ thống"
@@ -75,8 +75,63 @@ jobs:
           
           latest_content="### ✨ Tính năng mới\n$news\n\n### 🐛 Sửa lỗi\n$fixes"
 
-          # --- BUILD ---
-          make -C "$DIR" clean package FINALPACKAGE=1
+          # --- BUILD (an toàn) ---
+          make -C "$DIR" clean package FINALPACKAGE=1 || make -C "$DIR" package FINALPACKAGE=1
           find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
 
-          echo "proj_desc=$(grep "^Description:" "$CONTROL" | cut -d' ' -f2-)" >> $G
+          echo "proj_desc=$(grep "^Description:" "$CONTROL" | cut -d' ' -f2-)" >> $GITHUB_OUTPUT
+          echo "proj_changelog<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$latest_content" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.metadata.outputs.proj_name }}-v${{ steps.metadata.outputs.proj_ver }}
+          path: deb_output/*.deb
+          retention-days: 90
+
+      - name: Commit & Push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p debs
+          cp -v deb_output/*.deb debs/ 2>/dev/null || true
+          git add .
+          git diff --cached --quiet || git commit -m "build(${{ steps.metadata.outputs.proj_name }}): v${{ steps.metadata.outputs.proj_ver }}"
+          git push origin main
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.metadata.outputs.proj_name }}-v${{ steps.metadata.outputs.proj_ver }}
+          name: "${{ steps.metadata.outputs.proj_name }} - v${{ steps.metadata.outputs.proj_ver }}"
+          files: deb_output/*.deb
+          body: |
+            ## 📝 Mô tả
+            > ${{ steps.metadata.outputs.proj_desc }}
+
+            ${{ steps.metadata.outputs.proj_changelog }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Depictions & Sileo
+        run: |
+          mkdir -p depictions
+          
+          # Tạo/cập nhật file: depictions/<Tên dự án>.json
+          cat > depictions/${{ steps.metadata.outputs.proj_name }}.json << 'EOF'
+          {
+            "name": "${{ steps.metadata.outputs.proj_name }}",
+            "version": "${{ steps.metadata.outputs.proj_ver }}",
+            "description": "${{ steps.metadata.outputs.proj_desc }}",
+            "changelog": ${{ steps.metadata.outputs.proj_changelog | toJson }},
+            "updated": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          }
+          EOF
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add depictions/
+          git diff --cached --quiet || git commit -m "docs: update depictions for ${{ steps.metadata.outputs.proj_name }} v${{ steps.metadata.outputs.proj_ver }}"
+          git push origin main
