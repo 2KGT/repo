@@ -1,81 +1,30 @@
-name: Auto Sync Projects
-
-on:
-  workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - 'src/build-tweaks/**/control'
-  schedule:
-    - cron: '0 0 * * 0'
-
-permissions:
-  contents: write
-  workflows: write
-
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Auto Detect & Sync All Projects
         run: |
-          # 1. Thu thập dữ liệu sạch
-          PROJECT_DATA=$(find src/build-tweaks -name control -exec sh -c '
-            NAME=$(grep "^Name:" "$1" | cut -d":" -f2- | xargs)
-            VER=$(grep "^Version:" "$1" | cut -d":" -f2- | xargs)
-            DIR=$(dirname "$1")
-            echo "$NAME|$VER|$DIR"
-          ' _ {} \;)
+          # 1. Thu thập dữ liệu bằng jq (Không bao giờ lỗi ký tự đặc biệt)
+          PROJECTS_JSON="[]"
+          for dir in src/build-tweaks/*/; do
+            if [ -f "$dir/control" ]; then
+              NAME=$(grep "^Name:" "$dir/control" | cut -d':' -f2- | xargs)
+              VER=$(grep "^Version:" "$dir/control" | cut -d':' -f2- | xargs)
+              URL="https://github.com/${{ github.repository }}/tree/main/$dir"
+              PROJECTS_JSON=$(echo "$PROJECTS_JSON" | jq --arg n "$NAME" --arg v "$VER" --arg u "$URL" '. + [{name: $n, version: $v, url: $u}]')
+            fi
+          done
+          echo "$PROJECTS_JSON" > PROJECTS.json
 
-          # 2. Tạo nội dung options (không thụt lề trước)
-          echo "$PROJECT_DATA" | cut -d'|' -f1 | sort > raw_opts.txt
+          # 2. Tạo PROJECTS.md
+          echo -e "# 📦 Danh sách Dự án Tweak\n> Cập nhật: $(date -u)\n\n| Tên | Phiên bản | Link |\n|---|---|---|" > PROJECTS.md
+          echo "$PROJECTS_JSON" | jq -r '.[] | "| \(.name) | \(.version) | [📁 Xem](\(.url)) |"' >> PROJECTS.md
 
-          # 3. Python script cập nhật YAML chuẩn
+          # 3. Cập nhật YAML (Regex linh hoạt, không phụ thuộc khoảng trắng)
+          OPTS=$(echo "$PROJECTS_JSON" | jq -r '.[] | "          - \(.name)"')
           python3 -c "
           import re, os
           path = '.github/workflows/build-tweaks.yml'
-          if not os.path.exists(path): exit(0)
-          
-          with open('raw_opts.txt', 'r') as f:
-              opts = ['          - ' + line.strip() for line in f if line.strip()]
-          
-          with open(path, 'r') as f:
-              content = f.read()
-
-          # Regex tìm đoạn từ options: đến jobs:
-          pattern = r'( {8}options:).*?(\n {6}jobs:)'
-          replacement = '\\1\n' + '\n'.join(opts) + '\\2'
-          
-          new_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
-          with open(path, 'w') as f:
-              f.write(new_content)
+          if os.path.exists(path):
+              opts = '''$OPTS'''
+              with open(path, 'r') as f: txt = f.read()
+              # Tìm đoạn từ 'options:' đến chữ 'jobs:' gần nhất và thay thế
+              txt = re.sub(r'(options:).*?(?=\n\s*jobs:)', r'\1\n' + opts, txt, flags=re.DOTALL)
+              with open(path, 'w') as f: f.write(txt)
           "
-
-          # 4. Tạo PROJECTS.md & JSON
-          echo "# 📦 Danh sách Dự án Tweak" > PROJECTS.md
-          echo "> Cập nhật: $(date -u)" >> PROJECTS.md
-          echo "| Tên Dự án | Phiên bản | Thư mục |" >> PROJECTS.md
-          echo "|---|---|---|" >> PROJECTS.md
-          
-          echo "[" > PROJECTS.json
-          FIRST=true
-          while IFS="|" read -r name ver dir; do
-            URL="https://github.com/${{ github.repository }}/tree/main/$dir"
-            echo "| $name | $ver | [📁 Xem]($URL) |" >> PROJECTS.md
-            
-            if [ "$FIRST" = true ]; then FIRST=false; else echo "," >> PROJECTS.json; fi
-            printf '{"name":"%s","version":"%s","url":"%s"}' "$name" "$ver" "$URL" >> PROJECTS.json
-          done <<< "$PROJECT_DATA"
-          echo "]" >> PROJECTS.json
-
-      - name: Commit & Push Changes
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .github/workflows/build-tweaks.yml PROJECTS.md PROJECTS.json
-          git diff --cached --quiet || (git commit -m "docs: auto sync" && git push)
