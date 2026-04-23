@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  sync:
+  update:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -15,25 +15,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Update build-tweaks.yml
+      - name: Update Options
         run: |
           TARGET=".github/workflows/build-tweaks.yml"
           
-          # Tìm tên dự án từ dòng "Name:" trong file control
-          # Quét trong thư mục src/build-tweaks/
-          echo "          - none" > list.txt
-          find src/build-tweaks -name "control" | while read -r file; do
-            NAME=$(grep "^Name:" "$file" | cut -d':' -f2 | xargs)
+          # 1. Quét file control trong src/build-tweaks và lấy Name
+          LIST="          - none"
+          while read -r file; do
+            NAME=$(grep "^Name:" "$file" | cut -d':' -f2- | xargs)
             if [ -n "$NAME" ]; then
-              echo "          - \"$NAME\"" >> list.txt
+              LIST="$LIST\n          - $NAME"
             fi
-          done
+          done < <(find src/build-tweaks -name "control" 2>/dev/null)
+          
+          # 2. Thay thế chính xác phần giữa 'options:' và 'jobs:'
+          awk -v new_opts="$LIST" '
+            /^ *options:/ { print; printf "%s\n", new_opts; in_opts=1; next }
+            /^ *jobs:/ { in_opts=0 }
+            in_opts { next }
+            { print }
+          ' "$TARGET" > temp.yml && mv temp.yml "$TARGET"
 
-          # Cắt file build-tweaks.yml tại dòng 'options:' và dán list mới vào
-          sed -i '/options:/q' "$TARGET"
-          cat list.txt >> "$TARGET"
-
-      - name: Push update
+      - name: Push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
