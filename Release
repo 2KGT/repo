@@ -5,4 +5,6 @@ Version: 1.0
 Codename: ios
 Architectures: iphoneos-arm64 iphoneos-arm
 Components: main
-Description: Kyic Repository - Repo tweaks & IPA
+Description: Kyic Repository - Kho lưu trữ tweaks & IPA chất lượng cao cho thiết bị iOS jailbreak. Hỗ trợ Cydia, Sileo, Zebra và các trình quản lý gói hiện đại. Cung cấp tweak, công cụ, theme và file IPA đã ký cho người dùng iOS.
+Date: Thu, 23 Apr 2026 03:55:00 +0000
+Acquire-By-Hash: yes
