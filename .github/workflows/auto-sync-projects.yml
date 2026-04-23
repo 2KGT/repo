@@ -22,7 +22,7 @@ jobs:
         run: |
           # 1. Quét danh sách projects
           PROJECTS=$(find src/build-tweaks -name control -exec awk -F': ' '/^Name:/ {print $2}' {} \; | sort)
-          
+
           # 2. Ghi options ra file tạm (chuẩn 10 khoảng trắng thụt lề)
           > new_opts.txt
           while IFS= read -r p; do
@@ -41,12 +41,12 @@ jobs:
           with open(path, 'r') as f:
               content = f.read()
 
-          # Lấy block options hiện tại
-          pattern = r'( {8}options:\n)(.*?)(?=\n {2}jobs:)'
+          # Regex khớp block options (8 spaces indent) cho đến trước jobs: (2 spaces indent)
+          pattern = r'( {8}options:\n)(.*?)(?=\n  jobs:)'
           match = re.search(pattern, content, flags=re.DOTALL)
+
           if match:
               current_opts = match.group(2).rstrip()
-              # So sánh danh sách hiện tại với danh sách mới
               if current_opts != new_opts:
                   print("Options khác biệt, tiến hành cập nhật...")
                   new_content = re.sub(pattern, f"\\1{new_opts}", content, flags=re.DOTALL)
@@ -57,7 +57,7 @@ jobs:
           else:
               print("Không tìm thấy block options trong file YAML.")
           EOF
-          
+
           python3 update_yaml.py
 
       - name: Commit & Push
