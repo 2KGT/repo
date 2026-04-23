@@ -1,4 +1,4 @@
-name: Auto Sync Projects
+Name: Auto Sync Projects
 
 on:
   workflow_dispatch:
@@ -33,6 +33,7 @@ jobs:
             fi
           done
 
+          # Sắp xếp danh sách
           IFS=$'\n' SORTED=($(sort <<<"${PROJECT_LIST[*]}"))
           unset IFS
 
@@ -43,15 +44,17 @@ jobs:
 
           OPTIONS_CONTENT=""
           for proj in "${SORTED[@]}"; do
+            # Thêm khoảng trắng để đúng định dạng YAML
             OPTIONS_CONTENT="${OPTIONS_CONTENT}          - $proj\n"
           done
 
-          sed -i '/options:/,/^jobs:/c\        options:\n'"$OPTIONS_CONTENT"'.github/workflows/build-tweaks.yml'
+          # SỬA LỖI TẠI ĐÂY: Thêm dấu cách trước đường dẫn file và xử lý chuỗi an toàn hơn
+          sed -i '/options:/,/^jobs:/c\        options:\n'"$OPTIONS_CONTENT"'' .github/workflows/build-tweaks.yml
 
           echo "✅ Đã cập nhật options trong build-tweaks.yml"
 
           # === 3. TẠO PROJECTS.md + PROJECTS.json ===
-          cat > PROJECTS.md << 'HEADER'
+          cat > PROJECTS.md << EOF
           # 📦 Danh sách Dự án Tweak
 
           > Tự động cập nhật bởi GitHub Actions  
@@ -59,7 +62,7 @@ jobs:
 
           | Tên Dự án | Version | Mô tả | Trạng thái | Lần build cuối | Tác giả commit cuối | Số commit gần đây | Số file source | Kích thước | Link Thư mục |
           |-----------|---------|-------|------------|----------------|---------------------|-------------------|----------------|------------|--------------|
-          HEADER
+          EOF
 
           echo "[" > PROJECTS.json
           TOTAL=0
@@ -72,8 +75,8 @@ jobs:
               DESC=$(grep "^Description:" "$dir/control" | head -n 1 | cut -d' ' -f2- | xargs)
 
               if [ -n "$NAME" ]; then
-                LAST_BUILD=$(git log -1 --format="%ci" -- "$dir/control" 2>/dev/null | cut -d' ' -f1 || echo "N/A")
-                LAST_AUTHOR=$(git log -1 --format="%an" -- "$dir/control" 2>/dev/null || echo "N/A")
+                LAST_BUILD=$(git log -1 --format="%ci" -- "$dir" 2>/dev/null | cut -d' ' -f1 || echo "N/A")
+                LAST_AUTHOR=$(git log -1 --format="%an" -- "$dir" 2>/dev/null || echo "N/A")
                 RECENT_COMMITS=$(git log --since="30 days ago" --oneline -- "$dir" 2>/dev/null | wc -l | xargs)
 
                 if [ -f "$dir/Makefile" ]; then STATUS="✅ Active"; else STATUS="⚠️ Missing Makefile"; fi
@@ -110,11 +113,7 @@ jobs:
 
           echo "]" >> PROJECTS.json
 
-          echo "" >> PROJECTS.md
-          echo "---" >> PROJECTS.md
-          echo "**Tổng số dự án hợp lệ:** $TOTAL" >> PROJECTS.md
-          echo "" >> PROJECTS.md
-          echo "*File này được tạo tự động bởi workflow \`Auto Sync Projects\`* " >> PROJECTS.md
+          echo -e "\n---\n**Tổng số dự án hợp lệ:** $TOTAL\n\n*File này được tạo tự động bởi workflow \`Auto Sync Projects\`*" >> PROJECTS.md
 
           echo "✅ Đã tạo PROJECTS.md và PROJECTS.json với $TOTAL dự án"
 
