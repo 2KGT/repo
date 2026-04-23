@@ -1,6 +1,6 @@
 # Credits to https://github.com/YTLitePlus/YTLitePlus/blob/main/.github/workflows/buildapp.yml
 
-name: Build and Release YTBetterPlus
+name: Build YouTube Release
 
 on:
   workflow_dispatch:
