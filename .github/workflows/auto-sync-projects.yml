@@ -9,7 +9,7 @@ on:
 
 permissions:
   contents: write
-  workflows: write # Cấp quyền ghi đè thư mục .github/workflows
+  workflows: write
 
 jobs:
   sync:
@@ -31,23 +31,31 @@ jobs:
 
       - name: Update Target Workflow
         run: |
-          # 3. Dùng EOF để tách hẳn code Python (Chống 100% lỗi Syntax YAML)
           cat << 'EOF' > update_yaml.py
           import re
-          
+
           path = '.github/workflows/build-tweaks.yml'
           with open('new_opts.txt', 'r') as f:
-              opts = f.read().rstrip()
-              
+              new_opts = f.read().rstrip()
+
           with open(path, 'r') as f:
               content = f.read()
-              
-          # Thay thế toàn bộ nội dung dưới "options:" cho đến "jobs:"
-          pattern = r'( {8}options:\n).*?(?=\njobs:)'
-          new_content = re.sub(pattern, f"\\1{opts}", content, flags=re.DOTALL)
-          
-          with open(path, 'w') as f:
-              f.write(new_content)
+
+          # Lấy block options hiện tại
+          pattern = r'( {8}options:\n)(.*?)(?=\n {2}jobs:)'
+          match = re.search(pattern, content, flags=re.DOTALL)
+          if match:
+              current_opts = match.group(2).rstrip()
+              # So sánh danh sách hiện tại với danh sách mới
+              if current_opts != new_opts:
+                  print("Options khác biệt, tiến hành cập nhật...")
+                  new_content = re.sub(pattern, f"\\1{new_opts}", content, flags=re.DOTALL)
+                  with open(path, 'w') as f:
+                      f.write(new_content)
+              else:
+                  print("Options khớp, bỏ qua cập nhật.")
+          else:
+              print("Không tìm thấy block options trong file YAML.")
           EOF
           
           python3 update_yaml.py
