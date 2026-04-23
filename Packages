@@ -14,6 +14,25 @@ Description: Fix YouTube images not loading
 Author: Eevee
 Name: YouTube Fix
 
+Package: com.kyic.autoac
+Version: 1.0.7
+Architecture: iphoneos-arm64
+Maintainer: Kyic
+Installed-Size: 168
+Depends: firmware (>= 14.0)
+Filename: ./com.kyic.autoac_1.0.7_iphoneos-arm64.deb
+Size: 5236
+MD5sum: f37d838070bc23a6f1709440e0168183
+SHA1: d1345b1703c6b58c7b7984be38e650cf2512e496
+SHA256: b9b5855ba63a94f0aa682c21b99d7844d0e2fb588b5e85e227690ce1b712c174
+Section: Tweaks
+Priority: optional
+Description: AutoAC - tự động xoá cache + xoá Ads, banner tag sản phẩm trong ứng dụng YouTube.
+Author: Kyic
+Icon: https://2kgt.github.io/repo/icons/autoac.png
+Name: AutoAC
+Sileodepiction: https://2kgt.github.io/repo/depictions/autoac.json
+
 Package: com.ps.noytmpremium
 Version: 1.0.2
 Architecture: iphoneos-arm64
@@ -327,4 +346,20 @@ Author: PoomSmart
 Depiction: https://poomsmart.github.io/repo/depictions/ytx.html
 Name: YouTube X
 Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/ytx.json
+
+Package: dylv.liquidass
+Version: 6.alpha
+Architecture: iphoneos-arm64e
+Maintainer: dylv
+Installed-Size: 1092
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 14.0), preferenceloader
+Filename: ./liquidass_6.alpha _arm64e.deb
+Size: 186944
+MD5sum: f17a0e79995aedd0f3557899e666e4ae
+SHA1: 4693d95c16586a9381f8b41f14cbf8ef49742b9d
+SHA256: 68a771e93b41ee3f8dc639230d58fbf18d3b560417c52f14cab0746e0bfe2f25
+Section: Tweaks
+Description: ass
+Author: dylv
+Name: liquidass
 
