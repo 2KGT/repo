@@ -1,59 +1,41 @@
-name: "Sync List"
+name: Sync List
 
 on:
   push:
     paths:
-      - 'src/build-tweaks/**/control'
+      - 'src/build-tweaks/**'
   workflow_dispatch:
 
 jobs:
-  update:
+  sync:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       workflows: write
-
     steps:
-      - name: "Checkout"
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: "Scan Control Files"
+      - name: Update build-tweaks.yml
         run: |
           TARGET=".github/workflows/build-tweaks.yml"
           
-          # Tạo file tạm chứa danh sách mặc định
-          echo "          - none" > new_options.txt
-          
-          # Quét tất cả file 'control' trong src/build-tweaks/
-          # -maxdepth 3 để tìm sâu vào: src -> build-tweaks -> tên_dự_án -> control
-          find src/build-tweaks -maxdepth 3 -name "control" | while read -r control_file; do
-            # Đọc dòng Name: từ file control
-            PROJECT_NAME=$(grep "^Name:" "$control_file" | cut -d':' -f2- | xargs)
-            
-            if [ -n "$PROJECT_NAME" ]; then
-              echo "          - \"$PROJECT_NAME\"" >> new_options.txt
-              echo "✅ Đã tìm thấy tên: $PROJECT_NAME"
-            else
-              # Nếu không có dòng Name, lấy tạm tên thư mục
-              DIR_NAME=$(basename $(dirname "$control_file"))
-              echo "          - \"$DIR_NAME\"" >> new_options.txt
-              echo "⚠️ Không có Name, dùng tên thư mục: $DIR_NAME"
+          # Tìm tên dự án từ dòng "Name:" trong file control
+          # Quét trong thư mục src/build-tweaks/
+          echo "          - none" > list.txt
+          find src/build-tweaks -name "control" | while read -r file; do
+            NAME=$(grep "^Name:" "$file" | cut -d':' -f2 | xargs)
+            if [ -n "$NAME" ]; then
+              echo "          - \"$NAME\"" >> list.txt
             fi
           done
 
-          # Kiểm tra file build đích
-          if [ ! -f "$TARGET" ]; then
-            echo "❌ Không tìm thấy file $TARGET"
-            exit 1
-          fi
-
-          # Ghi đè mục options: (Xóa phần cũ sau dòng options: và dán phần mới)
+          # Cắt file build-tweaks.yml tại dòng 'options:' và dán list mới vào
           sed -i '/options:/q' "$TARGET"
-          cat new_options.txt >> "$TARGET"
+          cat list.txt >> "$TARGET"
 
-      - name: "Commit & Push"
+      - name: Push update
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git diff --cached --quiet || (git commit -m "chore: sync names from control in build-tweaks" && git push)
+          git diff --cached --quiet || (git commit -m "sync: updated project list" && git push)
