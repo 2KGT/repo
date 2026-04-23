@@ -24,92 +24,58 @@ jobs:
 
       - name: Auto Detect & Sync All Projects
         run: |
-          echo "🔄 Đang quét danh sách dự án..."
-          
-          # 1. Quét dự án từ thư mục src/build-tweaks/
-          PROJECT_LIST=()
-          for dir in src/build-tweaks/*/; do
-            if [ -f "$dir/control" ]; then
-              NAME=$(grep "^Name:" "$dir/control" | head -n 1 | cut -d' ' -f2- | xargs)
-              if [ -n "$NAME" ]; then
-                PROJECT_LIST+=("$NAME")
-              fi
-            fi
-          done
+          # 1. Thu thập dữ liệu sạch
+          PROJECT_DATA=$(find src/build-tweaks -name control -exec sh -c '
+            NAME=$(grep "^Name:" "$1" | cut -d":" -f2- | xargs)
+            VER=$(grep "^Version:" "$1" | cut -d":" -f2- | xargs)
+            DIR=$(dirname "$1")
+            echo "$NAME|$VER|$DIR"
+          ' _ {} \;)
 
-          # Sắp xếp danh sách theo bảng chữ cái
-          IFS=$'\n' SORTED=($(sort <<<"${PROJECT_LIST[*]}"))
-          unset IFS
-          echo "📋 Phát hiện: ${SORTED[*]}"
+          # 2. Tạo nội dung options (không thụt lề trước)
+          echo "$PROJECT_DATA" | cut -d'|' -f1 | sort > raw_opts.txt
 
-          # 2. Tạo nội dung options mới vào file tạm
-          echo "        options:" > new_opts.txt
-          for proj in "${SORTED[@]}"; do
-            echo "          - $proj" >> new_opts.txt
-          done
-
-          # 3. Sử dụng Python để ghi đè file workflow an toàn
+          # 3. Python script cập nhật YAML chuẩn
           python3 -c "
           import re, os
-          workflow_path = '.github/workflows/build-tweaks.yml'
-          if not os.path.exists(workflow_path):
-              print(f'❌ Không tìm thấy {workflow_path}')
-              exit(0)
-
-          with open(workflow_path, 'r', encoding='utf-8') as f:
+          path = '.github/workflows/build-tweaks.yml'
+          if not os.path.exists(path): exit(0)
+          
+          with open('raw_opts.txt', 'r') as f:
+              opts = ['          - ' + line.strip() for line in f if line.strip()]
+          
+          with open(path, 'r') as f:
               content = f.read()
+
+          # Regex tìm đoạn từ options: đến jobs:
+          pattern = r'( {8}options:).*?(\n {6}jobs:)'
+          replacement = '\\1\n' + '\n'.join(opts) + '\\2'
           
-          with open('new_opts.txt', 'r', encoding='utf-8') as f:
-              new_opts = f.read().strip()
-          
-          # Regex tìm block từ 'options:' đến 'jobs:' (giữ nguyên thụt lề 8 space cho options)
-          pattern = re.compile(r'( {8}options:).*?(\n {6}jobs:)', re.DOTALL)
-          
-          if pattern.search(content):
-              updated_content = pattern.sub(f'\\1\n{new_opts}\\2', content)
-              with open(workflow_path, 'w', encoding='utf-8') as f:
-                  f.write(updated_content)
-              print('✅ Đã cập nhật options trong build-tweaks.yml')
-          else:
-              print('⚠️ Cảnh báo: Không tìm thấy block options: phù hợp trong build-tweaks.yml')
+          new_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
+          with open(path, 'w') as f:
+              f.write(new_content)
           "
 
-          # 4. Cập nhật PROJECTS.md & PROJECTS.json
-          cat > PROJECTS.md << EOF
-          # 📦 Danh sách Dự án Tweak
-          > Cập nhật tự động lúc: \$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-
-          | Tên Dự án | Phiên bản | Trạng thái | Thư mục nguồn |
-          |-----------|-----------|------------|---------------|
-          EOF
-
+          # 4. Tạo PROJECTS.md & JSON
+          echo "# 📦 Danh sách Dự án Tweak" > PROJECTS.md
+          echo "> Cập nhật: $(date -u)" >> PROJECTS.md
+          echo "| Tên Dự án | Phiên bản | Thư mục |" >> PROJECTS.md
+          echo "|---|---|---|" >> PROJECTS.md
+          
           echo "[" > PROJECTS.json
-          COUNT=0
-          for dir in src/build-tweaks/*/; do
-            if [ -f "$dir/control" ]; then
-              NAME=$(grep "^Name:" "$dir/control" | head -n 1 | cut -d' ' -f2- | xargs)
-              VER=$(grep "^Version:" "$dir/control" | head -n 1 | cut -d' ' -f2- | xargs)
-              REPO_URL="https://github.com/\${{ github.repository }}/tree/main/$dir"
-              
-              [ \$COUNT -gt 0 ] && echo "," >> PROJECTS.json
-              echo "{\"name\":\"$NAME\",\"version\":\"$VER\",\"url\":\"$REPO_URL\"}" >> PROJECTS.json
-              echo "| $NAME | $VER | ✅ Active | [📁 Xem]($REPO_URL) |" >> PROJECTS.md
-              COUNT=\$((COUNT + 1))
-            fi
-          done
+          FIRST=true
+          while IFS="|" read -r name ver dir; do
+            URL="https://github.com/${{ github.repository }}/tree/main/$dir"
+            echo "| $name | $ver | [📁 Xem]($URL) |" >> PROJECTS.md
+            
+            if [ "$FIRST" = true ]; then FIRST=false; else echo "," >> PROJECTS.json; fi
+            printf '{"name":"%s","version":"%s","url":"%s"}' "$name" "$ver" "$URL" >> PROJECTS.json
+          done <<< "$PROJECT_DATA"
           echo "]" >> PROJECTS.json
-          rm new_opts.txt
 
       - name: Commit & Push Changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
           git add .github/workflows/build-tweaks.yml PROJECTS.md PROJECTS.json
-          
-          if git diff --cached --quiet; then
-            echo "Nothings to commit"
-          else
-            git commit -m "docs: auto update project lists and build options"
-            git push origin main
-          fi
+          git diff --cached --quiet || (git commit -m "docs: auto sync" && git push)
