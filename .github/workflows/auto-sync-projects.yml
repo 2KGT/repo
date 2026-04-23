@@ -1,0 +1,130 @@
+name: Auto Sync Projects
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/build-tweaks/**/control'
+  schedule:
+    - cron: '0 0 * * 0'   # Chạy tự động mỗi Chủ Nhật
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Auto Detect & Sync All Projects
+        run: |
+          echo "🔄 Đang đồng bộ hóa danh sách dự án..."
+
+          # === 1. QUÉT VÀ TẠO DANH SÁCH DỰ ÁN ===
+          PROJECT_LIST=()
+          for dir in src/build-tweaks/*/; do
+            if [ -f "$dir/control" ]; then
+              NAME=$(grep "^Name:" "$dir/control" | head -n 1 | cut -d' ' -f2- | xargs)
+              if [ -n "$NAME" ]; then
+                PROJECT_LIST+=("$NAME")
+              fi
+            fi
+          done
+
+          IFS=$'\n' SORTED=($(sort <<<"${PROJECT_LIST[*]}"))
+          unset IFS
+
+          echo "📋 Phát hiện được ${#SORTED[@]} dự án: ${SORTED[*]}"
+
+          # === 2. CẬP NHẬT build-tweaks.yml (GHI VÀO options) ===
+          echo "✏️ Đang cập nhật options trong build-tweaks.yml..."
+
+          OPTIONS_CONTENT=""
+          for proj in "${SORTED[@]}"; do
+            OPTIONS_CONTENT="${OPTIONS_CONTENT}          - $proj\n"
+          done
+
+          sed -i '/options:/,/^jobs:/c\        options:\n'"$OPTIONS_CONTENT"'.github/workflows/build-tweaks.yml'
+
+          echo "✅ Đã cập nhật options trong build-tweaks.yml"
+
+          # === 3. TẠO PROJECTS.md + PROJECTS.json ===
+          cat > PROJECTS.md << 'HEADER'
+          # 📦 Danh sách Dự án Tweak
+
+          > Tự động cập nhật bởi GitHub Actions  
+          > Cập nhật lần cuối: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          | Tên Dự án | Version | Mô tả | Trạng thái | Lần build cuối | Tác giả commit cuối | Số commit gần đây | Số file source | Kích thước | Link Thư mục |
+          |-----------|---------|-------|------------|----------------|---------------------|-------------------|----------------|------------|--------------|
+          HEADER
+
+          echo "[" > PROJECTS.json
+          TOTAL=0
+          FIRST=true
+
+          for dir in src/build-tweaks/*/; do
+            if [ -f "$dir/control" ]; then
+              NAME=$(grep "^Name:" "$dir/control" | head -n 1 | cut -d' ' -f2- | xargs)
+              VERSION=$(grep "^Version:" "$dir/control" | head -n 1 | cut -d' ' -f2- | xargs)
+              DESC=$(grep "^Description:" "$dir/control" | head -n 1 | cut -d' ' -f2- | xargs)
+
+              if [ -n "$NAME" ]; then
+                LAST_BUILD=$(git log -1 --format="%ci" -- "$dir/control" 2>/dev/null | cut -d' ' -f1 || echo "N/A")
+                LAST_AUTHOR=$(git log -1 --format="%an" -- "$dir/control" 2>/dev/null || echo "N/A")
+                RECENT_COMMITS=$(git log --since="30 days ago" --oneline -- "$dir" 2>/dev/null | wc -l | xargs)
+
+                if [ -f "$dir/Makefile" ]; then STATUS="✅ Active"; else STATUS="⚠️ Missing Makefile"; fi
+
+                SOURCE_COUNT=$(find "$dir" -type f \( -name "*.x" -o -name "*.xm" -o -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" -o -name "*.mm" \) | wc -l | xargs)
+                SIZE_MB=$(du -sm "$dir" | cut -f1)
+                SIZE="${SIZE_MB} MB"
+                REPO_URL="https://github.com/${{ github.repository }}/tree/main/$dir"
+
+                echo "| $NAME | $VERSION | $DESC | $STATUS | $LAST_BUILD | $LAST_AUTHOR | $RECENT_COMMITS | $SOURCE_COUNT | $SIZE | [📁 Xem]($REPO_URL) |" >> PROJECTS.md
+
+                if [ "$FIRST" = true ]; then FIRST=false; else echo "," >> PROJECTS.json; fi
+
+                cat >> PROJECTS.json << EOF
+                {
+                  "name": "$NAME",
+                  "version": "$VERSION",
+                  "description": "$DESC",
+                  "path": "$dir",
+                  "status": "$STATUS",
+                  "last_build": "$LAST_BUILD",
+                  "last_author": "$LAST_AUTHOR",
+                  "recent_commits_30d": $RECENT_COMMITS,
+                  "source_files": $SOURCE_COUNT,
+                  "size": "$SIZE",
+                  "github_url": "$REPO_URL",
+                  "updated": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+                }
+          EOF
+                TOTAL=$((TOTAL + 1))
+              fi
+            fi
+          done
+
+          echo "]" >> PROJECTS.json
+
+          echo "" >> PROJECTS.md
+          echo "---" >> PROJECTS.md
+          echo "**Tổng số dự án hợp lệ:** $TOTAL" >> PROJECTS.md
+          echo "" >> PROJECTS.md
+          echo "*File này được tạo tự động bởi workflow \`Auto Sync Projects\`* " >> PROJECTS.md
+
+          echo "✅ Đã tạo PROJECTS.md và PROJECTS.json với $TOTAL dự án"
+
+      - name: Commit & Push All Changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add PROJECTS.md PROJECTS.json .github/workflows/build-tweaks.yml
+          git diff --cached --quiet || git commit -m "docs: auto sync project list + update PROJECTS.md & PROJECTS.json"
+          git push origin main
+
+          echo "🚀 Đã đồng bộ hóa hoàn toàn!"
