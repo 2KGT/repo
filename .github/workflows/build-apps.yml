@@ -1,6 +1,6 @@
 # Credits to https://github.com/YTLitePlus/YTLitePlus/blob/main/.github/workflows/buildapp.yml
 
-name: Build YouTube Release
+name: Build Multi apps
 
 on:
   workflow_dispatch:
