@@ -4,11 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       project:
-        description: '🧱 Chọn dự án'
+        description: '🧱 Chọn dự án (Tên hiển thị)'
         required: true
         type: choice
+        default: 'none'
         options:
+          - none
+          - Auto Update YouTube
           - AutoAC
+
 jobs:
   build:
     runs-on: macos-latest
@@ -27,29 +31,39 @@ jobs:
       - name: Set Project Metadata & Build
         id: metadata
         run: |
-          PROJECT_NAME="${{ github.event.inputs.project }}"
+          DISPLAY_NAME="${{ github.event.inputs.project }}"
           
-          if [ "$PROJECT_NAME" = "none" ]; then
+          if [ "$DISPLAY_NAME" = "none" ] || [ -z "$DISPLAY_NAME" ]; then
             echo "❌ Bạn chưa chọn dự án!"
             exit 1
           fi
 
-          # Đơn giản hóa: dùng trực tiếp tên project làm thư mục
-          DIR="src/build-tweaks/$PROJECT_NAME"
-          
-          if [ ! -d "$DIR" ]; then
-            echo "❌ Không tìm thấy thư mục dự án: $DIR"
+          TARGET_CONTROL=$(grep -l "Name: $DISPLAY_NAME" src/build-tweaks/*/control | head -n 1)
+          if [ -z "$TARGET_CONTROL" ]; then
+            echo "❌ Không tìm thấy file control cho: $DISPLAY_NAME"
             exit 1
           fi
 
-          echo "proj_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
-          echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
-
+          DIR=$(dirname "$TARGET_CONTROL")
+          PROJECT_FOLDER=$(basename "$DIR")
           CONTROL="$DIR/control"
-          CHANGELOG="$DIR/CHANGELOG.md"
-          SOURCE=$(find "$DIR" -maxdepth 1 \( -name "*.x" -o -name "*.xm" \) | head -n 1)
           
-          mkdir -p deb_output
+          # --- XỬ LÝ TÊN VÀ ĐƯỜNG DẪN SILEO ---
+          TWEAK_NAME=$(grep "^Name:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//;s/ *$//')
+          SAFE_NAME=$(echo "$TWEAK_NAME" | tr -d ' ')
+          DEPICTION_URL="https://raw.githubusercontent.com/2KGT/repo/main/depictions/${SAFE_NAME}.json"
+          
+          # Chèn hoặc cập nhật SileoDepiction vào file control
+          if grep -q "^SileoDepiction:" "$CONTROL"; then
+            sed -i '' "s|^SileoDepiction:.*|SileoDepiction: $DEPICTION_URL|" "$CONTROL"
+          else
+            echo "SileoDepiction: $DEPICTION_URL" >> "$CONTROL"
+          fi
+
+          echo "proj_name=$PROJECT_FOLDER" >> $GITHUB_OUTPUT
+          echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
+          echo "safe_name=$SAFE_NAME" >> $GITHUB_OUTPUT
+          echo "tweak_name=$TWEAK_NAME" >> $GITHUB_OUTPUT
 
           # --- TỰ ĐỘNG TĂNG VERSION ---
           current_ver=$(grep "^Version:" "$CONTROL" | cut -d' ' -f2)
@@ -58,54 +72,47 @@ jobs:
           sed -i '' "s/Version: $current_ver/Version: $new_ver/" "$CONTROL"
           echo "proj_ver=$new_ver" >> $GITHUB_OUTPUT
 
-          # --- QUÉT CHỨC NĂNG ---
+          # --- QUÉT CHỨC NĂNG (CHANGELOG) ---
+          SOURCE=$(find "$DIR" -maxdepth 1 \( -name "*.x" -o -name "*.xm" \) | head -n 1)
           if [ -n "$SOURCE" ] && [ -f "$SOURCE" ]; then
             news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || true)
-            [ -z "$news" ] && news="- Cập nhật hệ thống"
-            
             fixes=$(grep "// FIX:" "$SOURCE" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || true)
+            [ -z "$news" ] && news="- Cập nhật hệ thống"
             [ -z "$fixes" ] && fixes="- Tối ưu hóa"
-            
-            sed -i '' '/\/\/ NEW:/d' "$SOURCE"
-            sed -i '' '/\/\/ FIX:/d' "$SOURCE"
+            sed -i '' '/\/\/ NEW:/d; /\/\/ FIX:/d' "$SOURCE"
           else
-            news="- Cập nhật mới"
-            fixes="- Sửa lỗi nhỏ"
+            news="- Cập nhật mới"; fixes="- Sửa lỗi nhỏ"
           fi
           
-          latest_content="### ✨ Tính năng mới\n$news\n\n### 🐛 Sửa lỗi\n$fixes"
-
-          # --- BUILD (an toàn) ---
-          make -C "$DIR" clean package FINALPACKAGE=1 || make -C "$DIR" package FINALPACKAGE=1
-          find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
-
-          echo "proj_desc=$(grep "^Description:" "$CONTROL" | cut -d' ' -f2-)" >> $GITHUB_OUTPUT
+          echo "proj_desc=$(grep "^Description:" "$CONTROL" | cut -d: -f2-)" >> $GITHUB_OUTPUT
           echo "proj_changelog<<EOF" >> $GITHUB_OUTPUT
-          echo -e "$latest_content" >> $GITHUB_OUTPUT
+          echo -e "### ✨ Tính năng mới\n$news\n\n### 🐛 Sửa lỗi\n$fixes" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.metadata.outputs.proj_name }}-v${{ steps.metadata.outputs.proj_ver }}
-          path: deb_output/*.deb
-          retention-days: 90
+          # --- BUILD ---
+          make -C "$DIR" clean package FINALPACKAGE=1 || make -C "$DIR" package FINALPACKAGE=1
+          mkdir -p deb_output
+          find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
 
-      - name: Commit & Push
+      - name: Update Packages Index
+        run: |
+          mkdir -p debs
+          cp -v deb_output/*.deb debs/ 2>/dev/null || true
+          dpkg-scanpackages -m ./debs /dev/null > Packages
+          bzip2 -fks Packages
+
+      - name: Commit & Push Changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          mkdir -p debs
-          cp -v deb_output/*.deb debs/ 2>/dev/null || true
-          git add .
-          git diff --cached --quiet || git commit -m "build(${{ steps.metadata.outputs.proj_name }}): v${{ steps.metadata.outputs.proj_ver }}"
-          git push origin main
+          git add debs/ Packages Packages.bz2 depictions/ src/build-tweaks/
+          git diff --cached --quiet || (git commit -m "build(${{ steps.metadata.outputs.tweak_name }}): v${{ steps.metadata.outputs.proj_ver }}" && git pull origin main --rebase && git push origin main)
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.metadata.outputs.proj_name }}-v${{ steps.metadata.outputs.proj_ver }}
-          name: "${{ steps.metadata.outputs.proj_name }} - v${{ steps.metadata.outputs.proj_ver }}"
+          name: "${{ steps.metadata.outputs.tweak_name }} - v${{ steps.metadata.outputs.proj_ver }}"
           files: deb_output/*.deb
           body: |
             ## 📝 Mô tả
@@ -118,32 +125,44 @@ jobs:
       - name: Update Depictions & Sileo
         run: |
           mkdir -p depictions
+          CONTROL="${{ steps.metadata.outputs.proj_dir }}/control"
           
-          # Tự động tạo/cập nhật file depictions/<Tên dự án>.json
-          # Sử dụng raw.githubusercontent.com để hình ảnh hiển thị trực tiếp
-          cat > depictions/${{ steps.metadata.outputs.proj_name }}.json << 'EOF'
+          # Lấy metadata cho JSON
+          AUTHOR=$(grep "^Author:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
+          MAINTAINER=$(grep "^Maintainer:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
+          DEPENDS=$(grep "^Depends:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
+          SECTION=$(grep "^Section:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
+          
+          [ -z "$AUTHOR" ] && AUTHOR="Unknown"
+          [ -z "$MAINTAINER" ] && MAINTAINER="Unknown"
+          [ -z "$DEPENDS" ] && DEPENDS="mobilesubstrate"
+          [ -z "$SECTION" ] && SECTION="Tweaks"
+          
+          cat > depictions/${{ steps.metadata.outputs.safe_name }}.json << EOF
           {
-            "name": "${{ steps.metadata.outputs.proj_name }}",
+            "name": "${{ steps.metadata.outputs.tweak_name }}",
             "version": "${{ steps.metadata.outputs.proj_ver }}",
             "description": "${{ steps.metadata.outputs.proj_desc }}",
-            "changelog": "${{ toJson(steps.metadata.outputs.proj_changelog) }}",
-            
-            "icon": "https://raw.githubusercontent.com/2KGT/repo/main/icons/${{ steps.metadata.outputs.proj_name }}.png",
-            "banner": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/${{ steps.metadata.outputs.proj_name }}-banner.png",
-            
+            "author": "${AUTHOR}",
+            "maintainer": "${MAINTAINER}",
+            "depends": "${DEPENDS}",
+            "section": "${SECTION}",
+            "tags": ["tweak", "jailbreak", "ios", "youtube"],
+            "tintColor": "#007aff",
+            "compatibility": { "firmware": { "min": "14.0", "max": "18.0" } },
+            "downloads": "https://raw.githubusercontent.com/2KGT/repo/main/debs/${{ steps.metadata.outputs.proj_name }}-v${{ steps.metadata.outputs.proj_ver }}.deb",
+            "changelog": "## ✨ What's New in v${{ steps.metadata.outputs.proj_ver }}\n\n${{ steps.metadata.outputs.proj_changelog }}\n\n---\n\n**Cập nhật lúc:** \$(date -u +'%Y-%m-%d %H:%M UTC')",
+            "icon": "https://raw.githubusercontent.com/2KGT/repo/main/icons/${{ steps.metadata.outputs.safe_name }}.png",
+            "banner": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/${{ steps.metadata.outputs.safe_name }}-banner.png",
             "screenshots": [
-              "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/${{ steps.metadata.outputs.proj_name }}1.png",
-              "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/${{ steps.metadata.outputs.proj_name }}2.png",
-              "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/${{ steps.metadata.outputs.proj_name }}3.png",
-              "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/${{ steps.metadata.outputs.proj_name }}4.png"
+              "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/${{ steps.metadata.outputs.safe_name }}1.png",
+              "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/${{ steps.metadata.outputs.safe_name }}2.png"
             ],
-            
-            "updated": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+            "updated": "\$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           }
           EOF
           
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add depictions/
-          git diff --cached --quiet || git commit -m "docs: update depictions for ${{ steps.metadata.outputs.proj_name }} v${{ steps.metadata.outputs.proj_ver }}"
-          git push origin main
+          git diff --cached --quiet || (git commit -m "docs: update depiction for ${{ steps.metadata.outputs.safe_name }}" && git pull origin main --rebase && git push origin main)
