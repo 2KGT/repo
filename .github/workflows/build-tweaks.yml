@@ -24,29 +24,32 @@ jobs:
       - name: Setup Theos
         uses: Randomblock1/theos-action@v1
 
-      - name: Fuzzy Discovery & Metadata
+      - name: Map Name to Directory & Metadata
         id: metadata
         run: |
           INPUT_NAME="${{ github.event.inputs.project }}"
-          SEARCH_TERM=$(echo "$INPUT_NAME" | xargs | tr '[:upper:]' '[:lower:]')
           
-          echo "🔍 Đang tìm kiếm dự án gần đúng với từ khóa: '$SEARCH_TERM'..."
+          if [ "$INPUT_NAME" == "none" ]; then
+            echo "❌ LỖI: Bạn chưa chọn dự án từ danh sách!"
+            exit 1
+          fi
           
-          # --- THUẬT TOÁN GỢI Ý GẦN ĐÚNG ---
-          # Tìm tất cả thư mục trong Build_Tweak, chuyển về chữ thường và so sánh
-          MATCH=$(ls src/Build_Tweak/ | grep -i "$SEARCH_TERM" | head -n 1)
+          echo "🔍 Đang tìm thư mục chứa dự án có Name: '$INPUT_NAME'..."
+          
+          # --- THUẬT TOÁN ÁNH XẠ MỚI ---
+          # Quét tất cả file control để tìm file nào có Name trùng với lựa chọn
+          MATCH_FILE=$(grep -rl "^Name: .*$INPUT_NAME" src/build-tweaks/*/control | head -n 1)
 
-          if [ -z "$MATCH" ]; then
-            echo "❌ Không tìm thấy dự án nào khớp với '$SEARCH_TERM'."
-            echo "📂 Danh sách dự án hiện có: $(ls -m src/Build_Tweak/)"
+          if [ -z "$MATCH_FILE" ]; then
+            echo "❌ Không tìm thấy thư mục nào chứa dự án tên: $INPUT_NAME."
             exit 1
           fi
 
-          # Nếu tìm thấy, gán lại PROJECT_NAME chính xác theo tên thư mục (case-sensitive)
-          PROJECT_NAME="$MATCH"
-          DIR="src/Build_Tweak/$PROJECT_NAME"
+          # Nếu tìm thấy, lấy tên thư mục chứa file control đó
+          DIR=$(dirname "$MATCH_FILE")
+          PROJECT_NAME=$(basename "$DIR")
           
-          echo "✅ Đã tìm thấy dự án phù hợp nhất: $PROJECT_NAME"
+          echo "✅ Đã tìm thấy dự án! Nằm trong thư mục: $PROJECT_NAME"
           echo "proj_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
 
           CONTROL="$DIR/control"
