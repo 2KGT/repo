@@ -1,3 +1,4 @@
+.DS_Store
 # Ẩn toàn bộ mã nguồn tweak
 src/*/.theos/
 src/*/packages/
