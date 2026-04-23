@@ -1,19 +1,3 @@
-Package: com.2d09.autoc
-Version: 1.0.0
-Architecture: iphoneos-arm
-Maintainer: 2KGT
-Installed-Size: 72
-Depends: mobilesubstrate
-Filename: ./autoc_1.0.0_arm64.deb
-Size: 3260
-MD5sum: 25292f65b6682993f6269b4d58727186
-SHA1: 727d06ca1157892dda56be57d315108bf334f20d
-SHA256: e64ef50183d807ababe4e0b7d08340a136e9ac04bed744da5db7fe1f54e1fc47
-Section: Tweaks
-Description: YouTube CacheClear
-Author: 2KGT
-Name: YTCacheClear
-
 Package: com.eevee.youtubefix
 Version: 1.0
 Architecture: iphoneos-arm
@@ -47,22 +31,6 @@ Description: autoc tweak by Kyic.
 Icon: https://2kgt.github.io/repo/icons/autoac.png
 Name: autoac
 Sileodepiction: https://2kgt.github.io/repo/depictions/autoac.json
-
-Package: com.kyic.autoc
-Version: 1.0.1
-Architecture: iphoneos-arm64
-Maintainer: Kyic <your@email>
-Installed-Size: 168
-Depends: mobilesubstrate | org.coolstar.sileo
-Filename: ./autoc_1.0.1_arm64.deb
-Size: 6250
-MD5sum: 5203ac75595f2284f5248c4adac2d03e
-SHA1: df6c3f2a9da1fc9613f06c10f4082b8d69d0b271
-SHA256: e95f578e8240b6c43dd26a64f25f988f6d35ec104702c36c09bc21ddf98bbbb5
-Section: Tweaks
-Description: Tweak xoá cache thông minh + ẩn quảng cáo bán hàng, ghim sản phẩm YouTube
-Author: Kyic
-Name: AutoC YouTube
 
 Package: com.ps.noytmpremium
 Version: 1.0.2
@@ -140,24 +108,6 @@ Name: YouGroupSettings
 
 Package: com.ps.youmute
 Version: 1.4.0
-Architecture: iphoneos-arm64
-Maintainer: PoomSmart
-Installed-Size: 128
-Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytvideooverlay (>= 2.3.2)
-Filename: ./youmute_1.4.0_arm64.deb
-Size: 6048
-MD5sum: edc5b15720b34d9cc36aa95fe31d7086
-SHA1: aa68f1d3bce1f0ba2ff832a391bd4177db5ff5b2
-SHA256: 8703314eb695d078b8e0f47b7b5f926d85216b35f69aeefb8e0d7ef4980e0bbc
-Section: Tweaks
-Description: Mutes/unmutes videos in YouTube directly.
-Author: PoomSmart
-Depiction: https://poomsmart.github.io/repo/depictions/youmute.html
-Name: YouMute
-Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/youmute.json
-
-Package: com.ps.youmute
-Version: 1.4.0
 Architecture: iphoneos-arm
 Maintainer: PoomSmart
 Installed-Size: 112
@@ -167,6 +117,24 @@ Size: 6198
 MD5sum: 151fc1b208fa9105da9f6d74c0069029
 SHA1: 6501bf2a689b1d75317249dbf676b25bd4ffdc12
 SHA256: 27b098f4ac4da14b8ca719f70eff5432bdd41885160a47e799958577acd744ae
+Section: Tweaks
+Description: Mutes/unmutes videos in YouTube directly.
+Author: PoomSmart
+Depiction: https://poomsmart.github.io/repo/depictions/youmute.html
+Name: YouMute
+Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/youmute.json
+
+Package: com.ps.youmute
+Version: 1.4.0
+Architecture: iphoneos-arm64
+Maintainer: PoomSmart
+Installed-Size: 128
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytvideooverlay (>= 2.3.2)
+Filename: ./youmute_1.4.0_arm64.deb
+Size: 6048
+MD5sum: edc5b15720b34d9cc36aa95fe31d7086
+SHA1: aa68f1d3bce1f0ba2ff832a391bd4177db5ff5b2
+SHA256: 8703314eb695d078b8e0f47b7b5f926d85216b35f69aeefb8e0d7ef4980e0bbc
 Section: Tweaks
 Description: Mutes/unmutes videos in YouTube directly.
 Author: PoomSmart
@@ -274,23 +242,6 @@ Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/ytlegacy.json
 
 Package: com.ps.ytunshorts
 Version: 1.3.1
-Architecture: iphoneos-arm
-Maintainer: PoomSmart
-Installed-Size: 56
-Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytreexplore
-Conflicts: com.ps.ytshortsprogress, com.miro.ytnoshorts
-Filename: ./ytunshorts_1.3.1_arm.deb
-Size: 3272
-MD5sum: 5e24e9313e8a3ed072821a3bc78ce16d
-SHA1: 4dfa72e3cf924c9aad1af3b0d989b6aa4b812ab4
-SHA256: 71e51ac80e9976a1c5338e5e869cd3e02583eb2135607d44c407145a8612e9b6
-Section: Tweaks
-Description: Removes Shorts from YouTube app's feed.
-Author: PoomSmart
-Name: YTUnShorts
-
-Package: com.ps.ytunshorts
-Version: 1.3.1
 Architecture: iphoneos-arm64
 Maintainer: PoomSmart
 Installed-Size: 56
@@ -301,6 +252,23 @@ Size: 3356
 MD5sum: 2ab4ee43ae059fc3f699b4f5acf2b334
 SHA1: 01bc5cd5e64dabdd613d2cb6fefd6bb26f3f20ab
 SHA256: 8c331803cf8bd4611ca0d7a2cfff5b6e1a30b3ef697d015f6e1a185ed49c64ca
+Section: Tweaks
+Description: Removes Shorts from YouTube app's feed.
+Author: PoomSmart
+Name: YTUnShorts
+
+Package: com.ps.ytunshorts
+Version: 1.3.1
+Architecture: iphoneos-arm
+Maintainer: PoomSmart
+Installed-Size: 56
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytreexplore
+Conflicts: com.ps.ytshortsprogress, com.miro.ytnoshorts
+Filename: ./ytunshorts_1.3.1_arm.deb
+Size: 3272
+MD5sum: 5e24e9313e8a3ed072821a3bc78ce16d
+SHA1: 4dfa72e3cf924c9aad1af3b0d989b6aa4b812ab4
+SHA256: 71e51ac80e9976a1c5338e5e869cd3e02583eb2135607d44c407145a8612e9b6
 Section: Tweaks
 Description: Removes Shorts from YouTube app's feed.
 Author: PoomSmart
@@ -344,24 +312,6 @@ Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/ytvideooverlay.
 
 Package: com.ps.ytx
 Version: 1.7.19
-Architecture: iphoneos-arm64
-Maintainer: PoomSmart
-Installed-Size: 72
-Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytabgoodies
-Filename: ./ytx_1.7.19_arm64.deb
-Size: 5684
-MD5sum: 043c6e792611c9c4d4501c90d9794153
-SHA1: fb5e68562a652452607ce48af202e25212a9023c
-SHA256: 4c42a461ec2838962614a97f7f4d3a77a39bf073145fd7543bdbd2a255bbc7c2
-Section: Tweaks
-Description: A YouTube improvement tweak.
-Author: PoomSmart
-Depiction: https://poomsmart.github.io/repo/depictions/ytx.html
-Name: YouTube X
-Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/ytx.json
-
-Package: com.ps.ytx
-Version: 1.7.19
 Architecture: iphoneos-arm
 Maintainer: PoomSmart
 Installed-Size: 56
@@ -371,6 +321,24 @@ Size: 5728
 MD5sum: 1fe505d84bec2e5b24d2bb26e48ac48f
 SHA1: 18ee76c6192cba0e15d11ae97d8db7bc37776f93
 SHA256: 5c4203245b9eafa05fd356f21e7613788146dcad6abcda3ae193b6d1b6cc26a5
+Section: Tweaks
+Description: A YouTube improvement tweak.
+Author: PoomSmart
+Depiction: https://poomsmart.github.io/repo/depictions/ytx.html
+Name: YouTube X
+Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/ytx.json
+
+Package: com.ps.ytx
+Version: 1.7.19
+Architecture: iphoneos-arm64
+Maintainer: PoomSmart
+Installed-Size: 72
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytabgoodies
+Filename: ./ytx_1.7.19_arm64.deb
+Size: 5684
+MD5sum: 043c6e792611c9c4d4501c90d9794153
+SHA1: fb5e68562a652452607ce48af202e25212a9023c
+SHA256: 4c42a461ec2838962614a97f7f4d3a77a39bf073145fd7543bdbd2a255bbc7c2
 Section: Tweaks
 Description: A YouTube improvement tweak.
 Author: PoomSmart
