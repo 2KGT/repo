@@ -14,24 +14,6 @@ Description: Fix YouTube images not loading
 Author: Eevee
 Name: YouTube Fix
 
-Package: com.kyic.autoac
-Version: 1.0.5
-Architecture: iphoneos-arm64
-Maintainer: Kyic
-Installed-Size: 72
-Depends: firmware (>= 14.0)
-Filename: ./autoac_1.0.5_arm64.deb
-Size: 1622
-MD5sum: 6f611ef88342d67ef22b20d581e64945
-SHA1: 03e799a7425154874f528fb7a53f16c372cc6e25
-SHA256: ec5d2dd2f7d211ee3f2d7ded5ac71d9cbcea4e383f697a4b39da8944966ee16f
-Section: Tweaks
-Priority: optional
-Description: autoc tweak by Kyic.
-Icon: https://2kgt.github.io/repo/icons/autoac.png
-Name: autoac
-Sileodepiction: https://2kgt.github.io/repo/depictions/autoac.json
-
 Package: com.ps.noytmpremium
 Version: 1.0.2
 Architecture: iphoneos-arm64
