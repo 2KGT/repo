@@ -24,24 +24,27 @@ jobs:
       - name: Setup Theos
         uses: Randomblock1/theos-action@v1
 
-      - name: Set Project Directory
+      - name: Find Directory & Set Metadata
         id: metadata
         run: |
-          PROJECT_NAME="${{ github.event.inputs.project }}"
+          SELECTED_NAME="${{ github.event.inputs.project }}"
           
-          if [ "$PROJECT_NAME" = "none" ]; then
+          if [ "$SELECTED_NAME" = "none" ]; then
             echo "❌ Bạn chưa chọn dự án!"
             exit 1
           fi
 
-          DIR="src/build-tweaks/$PROJECT_NAME"
+          # Dùng grep tìm thư mục chứa file control có Name khớp với tên bạn chọn
+          CONTROL_FILE=$(grep -rl "^Name:[[:space:]]*$SELECTED_NAME" src/build-tweaks/ | head -n 1)
 
-          if [ ! -d "$DIR" ]; then
-            echo "❌ Không tìm thấy thư mục dự án: $DIR"
+          if [ -z "$CONTROL_FILE" ]; then
+            echo "❌ Không tìm thấy thư mục cho dự án: $SELECTED_NAME"
             exit 1
           fi
 
-          echo "✅ Đang build dự án: $PROJECT_NAME"
+          DIR=$(dirname "$CONTROL_FILE")
+          PROJECT_NAME=$(basename "$DIR")
+          
           echo "proj_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
 
