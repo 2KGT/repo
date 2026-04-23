@@ -126,7 +126,7 @@ jobs:
             "name": "${{ steps.metadata.outputs.proj_name }}",
             "version": "${{ steps.metadata.outputs.proj_ver }}",
             "description": "${{ steps.metadata.outputs.proj_desc }}",
-            "changelog": ${{ toJson(steps.metadata.outputs.proj_changelog) }},
+            "changelog": "${{ toJson(steps.metadata.outputs.proj_changelog) }}",
             
             "icon": "https://raw.githubusercontent.com/2KGT/repo/main/icons/${{ steps.metadata.outputs.proj_name }}.png",
             "banner": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/${{ steps.metadata.outputs.proj_name }}-banner.png",
