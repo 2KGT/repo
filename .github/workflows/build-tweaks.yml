@@ -10,7 +10,6 @@ on:
         default: 'none'
         options:
           - none
-          - Auto Update YouTube
           - AutoAC
 
 jobs:
