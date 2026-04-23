@@ -24,33 +24,30 @@ jobs:
       - name: Setup Theos
         uses: Randomblock1/theos-action@v1
 
-      - name: Find Directory & Set Metadata
+      - name: Set Project Metadata & Build
         id: metadata
         run: |
-          SELECTED_NAME="${{ github.event.inputs.project }}"
+          PROJECT_NAME="${{ github.event.inputs.project }}"
           
-          if [ "$SELECTED_NAME" = "none" ]; then
+          if [ "$PROJECT_NAME" = "none" ]; then
             echo "❌ Bạn chưa chọn dự án!"
             exit 1
           fi
 
-          # Dùng grep tìm thư mục chứa file control có Name khớp với tên bạn chọn
-          CONTROL_FILE=$(grep -rl "^Name:[[:space:]]*$SELECTED_NAME" src/build-tweaks/ | head -n 1)
-
-          if [ -z "$CONTROL_FILE" ]; then
-            echo "❌ Không tìm thấy thư mục cho dự án: $SELECTED_NAME"
+          # Đơn giản hóa: dùng trực tiếp tên project làm thư mục (không còn tự động grep tìm control)
+          DIR="src/build-tweaks/$PROJECT_NAME"
+          
+          if [ ! -d "$DIR" ]; then
+            echo "❌ Không tìm thấy thư mục dự án: $DIR"
             exit 1
           fi
 
-          DIR=$(dirname "$CONTROL_FILE")
-          PROJECT_NAME=$(basename "$DIR")
-          
           echo "proj_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
 
           CONTROL="$DIR/control"
           CHANGELOG="$DIR/CHANGELOG.md"
-          SOURCE=$(find "$DIR" -maxdepth 1 -name "*.x" -o -name "*.xm" | head -n 1)
+          SOURCE=$(find "$DIR" -maxdepth 1 \( -name "*.x" -o -name "*.xm" \) | head -n 1)
           
           mkdir -p deb_output
 
@@ -61,10 +58,14 @@ jobs:
           sed -i '' "s/Version: $current_ver/Version: $new_ver/" "$CONTROL"
           echo "proj_ver=$new_ver" >> $GITHUB_OUTPUT
 
-          # --- QUÉT CHỨC NĂNG ---
+          # --- QUÉT CHỨC NĂNG (đã sửa lỗi default) ---
           if [ -n "$SOURCE" ] && [ -f "$SOURCE" ]; then
-            news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || echo "- Cập nhật hệ thống")
-            fixes=$(grep "// FIX:" "$SOURCE" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || echo "- Tối ưu hóa")
+            news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || true)
+            [ -z "$news" ] && news="- Cập nhật hệ thống"
+            
+            fixes=$(grep "// FIX:" "$SOURCE" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || true)
+            [ -z "$fixes" ] && fixes="- Tối ưu hóa"
+            
             sed -i '' '/\/\/ NEW:/d' "$SOURCE"
             sed -i '' '/\/\/ FIX:/d' "$SOURCE"
           else
@@ -78,31 +79,4 @@ jobs:
           make -C "$DIR" clean package FINALPACKAGE=1
           find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
 
-          echo "proj_desc=$(grep "^Description:" "$CONTROL" | cut -d' ' -f2-)" >> $GITHUB_OUTPUT
-          echo "proj_changelog<<EOF" >> $GITHUB_OUTPUT
-          echo -e "$latest_content" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Commit & Push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          mkdir -p debs
-          cp -v deb_output/*.deb debs/ 2>/dev/null || true
-          git add .
-          git diff --cached --quiet || git commit -m "build(${{ steps.metadata.outputs.proj_name }}): v${{ steps.metadata.outputs.proj_ver }}"
-          git push origin main
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.metadata.outputs.proj_name }}-v${{ steps.metadata.outputs.proj_ver }}
-          name: "${{ steps.metadata.outputs.proj_name }} - v${{ steps.metadata.outputs.proj_ver }}"
-          files: deb_output/*.deb
-          body: |
-            ## 📝 Mô tả
-            > ${{ steps.metadata.outputs.proj_desc }}
-
-            ${{ steps.metadata.outputs.proj_changelog }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "proj_desc=$(grep "^Description:" "$CONTROL" | cut -d' ' -f2-)" >> $G
