@@ -37,7 +37,6 @@ jobs:
             exit 1
           fi
 
-          # Dùng grep -lE và .* để bỏ qua dấu ngoặc khi tìm kiếm
           TARGET_CONTROL=$(grep -lE "Name:.*$DISPLAY_NAME" src/build-tweaks/*/control | head -n 1)
           if [ -z "$TARGET_CONTROL" ]; then
             echo "❌ Không tìm thấy file control cho: $DISPLAY_NAME"
@@ -48,7 +47,6 @@ jobs:
           PROJECT_FOLDER=$(basename "$DIR")
           CONTROL="$DIR/control"
           
-          # Lọc sạch dấu ngoặc () và khoảng trắng để làm tên file an toàn
           TWEAK_NAME=$(grep "^Name:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//;s/ *$//')
           SAFE_NAME=$(echo "$TWEAK_NAME" | tr -d '()' | tr -d ' ') 
           DEPICTION_URL="https://raw.githubusercontent.com/2KGT/repo/main/depictions/${SAFE_NAME}.json"
@@ -64,14 +62,12 @@ jobs:
           echo "safe_name=$SAFE_NAME" >> $GITHUB_OUTPUT
           echo "tweak_name=$TWEAK_NAME" >> $GITHUB_OUTPUT
 
-          # --- TỰ ĐỘNG TĂNG VERSION ---
           current_ver=$(grep "^Version:" "$CONTROL" | cut -d' ' -f2)
           IFS='.' read -r major minor patch <<< "$current_ver"
           new_ver="$major.$minor.$((patch + 1))"
           sed -i '' "s/Version: $current_ver/Version: $new_ver/" "$CONTROL"
           echo "proj_ver=$new_ver" >> $GITHUB_OUTPUT
 
-          # --- QUÉT CHỨC NĂNG (CHANGELOG) ---
           SOURCE=$(find "$DIR" -maxdepth 1 \( -name "*.x" -o -name "*.xm" \) | head -n 1)
           if [ -n "$SOURCE" ] && [ -f "$SOURCE" ]; then
             news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || true)
@@ -88,12 +84,10 @@ jobs:
           echo -e "### ✨ Tính năng mới\n$news\n\n### 🐛 Sửa lỗi\n$fixes" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          # --- BUILD ---
           make -C "$DIR" clean package FINALPACKAGE=1 || make -C "$DIR" package FINALPACKAGE=1
           mkdir -p deb_output
           find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           
-          # Lấy chính xác tên file .deb vừa tạo ra để đẩy sang file JSON
           DEB_FILE=$(basename $(ls deb_output/*.deb | head -n 1))
           echo "deb_filename=$DEB_FILE" >> $GITHUB_OUTPUT
 
@@ -109,8 +103,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config diff.ignoreSubmodules all
+          
           git add debs/ Packages Packages.bz2 src/build-tweaks/
-          git diff --cached --quiet || (git commit -m "build(${{ steps.metadata.outputs.safe_name }}): v${{ steps.metadata.outputs.proj_ver }}" && git stash --include-untracked && git pull origin main --rebase && git push origin main)
+          git diff --cached --quiet || git commit -m "build(${{ steps.metadata.outputs.safe_name }}): v${{ steps.metadata.outputs.proj_ver }}"
+          git pull origin main --rebase --autostash
+          git push origin main
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -133,7 +131,6 @@ jobs:
           SAFE_NAME="${{ steps.metadata.outputs.safe_name }}"
           REPO_URL="https://raw.githubusercontent.com/2KGT/repo/main"
           
-          # 1. Lấy metadata cơ bản
           AUTHOR=$(grep "^Author:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
           MAINTAINER=$(grep "^Maintainer:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
           DEPENDS=$(grep "^Depends:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
@@ -142,7 +139,6 @@ jobs:
           [ -z "$MAINTAINER" ] && MAINTAINER="Unknown"
           [ -z "$DEPENDS" ] && DEPENDS="mobilesubstrate"
           
-          # 2. Xử lý logic Hình ảnh/Video thông minh
           ICON_URL="${REPO_URL}/icons/${SAFE_NAME}.png"
           
           BANNER_URL=""
@@ -164,7 +160,6 @@ jobs:
             fi
           done
 
-          # 3. Tạo file JSON hoàn chỉnh
           cat > depictions/${SAFE_NAME}.json << EOF
           {
             "name": "${{ steps.metadata.outputs.tweak_name }}",
@@ -185,8 +180,11 @@ jobs:
           }
           EOF
           
-          # 4. Đẩy JSON lên Repo (Có kèm git stash để chống lỗi)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config diff.ignoreSubmodules all
+          
           git add depictions/
-          git diff --cached --quiet || (git commit -m "docs: update dynamic depiction for ${SAFE_NAME}" && git stash --include-untracked && git pull origin main --rebase && git push origin main)
+          git diff --cached --quiet || git commit -m "docs: update dynamic depiction for ${SAFE_NAME}"
+          git pull origin main --rebase --autostash
+          git push origin main
