@@ -104,19 +104,20 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 1. Dọn rác vật lý ngay lập tức
-          rm -rf theos/ .theos/
+          # 1. TỔNG VỆ SINH XƯỞNG (Quan trọng nhất)
+          rm -rf theos/ .theos/ obj/
           find . -name "obj" -type d -exec rm -rf {} +
           find . -name "packages" -type d -exec rm -rf {} +
-
-          # 2. Reset và Clean mạnh tay, loại trừ các file thành phẩm
+          
+          # 2. Reset cứng để Git không thấy file rác "cấn"
           git reset --hard HEAD
           git clean -fdx -e deb_output/ -e debs/ -e Packages -e Packages.bz2 -e src/build-tweaks/ -e depictions/
 
-          # 3. Add và Commit
+          # 3. Niêm phong hàng hóa thành phẩm
           git add debs/ Packages Packages.bz2 src/build-tweaks/
           git diff --cached --quiet || git commit -m "build(${{ steps.metadata.outputs.safe_name }}): v${{ steps.metadata.outputs.proj_ver }}"
           
+          # 4. Thông quan (Kéo và Đẩy)
           git pull origin main --rebase
           git push origin main
 
@@ -187,8 +188,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Dọn rác lần cuối trước khi hoàn tất
-          rm -rf theos/ .theos/
+          # Dọn dẹp rác lần cuối để đảm bảo JSON lên kệ đẹp đẽ
+          rm -rf theos/ .theos/ obj/
           git add depictions/
           git diff --cached --quiet || git commit -m "docs: update dynamic depiction for ${SAFE_NAME}"
           
