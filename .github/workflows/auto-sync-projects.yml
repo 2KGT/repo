@@ -11,17 +11,16 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      workflows: write
 
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🐍 Cập nhật Menu Build
+      - name: Update Menu Build
         run: |
           cat << 'EOF' > sync_menu.py
           import os, glob, re
-
-          # 1. Tìm tên dự án (Chỉ trong vùng cấm build-tweaks)
           names = ["(none)"]
           for f in glob.glob('src/build-tweaks/*/control'):
               try:
@@ -31,23 +30,17 @@ jobs:
                               n = line.split(':', 1)[1].strip()
                               if n: names.append(n)
               except: continue
-
           names.sort(key=lambda x: (x != "(none)", x.lower()))
-
-          # 2. Ghi đè vào file build-tweaks.yml
           yml_path = '.github/workflows/build-tweaks.yml'
           if os.path.exists(yml_path):
               with open(yml_path, 'r') as f: content = f.read()
-              
               opts = "\n".join([f"          - '{n}'" for n in names])
-              # Vẫn dùng Marker ở đây để robot biết chỗ dán vào file YML cho đúng
               new_content = re.sub(r'(# OPTIONS-START\n).*?(\n[ \t]*# OPTIONS-END)', f'\\1{opts}\\2', content, flags=re.DOTALL)
-              
               with open(yml_path, 'w') as f: f.write(new_content)
           EOF
           python3 sync_menu.py
 
-      - name: 🚀 Push Menu mới
+      - name: Push Menu
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
