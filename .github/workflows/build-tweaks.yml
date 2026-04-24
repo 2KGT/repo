@@ -37,7 +37,8 @@ jobs:
             exit 1
           fi
 
-          TARGET_CONTROL=$(grep -l "Name: $DISPLAY_NAME" src/build-tweaks/*/control | head -n 1)
+          # Dùng grep -lE và .* để bỏ qua dấu ngoặc khi tìm kiếm
+          TARGET_CONTROL=$(grep -lE "Name:.*$DISPLAY_NAME" src/build-tweaks/*/control | head -n 1)
           if [ -z "$TARGET_CONTROL" ]; then
             echo "❌ Không tìm thấy file control cho: $DISPLAY_NAME"
             exit 1
@@ -47,12 +48,11 @@ jobs:
           PROJECT_FOLDER=$(basename "$DIR")
           CONTROL="$DIR/control"
           
-          # --- XỬ LÝ TÊN VÀ ĐƯỜNG DẪN SILEO ---
+          # Lọc sạch dấu ngoặc () và khoảng trắng để làm tên file an toàn
           TWEAK_NAME=$(grep "^Name:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//;s/ *$//')
-          SAFE_NAME=$(echo "$TWEAK_NAME" | tr -d ' ')
+          SAFE_NAME=$(echo "$TWEAK_NAME" | tr -d '()' | tr -d ' ') 
           DEPICTION_URL="https://raw.githubusercontent.com/2KGT/repo/main/depictions/${SAFE_NAME}.json"
           
-          # Chèn hoặc cập nhật SileoDepiction vào file control
           if grep -q "^SileoDepiction:" "$CONTROL"; then
             sed -i '' "s|^SileoDepiction:.*|SileoDepiction: $DEPICTION_URL|" "$CONTROL"
           else
@@ -92,9 +92,14 @@ jobs:
           make -C "$DIR" clean package FINALPACKAGE=1 || make -C "$DIR" package FINALPACKAGE=1
           mkdir -p deb_output
           find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
+          
+          # Lấy chính xác tên file .deb vừa tạo ra để đẩy sang file JSON
+          DEB_FILE=$(basename $(ls deb_output/*.deb | head -n 1))
+          echo "deb_filename=$DEB_FILE" >> $GITHUB_OUTPUT
 
       - name: Update Packages Index
         run: |
+          brew install dpkg
           mkdir -p debs
           cp -v deb_output/*.deb debs/ 2>/dev/null || true
           dpkg-scanpackages -m ./debs /dev/null > Packages
@@ -104,8 +109,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add debs/ Packages Packages.bz2 depictions/ src/build-tweaks/
-          git diff --cached --quiet || (git commit -m "build(${{ steps.metadata.outputs.tweak_name }}): v${{ steps.metadata.outputs.proj_ver }}" && git pull origin main --rebase && git push origin main)
+          git add debs/ Packages Packages.bz2 src/build-tweaks/
+          git diff --cached --quiet || (git commit -m "build(${{ steps.metadata.outputs.safe_name }}): v${{ steps.metadata.outputs.proj_ver }}" && git pull origin main --rebase && git push origin main)
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -125,19 +130,42 @@ jobs:
         run: |
           mkdir -p depictions
           CONTROL="${{ steps.metadata.outputs.proj_dir }}/control"
+          SAFE_NAME="${{ steps.metadata.outputs.safe_name }}"
+          REPO_URL="https://raw.githubusercontent.com/2KGT/repo/main"
           
-          # Lấy metadata cho JSON
+          # 1. Lấy metadata cơ bản
           AUTHOR=$(grep "^Author:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
           MAINTAINER=$(grep "^Maintainer:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
           DEPENDS=$(grep "^Depends:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
-          SECTION=$(grep "^Section:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
           
           [ -z "$AUTHOR" ] && AUTHOR="Unknown"
           [ -z "$MAINTAINER" ] && MAINTAINER="Unknown"
           [ -z "$DEPENDS" ] && DEPENDS="mobilesubstrate"
-          [ -z "$SECTION" ] && SECTION="Tweaks"
           
-          cat > depictions/${{ steps.metadata.outputs.safe_name }}.json << EOF
+          # 2. Xử lý logic Hình ảnh/Video thông minh
+          ICON_URL="${REPO_URL}/icons/${SAFE_NAME}.png"
+          
+          BANNER_URL=""
+          if [ -f "depictions/images/${SAFE_NAME}-banner.png" ]; then
+            BANNER_URL="${REPO_URL}/depictions/images/${SAFE_NAME}-banner.png"
+          fi
+
+          VIDEO_URL=""
+          if [ -f "depictions/images/${SAFE_NAME}.mp4" ]; then
+            VIDEO_URL="${REPO_URL}/depictions/images/${SAFE_NAME}.mp4"
+          fi
+
+          SCREENSHOTS_JSON=""
+          for i in {1..5}; do
+            SS_PATH="depictions/images/${SAFE_NAME}${i}.png"
+            if [ -f "$SS_PATH" ]; then
+              [ -n "$SCREENSHOTS_JSON" ] && SCREENSHOTS_JSON="${SCREENSHOTS_JSON},"
+              SCREENSHOTS_JSON="${SCREENSHOTS_JSON}\"${REPO_URL}/${SS_PATH}\""
+            fi
+          done
+
+          # 3. Tạo file JSON hoàn chỉnh
+          cat > depictions/${SAFE_NAME}.json << EOF
           {
             "name": "${{ steps.metadata.outputs.tweak_name }}",
             "version": "${{ steps.metadata.outputs.proj_ver }}",
@@ -145,23 +173,20 @@ jobs:
             "author": "${AUTHOR}",
             "maintainer": "${MAINTAINER}",
             "depends": "${DEPENDS}",
-            "section": "${SECTION}",
-            "tags": ["tweak", "jailbreak", "ios", "youtube"],
+            "section": "Tweaks",
             "tintColor": "#007aff",
-            "compatibility": { "firmware": { "min": "14.0", "max": "18.0" } },
-            "downloads": "https://raw.githubusercontent.com/2KGT/repo/main/debs/${{ steps.metadata.outputs.proj_name }}-v${{ steps.metadata.outputs.proj_ver }}.deb",
-            "changelog": "## ✨ What's New in v${{ steps.metadata.outputs.proj_ver }}\n\n${{ steps.metadata.outputs.proj_changelog }}\n\n---\n\n**Cập nhật lúc:** \$(date -u +'%Y-%m-%d %H:%M UTC')",
-            "icon": "https://raw.githubusercontent.com/2KGT/repo/main/icons/${{ steps.metadata.outputs.safe_name }}.png",
-            "banner": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/${{ steps.metadata.outputs.safe_name }}-banner.png",
-            "screenshots": [
-              "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/${{ steps.metadata.outputs.safe_name }}1.png",
-              "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/${{ steps.metadata.outputs.safe_name }}2.png"
-            ],
+            "icon": "${ICON_URL}",
+            "banner": "${BANNER_URL}",
+            "video": "${VIDEO_URL}",
+            "screenshots": [${SCREENSHOTS_JSON}],
+            "downloads": "${REPO_URL}/debs/${{ steps.metadata.outputs.deb_filename }}",
+            "changelog": "## ✨ Nhật ký v${{ steps.metadata.outputs.proj_ver }}\n\n${{ steps.metadata.outputs.proj_changelog }}\n\n---\n**Cập nhật:** \$(date -u +'%Y-%m-%d %H:%M')",
             "updated": "\$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           }
           EOF
           
+          # 4. Đẩy JSON lên Repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add depictions/
-          git diff --cached --quiet || (git commit -m "docs: update depiction for ${{ steps.metadata.outputs.safe_name }}" && git pull origin main --rebase && git push origin main)
+          git diff --cached --quiet || (git commit -m "docs: update dynamic depiction for ${SAFE_NAME}" && git pull origin main --rebase && git push origin main)
