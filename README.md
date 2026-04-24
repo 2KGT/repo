@@ -17,7 +17,7 @@
 ---
 
 ## 🚀 Danh sách dự án
-*Bấm vào nút bên dưới để xem danh sách các dự án hiện có.*
+*Dưới đây là danh mục các dự án đang được duy trì trong Repo.*
 
 ---
 
