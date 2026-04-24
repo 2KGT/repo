@@ -73,7 +73,6 @@ with open('new_opts.txt') as f:
 with open('.github/workflows/build-tweaks.yml') as f:
     content = f.read()
 
-# Regex linh hoạt nhất
 pattern = r'(^\s+options:\s*\n)((?:\s+-\s+.+\n)*)'
 
 match = re.search(pattern, content, re.MULTILINE)
@@ -90,7 +89,7 @@ if match:
     else:
         print("✅ Options không thay đổi")
 else:
-    print("❌ Không tìm thấy 'options:'")
+    print("❌ Không tìm thấy block 'options:'")
 EOF
 
           python3 /tmp/update.py
