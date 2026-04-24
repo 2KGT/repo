@@ -21,63 +21,65 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Theos
+      - name: 🛠️ Setup Theos
         uses: Randomblock1/theos-action@v1
 
-      - name: Set Project Metadata & Build
+      - name: ⚙️ Set Project Metadata & Build
         id: metadata
         run: |
           DISPLAY_NAME="${{ github.event.inputs.project }}"
           if [ "$DISPLAY_NAME" = "(none)" ] || [ -z "$DISPLAY_NAME" ]; then exit 1; fi
 
+          # CHỈ QUÉT TRONG src/build-tweaks/
           TARGET_CONTROL=$(grep -lE "^Name:.*$DISPLAY_NAME" src/build-tweaks/*/control | head -n 1)
+          if [ -z "$TARGET_CONTROL" ]; then echo "❌ Không tìm thấy dự án!"; exit 1; fi
+
           DIR=$(dirname "$TARGET_CONTROL")
           CONTROL="$DIR/control"
-          
-          # 1. METADATA
-          TWEAK_NAME=$(grep "^Name:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//;s/ *$//')
-          SAFE_NAME=$(echo "$TWEAK_NAME" | tr -d '()' | tr -d ' ') 
+          SAFE_NAME=$(grep "^Name:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           REPO_URL="https://raw.githubusercontent.com/${{ github.repository }}/main"
-          
+
+          # 1. TỰ ĐỘNG GÁN TRƯỜNG THIẾU
           sed -i '' "/^SileoDepiction:/d" "$CONTROL"
           echo "SileoDepiction: ${REPO_URL}/depictions/${SAFE_NAME}.json" >> "$CONTROL"
+          if ! grep -q "^Section:" "$CONTROL"; then echo "Section: Tweaks" >> "$CONTROL"; fi
+          if ! grep -q "^Architecture:" "$CONTROL"; then echo "Architecture: iphoneos-arm" >> "$CONTROL"; fi
 
-          # 2. TĂNG VERSION 4 SỐ (0.0.0.0)
+          # 2. NHẢY SỐ VERSION (ĐỊNH DẠNG 4 SỐ 0.0.0.0)
           current_ver=$(grep "^Version:" "$CONTROL" | cut -d' ' -f2)
-          if [[ -z "$current_ver" || $(echo "$current_ver" | tr -cd '.' | wc -c) -lt 3 ]]; then
-            current_ver="0.0.0.0"
-          fi
+          [[ "$current_ver" != *.*.*.* ]] && current_ver="0.0.0.0"
           IFS='.' read -r v1 v2 v3 v4 <<< "$current_ver"
           new_ver="$v1.$v2.$v3.$((v4 + 1))"
           sed -i '' "s/^Version: .*/Version: $new_ver/" "$CONTROL"
           
-          echo "proj_name=$(basename "$DIR")" >> $GITHUB_OUTPUT
-          echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
-          echo "safe_name=$SAFE_NAME" >> $GITHUB_OUTPUT
-          echo "tweak_name=$TWEAK_NAME" >> $GITHUB_OUTPUT
-          echo "proj_ver=$new_ver" >> $GITHUB_OUTPUT
-          echo "proj_desc=$(grep "^Description:" "$CONTROL" | cut -d: -f2-)" >> $GITHUB_OUTPUT
-
-          # 3. QUÉT CHANGELOG
+          # 3. QUÉT CHANGELOG TỪ CODE
           SOURCE=$(find "$DIR" -maxdepth 1 \( -name "*.x" -o -name "*.xm" \) | head -n 1)
           news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || echo "- Cập nhật hệ thống")
           fixes=$(grep "// FIX:" "$SOURCE" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || echo "- Tối ưu hóa")
+          
+          # Output dữ liệu cho các bước sau
+          echo "proj_name=$(basename "$DIR")" >> $GITHUB_OUTPUT
+          echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
+          echo "safe_name=$SAFE_NAME" >> $GITHUB_OUTPUT
+          echo "tweak_name=$(grep "^Name:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')" >> $GITHUB_OUTPUT
+          echo "proj_ver=$new_ver" >> $GITHUB_OUTPUT
+          echo "proj_desc=$(grep "^Description:" "$CONTROL" | cut -d: -f2-)" >> $GITHUB_OUTPUT
           echo "proj_changelog<<EOF" >> $GITHUB_OUTPUT
           echo -e "### ✨ Tính năng mới\n$news\n\n### 🐛 Sửa lỗi\n$fixes" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          # 4. BUILD
+          # 4. THỰC HIỆN BUILD
           make -C "$DIR" clean package FINALPACKAGE=1 || make -C "$DIR" package FINALPACKAGE=1
           mkdir -p deb_output
           find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           echo "deb_filename=$(basename $(ls deb_output/*.deb | head -n 1))" >> $GITHUB_OUTPUT
 
-      - name: Update Packages Index
+      - name: 📦 Update Packages Index
         run: |
           brew install dpkg
           mkdir -p debs
@@ -85,42 +87,48 @@ jobs:
           dpkg-scanpackages -m ./debs /dev/null > Packages
           bzip2 -fks Packages
 
-      - name: Commit & Push
+      - name: 🚀 Commit & Push Changes (Lưu Version mới)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           rm -rf theos/ .theos/ obj/
-          git add src/build-tweaks/ debs/ Packages Packages.bz2 depictions/
+          git add src/build-tweaks/ debs/ Packages Packages.bz2
           git commit -m "build(${{ steps.metadata.outputs.safe_name }}): v${{ steps.metadata.outputs.proj_ver }}" || echo "No changes"
           git push origin main
 
-      - name: Create Release
+      - name: 🎁 Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.metadata.outputs.proj_name }}-v${{ steps.metadata.outputs.proj_ver }}
+          name: "${{ steps.metadata.outputs.tweak_name }} - v${{ steps.metadata.outputs.proj_ver }}"
           files: deb_output/*.deb
+          body: |
+            ## 📝 Mô tả
+            > ${{ steps.metadata.outputs.proj_desc }}
+
+            ${{ steps.metadata.outputs.proj_changelog }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update Full Depictions JSON (Giữ nguyên logic của ông)
+      - name: 📱 Update Full Depictions JSON
         run: |
           mkdir -p depictions
           CONTROL="${{ steps.metadata.outputs.proj_dir }}/control"
           SAFE_NAME="${{ steps.metadata.outputs.safe_name }}"
           REPO_URL="https://raw.githubusercontent.com/${{ github.repository }}/main"
           
+          # Lấy thông tin metadata
           AUTHOR=$(grep "^Author:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
           MAINTAINER=$(grep "^Maintainer:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
           DEPENDS=$(grep "^Depends:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
-          [ -z "$AUTHOR" ] && AUTHOR="Unknown"
-          [ -z "$MAINTAINER" ] && MAINTAINER="Unknown"
+          [ -z "$AUTHOR" ] && AUTHOR="Kyic"
+          [ -z "$MAINTAINER" ] && MAINTAINER="Kyic"
           [ -z "$DEPENDS" ] && DEPENDS="mobilesubstrate"
           
+          # TỰ ĐỘNG QUÉT LINK MEDIA
           ICON_URL="${REPO_URL}/icons/${SAFE_NAME}.png"
-          BANNER_URL=""
-          [ -f "depictions/images/${SAFE_NAME}-banner.png" ] && BANNER_URL="${REPO_URL}/depictions/images/${SAFE_NAME}-banner.png"
-          VIDEO_URL=""
-          [ -f "depictions/images/${SAFE_NAME}.mp4" ] && VIDEO_URL="${REPO_URL}/depictions/images/${SAFE_NAME}.mp4"
+          BANNER_URL=""; [ -f "depictions/images/${SAFE_NAME}-banner.png" ] && BANNER_URL="${REPO_URL}/depictions/images/${SAFE_NAME}-banner.png"
+          VIDEO_URL=""; [ -f "depictions/images/${SAFE_NAME}.mp4" ] && VIDEO_URL="${REPO_URL}/depictions/images/${SAFE_NAME}.mp4"
 
           SCREENSHOTS_JSON=""
           for i in {1..5}; do
@@ -131,6 +139,7 @@ jobs:
             fi
           done
 
+          # GHI FILE JSON
           cat > depictions/${SAFE_NAME}.json << EOF
           {
             "name": "${{ steps.metadata.outputs.tweak_name }}",
@@ -150,5 +159,6 @@ jobs:
             "updated": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           }
           EOF
+          
           git add depictions/
           git commit -m "docs: update depiction for ${SAFE_NAME}" && git push origin main
