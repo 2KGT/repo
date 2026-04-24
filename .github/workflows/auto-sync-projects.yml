@@ -36,6 +36,8 @@ jobs:
 
           echo "[" > PROJECTS.json
           > new_opts.txt
+          echo "          - (none)" >> new_opts.txt   # thêm option mặc định
+
           COUNT=0
 
           find src/build-tweaks -name control -print0 | sort -z | while IFS= read -r -d '' filepath; do
@@ -73,6 +75,7 @@ with open('new_opts.txt', encoding='utf-8') as f:
 with open('.github/workflows/build-tweaks.yml', encoding='utf-8') as f:
     content = f.read()
 
+# Regex khớp block options
 pattern = r'(^\s*options:\s*\n)((?:\s*-\s+.+\n)*)'
 
 match = re.search(pattern, content, re.MULTILINE)
