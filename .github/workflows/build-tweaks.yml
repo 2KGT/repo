@@ -37,6 +37,7 @@ jobs:
             exit 1
           fi
 
+          # Dùng grep -lE và .* để bỏ qua dấu ngoặc khi tìm kiếm
           TARGET_CONTROL=$(grep -lE "Name:.*$DISPLAY_NAME" src/build-tweaks/*/control | head -n 1)
           if [ -z "$TARGET_CONTROL" ]; then
             echo "❌ Không tìm thấy file control cho: $DISPLAY_NAME"
@@ -47,6 +48,7 @@ jobs:
           PROJECT_FOLDER=$(basename "$DIR")
           CONTROL="$DIR/control"
           
+          # Lọc sạch dấu ngoặc () và khoảng trắng để làm tên file an toàn
           TWEAK_NAME=$(grep "^Name:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//;s/ *$//')
           SAFE_NAME=$(echo "$TWEAK_NAME" | tr -d '()' | tr -d ' ') 
           DEPICTION_URL="https://raw.githubusercontent.com/2KGT/repo/main/depictions/${SAFE_NAME}.json"
@@ -62,12 +64,14 @@ jobs:
           echo "safe_name=$SAFE_NAME" >> $GITHUB_OUTPUT
           echo "tweak_name=$TWEAK_NAME" >> $GITHUB_OUTPUT
 
+          # --- TỰ ĐỘNG TĂNG VERSION ---
           current_ver=$(grep "^Version:" "$CONTROL" | cut -d' ' -f2)
           IFS='.' read -r major minor patch <<< "$current_ver"
           new_ver="$major.$minor.$((patch + 1))"
           sed -i '' "s/Version: $current_ver/Version: $new_ver/" "$CONTROL"
           echo "proj_ver=$new_ver" >> $GITHUB_OUTPUT
 
+          # --- QUÉT CHỨC NĂNG (CHANGELOG) ---
           SOURCE=$(find "$DIR" -maxdepth 1 \( -name "*.x" -o -name "*.xm" \) | head -n 1)
           if [ -n "$SOURCE" ] && [ -f "$SOURCE" ]; then
             news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || true)
@@ -84,6 +88,7 @@ jobs:
           echo -e "### ✨ Tính năng mới\n$news\n\n### 🐛 Sửa lỗi\n$fixes" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+          # --- SẢN XUẤT ---
           make -C "$DIR" clean package FINALPACKAGE=1 || make -C "$DIR" package FINALPACKAGE=1
           mkdir -p deb_output
           find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
@@ -104,20 +109,27 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 1. TỔNG VỆ SINH XƯỞNG (Quan trọng nhất)
-          rm -rf theos/ .theos/ obj/
-          find . -name "obj" -type d -exec rm -rf {} +
-          find . -name "packages" -type d -exec rm -rf {} +
-          
-          # 2. Reset cứng để Git không thấy file rác "cấn"
-          git reset --hard HEAD
-          git clean -fdx -e deb_output/ -e debs/ -e Packages -e Packages.bz2 -e src/build-tweaks/ -e depictions/
+          # 1. Dọn xưởng (Dọn sạch rác Theos phát sinh)
+          rm -rf theos/ .theos/ obj/ packages/
+          find . -name "obj" -type d -exec rm -rf {} + 2>/dev/null || true
+          find . -name "packages" -type d -exec rm -rf {} + 2>/dev/null || true
+          find . -name ".DS_Store" -delete 2>/dev/null || true
 
-          # 3. Niêm phong hàng hóa thành phẩm
-          git add debs/ Packages Packages.bz2 src/build-tweaks/
-          git diff --cached --quiet || git commit -m "build(${{ steps.metadata.outputs.safe_name }}): v${{ steps.metadata.outputs.proj_ver }}"
+          # 2. Reset + Clean mạnh tay (Giữ lại các tệp sản phẩm quan trọng)
+          git reset --hard HEAD
+          git clean -fdx -e deb_output/ -e debs/ -e Packages -e Packages.bz2 -e src/build-tweaks/ -e depictions/ 2>/dev/null || true
+
+          # 3. Add thành phẩm
+          git add debs/ Packages Packages.bz2 src/build-tweaks/ depictions/ 2>/dev/null || true
           
-          # 4. Thông quan (Kéo và Đẩy)
+          if git diff --cached --quiet; then
+            echo "ℹ️ Không có thay đổi nào cần commit."
+          else
+            git commit -m "build(${{ steps.metadata.outputs.safe_name }}): v${{ steps.metadata.outputs.proj_ver }}"
+            echo "✅ Đã commit thay đổi."
+          fi
+
+          # 4. Thông quan (Pull & Push)
           git pull origin main --rebase
           git push origin main
 
@@ -142,6 +154,7 @@ jobs:
           SAFE_NAME="${{ steps.metadata.outputs.safe_name }}"
           REPO_URL="https://raw.githubusercontent.com/2KGT/repo/main"
           
+          # Metadata cho JSON
           AUTHOR=$(grep "^Author:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
           MAINTAINER=$(grep "^Maintainer:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
           DEPENDS=$(grep "^Depends:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
@@ -150,6 +163,7 @@ jobs:
           [ -z "$MAINTAINER" ] && MAINTAINER="Unknown"
           [ -z "$DEPENDS" ] && DEPENDS="mobilesubstrate"
           
+          # Xử lý hình ảnh/video
           ICON_URL="${REPO_URL}/icons/${SAFE_NAME}.png"
           BANNER_URL=""
           [ -f "depictions/images/${SAFE_NAME}-banner.png" ] && BANNER_URL="${REPO_URL}/depictions/images/${SAFE_NAME}-banner.png"
@@ -165,6 +179,7 @@ jobs:
             fi
           done
 
+          # Tạo file JSON
           cat > depictions/${SAFE_NAME}.json << EOF
           {
             "name": "${{ steps.metadata.outputs.tweak_name }}",
@@ -188,7 +203,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Dọn dẹp rác lần cuối để đảm bảo JSON lên kệ đẹp đẽ
+          # Dọn dẹp lần cuối
           rm -rf theos/ .theos/ obj/
           git add depictions/
           git diff --cached --quiet || git commit -m "docs: update dynamic depiction for ${SAFE_NAME}"
