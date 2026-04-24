@@ -16,12 +16,9 @@
 
 ---
 
-## 🚀 Danh sách dự án tự động
-*Dưới đây là danh sách các dự án đang được duy trì trong Repo, được cập nhật tự động mỗi khi có phiên bản mới.*
+## 🚀 Dự án & Kho lưu trữ
+*Bấm vào nút bên dưới để xem danh sách dự án được phân loại tự động.*
 
-| Tên Project | Phiên bản | Đường dẫn |
-|---|---|---|
-| **AutoAC** | `1.0.0` | `src/build-tweaks/AutoAC` |
 ---
 
 ## 🛠️ Chi tiết các Tweak nổi bật
@@ -29,7 +26,7 @@
 ### ✨ AutoAC
 **Tweak YouTube mạnh mẽ**
 
-* **Xoá bộ nhớ đệm:** Tự động dọn dẹp cache YouTube thông minh.
+* **Xóa bộ nhớ đệm:** Tự động dọn dẹp cache YouTube thông minh.
 * **Chặn quảng cáo:** Ẩn các banner quảng cáo gây phiền nhiễu.
 * **Tương thích:** Hoạt động ổn định trên cả thiết bị Jailbreak và Non-Jailbreak.
 
