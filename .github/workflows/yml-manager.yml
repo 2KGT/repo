@@ -3,15 +3,18 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        type: choice
         description: 'Chon chuc nang'
+        type: choice
+        required: true
         options:
           - backup
           - restore
           - delete
       target_file:
-        type: choice
         description: 'Chon ban sao luu'
+        type: choice
+        required: false
+        default: '(none)'
         options:
           # OPTIONS-START
           - '(none)'
@@ -33,7 +36,7 @@ jobs:
             for f in .github/workflows/*.yml; do
               name=$(basename "$f" .yml)
               mkdir -p "src/sync-yml/$name"
-              count=$(ls "src/sync-yml/$name" | wc -l)
+              count=$(ls "src/sync-yml/$name" 2>/dev/null | wc -l)
               new_num=$((count + 1))
               cp "$f" "src/sync-yml/$name/$new_num-$name.yml"
             done
