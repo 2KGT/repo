@@ -1,17 +1,16 @@
 name: Build Multi Tweak
-
 on:
   workflow_dispatch:
     inputs:
       action:
-        description: '🚀 Chọn chức năng'
+        description: '🚀 Chon chuc nang'
         type: choice
         default: 'Build Project'
         options:
           - 'Build Project'
           - 'Scan Options'
       project:
-        description: '🧱 Chọn dự án'
+        description: '🧱 Chon du an'
         required: true
         type: choice
         default: '(none)'
@@ -19,101 +18,63 @@ on:
           # OPTIONS-START
           - '(none)'
           # OPTIONS-END
-
 jobs:
   process:
     runs-on: macos-latest
     permissions:
       contents: write
       workflows: write
-
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      # --- CHỨC NĂNG 1: QUÉT VÀ CẬP NHẬT (Scan options) ---
-      - name: 🔍 Quét và đồng bộ dự án
-        if: github.event.inputs.action == 'Scan options'
+      - name: 🔍 Scan Options
+        if: github.event.inputs.action == 'Scan Options'
         run: |
-          echo "✨ [START] Bắt đầu quá trình Scan options..."
-          echo "📁 Đang quét thư mục: src/build-tweaks/"
-          
-          # Tìm tất cả các file control và bốc tên dự án
+          echo "✨ [START] Scanning..."
           PROJECTS=$(grep -h "^Name:" src/build-tweaks/*/control | cut -d: -f2- | sed 's/^ *//;s/ *$//' | sort | uniq)
-          
-          if [ -z "$PROJECTS" ]; then
-            echo "⚠️ [WARN] Không tìm thấy dự án nào có file 'control' hợp lệ!"
-            exit 0
-          fi
-
-          echo "📝 Tìm thấy các dự án:"
-          echo "$PROJECTS"
-
-          # Tạo danh sách định dạng YAML
+          if [ -z "$PROJECTS" ]; then echo "⚠️ No projects found!"; exit 0; fi
           LIST="- '(none)'"
           while IFS= read -r line; do
-            echo "➕ Đang thêm: $line"
-            LIST="$LIST\n          - '$line'"
+            [ -n "$line" ] && LIST="$LIST\n          - '$line'"
           done <<< "$PROJECTS"
-
-          # Tự ghi đè vào chính file này
-  FILE=".github/workflows/build-multi-tweak.yml"
-          echo "💾 Đang ghi dữ liệu vào $FILE..."
-          
-          # Dùng sed chuẩn MacOS để dán danh sách vào giữa 2 Marker
+          FILE=".github/workflows/build-multi-tweak.yml"
           sed -i '' "/# OPTIONS-START/,/# OPTIONS-END/ { /# OPTIONS-START/ n; /# OPTIONS-END/ ! d; }" "$FILE"
           sed -i '' "/# OPTIONS-START/ a\\
           $LIST" "$FILE"
-
-          echo "🚀 [PUSH] Đang đẩy thay đổi lên Repo..."
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           git add "$FILE"
-          git commit -m "chore: scan and update build options" || echo "Không có thay đổi mới"
-          git pull --rebase origin main
+          git commit -m "chore: scan and update options" || echo "No changes"
           git push origin main
-          echo "✅ [SUCCESS] Đã cập nhật Menu thành công. Hãy F5 lại trang web!"
-
-      # --- CHỨC NĂNG 2: BUILD TWEAK (Build Project) ---
       - name: 🛠️ Setup Theos
         if: github.event.inputs.action == 'Build Project'
         uses: Randomblock1/theos-action@v1
-
       - name: ⚙️ Build Logic
         if: github.event.inputs.action == 'Build Project'
         id: metadata
         run: |
           DISPLAY_NAME="${{ github.event.inputs.project }}"
-          if [ "$DISPLAY_NAME" = "(none)" ]; then echo "Vui lòng chọn dự án!"; exit 1; fi
-
-          echo "🏗️ Đang chuẩn bị build: $DISPLAY_NAME"
+          if [ "$DISPLAY_NAME" = "(none)" ]; then exit 1; fi
           TARGET_CONTROL=$(grep -lE "^Name:.*$DISPLAY_NAME" src/build-tweaks/*/control | head -n 1)
-          
           DIR=$(dirname "$TARGET_CONTROL")
           CONTROL="$DIR/control"
           SAFE_NAME=$(grep "^Name:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
-          
-          # Tăng version, build và copy deb (Giữ nguyên logic cũ của ông)
           current_ver=$(grep "^Version:" "$CONTROL" | cut -d' ' -f2)
           [[ "$current_ver" != *.*.*.* ]] && current_ver="0.0.0.0"
           IFS='.' read -r v1 v2 v3 v4 <<< "$current_ver"
           new_ver="$v1.$v2.$v3.$((v4 + 1))"
           sed -i '' "s/^Version: .*/Version: $new_ver/" "$CONTROL"
-          
           echo "proj_name=$(basename "$DIR")" >> $GITHUB_OUTPUT
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
           echo "safe_name=$SAFE_NAME" >> $GITHUB_OUTPUT
           echo "tweak_name=$DISPLAY_NAME" >> $GITHUB_OUTPUT
           echo "proj_ver=$new_ver" >> $GITHUB_OUTPUT
-          
           make -C "$DIR" clean package FINALPACKAGE=1 || make -C "$DIR" package FINALPACKAGE=1
           mkdir -p deb_output
           find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
-          echo "deb_filename=$(basename $(ls deb_output/*.deb | head -n 1))" >> $GITHUB_OUTPUT
-
-      - name: 📦 Cập nhật Repo & Push
+      - name: 📦 Update Repo
         if: github.event.inputs.action == 'Build Project'
         run: |
           brew install dpkg
@@ -121,7 +82,6 @@ jobs:
           cp -v deb_output/*.deb debs/ 2>/dev/null || true
           dpkg-scanpackages -m ./debs /dev/null > Packages
           bzip2 -fks Packages
-          
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           rm -rf theos/ .theos/ obj/
