@@ -6,9 +6,7 @@ on:
         description: '🚀 Chon chuc nang'
         type: choice
         default: 'Build Project'
-        options:
-          - 'Build Project'
-          - 'Scan Options'
+        options: [Build Project, Scan Options]
       project:
         description: '🧱 Chon du an'
         required: true
@@ -25,28 +23,25 @@ jobs:
       contents: write
       workflows: write
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: 🔍 Scan Options
         if: github.event.inputs.action == 'Scan Options'
         run: |
-          echo "✨ [START] Scanning..."
-          PROJECTS=$(grep -h "^Name:" src/build-tweaks/*/control | cut -d: -f2- | sed 's/^ *//;s/ *$//' | sort | uniq)
-          if [ -z "$PROJECTS" ]; then echo "⚠️ No projects found!"; exit 0; fi
+          PROJS=$(grep -h "^Name:" src/build-tweaks/*/control | cut -d: -f2- | sed 's/^ *//;s/ *$//' | sort | uniq)
           LIST="- '(none)'"
           while IFS= read -r line; do
             [ -n "$line" ] && LIST="$LIST\n          - '$line'"
-          done <<< "$PROJECTS"
-          FILE=".github/workflows/build-multi-tweak.yml"
+          done <<< "$PROJS"
+          FILE=".github/workflows/build-tweaks.yml"
           sed -i '' "/# OPTIONS-START/,/# OPTIONS-END/ { /# OPTIONS-START/ n; /# OPTIONS-END/ ! d; }" "$FILE"
           sed -i '' "/# OPTIONS-START/ a\\
           $LIST" "$FILE"
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           git add "$FILE"
-          git commit -m "chore: scan and update options" || echo "No changes"
+          git commit -m "chore: update options" || exit 0
           git push origin main
       - name: 🛠️ Setup Theos
         if: github.event.inputs.action == 'Build Project'
@@ -55,37 +50,30 @@ jobs:
         if: github.event.inputs.action == 'Build Project'
         id: metadata
         run: |
-          DISPLAY_NAME="${{ github.event.inputs.project }}"
-          if [ "$DISPLAY_NAME" = "(none)" ]; then exit 1; fi
-          TARGET_CONTROL=$(grep -lE "^Name:.*$DISPLAY_NAME" src/build-tweaks/*/control | head -n 1)
-          DIR=$(dirname "$TARGET_CONTROL")
-          CONTROL="$DIR/control"
-          SAFE_NAME=$(grep "^Name:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
-          current_ver=$(grep "^Version:" "$CONTROL" | cut -d' ' -f2)
-          [[ "$current_ver" != *.*.*.* ]] && current_ver="0.0.0.0"
-          IFS='.' read -r v1 v2 v3 v4 <<< "$current_ver"
-          new_ver="$v1.$v2.$v3.$((v4 + 1))"
-          sed -i '' "s/^Version: .*/Version: $new_ver/" "$CONTROL"
-          echo "proj_name=$(basename "$DIR")" >> $GITHUB_OUTPUT
-          echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
-          echo "safe_name=$SAFE_NAME" >> $GITHUB_OUTPUT
-          echo "tweak_name=$DISPLAY_NAME" >> $GITHUB_OUTPUT
-          echo "proj_ver=$new_ver" >> $GITHUB_OUTPUT
+          DP_NAME="${{ github.event.inputs.project }}"
+          [ "$DP_NAME" = "(none)" ] && exit 1
+          CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
+          DIR=$(dirname "$CTRL")
+          SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
+          VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
+          [[ "$VER" != *.*.*.* ]] && VER="0.0.0.0"
+          IFS='.' read -r v1 v2 v3 v4 <<< "$VER"
+          NVER="$v1.$v2.$v3.$((v4 + 1))"
+          sed -i '' "s/^Version: .*/Version: $NVER/" "$CTRL"
+          echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
+          echo "proj_ver=$NVER" >> $GITHUB_OUTPUT
           make -C "$DIR" clean package FINALPACKAGE=1 || make -C "$DIR" package FINALPACKAGE=1
-          mkdir -p deb_output
-          find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
+          mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
       - name: 📦 Update Repo
         if: github.event.inputs.action == 'Build Project'
         run: |
           brew install dpkg
-          mkdir -p debs
-          cp -v deb_output/*.deb debs/ 2>/dev/null || true
-          dpkg-scanpackages -m ./debs /dev/null > Packages
-          bzip2 -fks Packages
+          mkdir -p debs && cp -v deb_output/*.deb debs/ 2>/dev/null || true
+          dpkg-scanpackages -m ./debs /dev/null > Packages && bzip2 -fks Packages
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           rm -rf theos/ .theos/ obj/
           git add .
-          git commit -m "build(${{ steps.metadata.outputs.safe_name }}): v${{ steps.metadata.outputs.proj_ver }}" || echo "No changes"
+          git commit -m "build: v${{ steps.metadata.outputs.proj_ver }}" || exit 0
           git pull --rebase origin main
           git push origin main
