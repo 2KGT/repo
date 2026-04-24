@@ -11,7 +11,7 @@ on:
         options:
           # OPTIONS-START
           - '(none)'
-          - 'AutoAC'
+          
           # OPTIONS-END
 
 jobs:
