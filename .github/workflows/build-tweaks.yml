@@ -59,7 +59,7 @@ jobs:
           done <<< "$PROJECTS"
 
           # Tự ghi đè vào chính file này
-         FILE=".github/workflows/build-multi-tweak.yml"
+        FILE=".github/workflows/build-multi-tweak.yml"
           echo "💾 Đang ghi dữ liệu vào $FILE..."
           
           # Dùng sed chuẩn MacOS để dán danh sách vào giữa 2 Marker
