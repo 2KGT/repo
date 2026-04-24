@@ -33,61 +33,40 @@ jobs:
         id: metadata
         run: |
           DISPLAY_NAME="${{ github.event.inputs.project }}"
-          
-          if [ "$DISPLAY_NAME" = "(none)" ] || [ -z "$DISPLAY_NAME" ]; then
-            echo "❌ Bạn chưa chọn dự án!"
-            exit 1
-          fi
+          if [ "$DISPLAY_NAME" = "(none)" ] || [ -z "$DISPLAY_NAME" ]; then exit 1; fi
 
-          # CHỈ QUÉT TRONG src/build-tweaks/
           TARGET_CONTROL=$(grep -lE "^Name:.*$DISPLAY_NAME" src/build-tweaks/*/control | head -n 1)
-          
-          if [ -z "$TARGET_CONTROL" ]; then
-            echo "❌ Không tìm thấy file control cho dự án: $DISPLAY_NAME"
-            exit 1
-          fi
-
           DIR=$(dirname "$TARGET_CONTROL")
-          PROJECT_FOLDER=$(basename "$DIR")
           CONTROL="$DIR/control"
           
-          # 1. XỬ LÝ METADATA & LINK DEPICTION
+          # 1. METADATA
           TWEAK_NAME=$(grep "^Name:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//;s/ *$//')
           SAFE_NAME=$(echo "$TWEAK_NAME" | tr -d '()' | tr -d ' ') 
           REPO_URL="https://raw.githubusercontent.com/${{ github.repository }}/main"
-          DEPICTION_URL="${REPO_URL}/depictions/${SAFE_NAME}.json"
           
-          # Gán SileoDepiction và các trường thiếu
           sed -i '' "/^SileoDepiction:/d" "$CONTROL"
-          echo "SileoDepiction: $DEPICTION_URL" >> "$CONTROL"
-          if ! grep -q "^Section:" "$CONTROL"; then echo "Section: Tweaks" >> "$CONTROL"; fi
-          if ! grep -q "^Architecture:" "$CONTROL"; then echo "Architecture: iphoneos-arm" >> "$CONTROL"; fi
+          echo "SileoDepiction: ${REPO_URL}/depictions/${SAFE_NAME}.json" >> "$CONTROL"
 
-          # 2. TĂNG VERSION TỰ ĐỘNG (NHÀY SỐ THỰC TẾ)
+          # 2. TĂNG VERSION 4 SỐ (0.0.0.0)
           current_ver=$(grep "^Version:" "$CONTROL" | cut -d' ' -f2)
-          IFS='.' read -r major minor patch <<< "$current_ver"
-          new_ver="$major.$minor.$((patch + 1))"
-          sed -i '' "s/Version: $current_ver/Version: $new_ver/" "$CONTROL"
+          if [[ -z "$current_ver" || $(echo "$current_ver" | tr -cd '.' | wc -c) -lt 3 ]]; then
+            current_ver="0.0.0.0"
+          fi
+          IFS='.' read -r v1 v2 v3 v4 <<< "$current_ver"
+          new_ver="$v1.$v2.$v3.$((v4 + 1))"
+          sed -i '' "s/^Version: .*/Version: $new_ver/" "$CONTROL"
           
-          echo "proj_name=$PROJECT_FOLDER" >> $GITHUB_OUTPUT
+          echo "proj_name=$(basename "$DIR")" >> $GITHUB_OUTPUT
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
           echo "safe_name=$SAFE_NAME" >> $GITHUB_OUTPUT
           echo "tweak_name=$TWEAK_NAME" >> $GITHUB_OUTPUT
           echo "proj_ver=$new_ver" >> $GITHUB_OUTPUT
-
-          # 3. QUÉT CHANGELOG (NEW/FIX)
-          SOURCE=$(find "$DIR" -maxdepth 1 \( -name "*.x" -o -name "*.xm" \) | head -n 1)
-          if [ -n "$SOURCE" ] && [ -f "$SOURCE" ]; then
-            news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || true)
-            fixes=$(grep "// FIX:" "$SOURCE" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || true)
-            [ -z "$news" ] && news="- Cập nhật hệ thống"
-            [ -z "$fixes" ] && fixes="- Tối ưu hóa"
-            sed -i '' '/\/\/ NEW:/d; /\/\/ FIX:/d' "$SOURCE"
-          else
-            news="- Cập nhật mới"; fixes="- Sửa lỗi nhỏ"
-          fi
-          
           echo "proj_desc=$(grep "^Description:" "$CONTROL" | cut -d: -f2-)" >> $GITHUB_OUTPUT
+
+          # 3. QUÉT CHANGELOG
+          SOURCE=$(find "$DIR" -maxdepth 1 \( -name "*.x" -o -name "*.xm" \) | head -n 1)
+          news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || echo "- Cập nhật hệ thống")
+          fixes=$(grep "// FIX:" "$SOURCE" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || echo "- Tối ưu hóa")
           echo "proj_changelog<<EOF" >> $GITHUB_OUTPUT
           echo -e "### ✨ Tính năng mới\n$news\n\n### 🐛 Sửa lỗi\n$fixes" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -106,31 +85,24 @@ jobs:
           dpkg-scanpackages -m ./debs /dev/null > Packages
           bzip2 -fks Packages
 
-      - name: Commit & Push Changes
+      - name: Commit & Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           rm -rf theos/ .theos/ obj/
-          git add src/build-tweaks/ debs/ Packages Packages.bz2
+          git add src/build-tweaks/ debs/ Packages Packages.bz2 depictions/
           git commit -m "build(${{ steps.metadata.outputs.safe_name }}): v${{ steps.metadata.outputs.proj_ver }}" || echo "No changes"
-          git pull origin main --rebase
           git push origin main
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.metadata.outputs.proj_name }}-v${{ steps.metadata.outputs.proj_ver }}
-          name: "${{ steps.metadata.outputs.tweak_name }} - v${{ steps.metadata.outputs.proj_ver }}"
           files: deb_output/*.deb
-          body: |
-            ## 📝 Mô tả
-            > ${{ steps.metadata.outputs.proj_desc }}
-
-            ${{ steps.metadata.outputs.proj_changelog }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update Full Depictions JSON (Icon/Banner/Screenshots/Video)
+      - name: Update Full Depictions JSON (Giữ nguyên logic của ông)
         run: |
           mkdir -p depictions
           CONTROL="${{ steps.metadata.outputs.proj_dir }}/control"
@@ -144,14 +116,12 @@ jobs:
           [ -z "$MAINTAINER" ] && MAINTAINER="Unknown"
           [ -z "$DEPENDS" ] && DEPENDS="mobilesubstrate"
           
-          # TỰ ĐỘNG HOÁ LINK ẢNH & VIDEO
           ICON_URL="${REPO_URL}/icons/${SAFE_NAME}.png"
           BANNER_URL=""
           [ -f "depictions/images/${SAFE_NAME}-banner.png" ] && BANNER_URL="${REPO_URL}/depictions/images/${SAFE_NAME}-banner.png"
           VIDEO_URL=""
           [ -f "depictions/images/${SAFE_NAME}.mp4" ] && VIDEO_URL="${REPO_URL}/depictions/images/${SAFE_NAME}.mp4"
 
-          # QUÉT CHỤP MÀN HÌNH (1-5)
           SCREENSHOTS_JSON=""
           for i in {1..5}; do
             SS_PATH="depictions/images/${SAFE_NAME}${i}.png"
@@ -161,7 +131,6 @@ jobs:
             fi
           done
 
-          # GHI FILE JSON ĐẦY ĐỦ
           cat > depictions/${SAFE_NAME}.json << EOF
           {
             "name": "${{ steps.metadata.outputs.tweak_name }}",
@@ -181,6 +150,5 @@ jobs:
             "updated": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           }
           EOF
-          
           git add depictions/
           git commit -m "docs: update depiction for ${SAFE_NAME}" && git push origin main
