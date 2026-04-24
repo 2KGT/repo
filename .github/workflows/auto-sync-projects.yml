@@ -1,55 +1,43 @@
 name: Auto Sync Projects
-
 on:
   push:
     paths:
       - 'src/build-tweaks/**/control'
   workflow_dispatch:
-
 jobs:
   sync-menu:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
+      workflows: write
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: 🐍 Cập nhật Menu Build
+      - name: Update Menu Build
         run: |
           cat << 'EOF' > sync_menu.py
           import os, glob, re
-
-          # 1. Tìm tên dự án (Chỉ trong vùng cấm build-tweaks)
           names = ["(none)"]
-          for f in glob.glob('src/build-tweaks/*/control'):
+          for path in glob.glob('src/build-tweaks/*/control'):
               try:
-                  with open(f, 'r') as file:
-                      for line in file:
+                  with open(path, 'r', encoding='utf-8') as f:
+                      for line in f:
                           if line.startswith('Name:'):
                               n = line.split(':', 1)[1].strip()
                               if n: names.append(n)
               except: continue
-
           names.sort(key=lambda x: (x != "(none)", x.lower()))
-
-          # 2. Ghi đè vào file build-tweaks.yml
-          yml_path = '.github/workflows/build-tweaks.yml'
-          if os.path.exists(yml_path):
-              with open(yml_path, 'r') as f: content = f.read()
-              
+          yml = '.github/workflows/build-tweaks.yml'
+          if os.path.exists(yml):
+              with open(yml, 'r', encoding='utf-8') as f: content = f.read()
               opts = "\n".join([f"          - '{n}'" for n in names])
-              # Vẫn dùng Marker ở đây để robot biết chỗ dán vào file YML cho đúng
               new_content = re.sub(r'(# OPTIONS-START\n).*?(\n[ \t]*# OPTIONS-END)', f'\\1{opts}\\2', content, flags=re.DOTALL)
-              
-              with open(yml_path, 'w') as f: f.write(new_content)
+              with open(yml, 'w', encoding='utf-8') as f: f.write(new_content)
           EOF
           python3 sync_menu.py
-
-      - name: 🚀 Push Menu mới
+      - name: Push Changes
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .github/workflows/build-tweaks.yml
-          git diff --staged --quiet || (git commit -m "chore: sync build menu" && git push)
+          git diff --cached --quiet || (git commit -m "chore: sync build menu" && git push)
