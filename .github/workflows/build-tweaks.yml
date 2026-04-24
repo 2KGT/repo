@@ -39,7 +39,7 @@ jobs:
             exit 1
           fi
 
-          # SỬA ĐỔI: Quét trong src/ (bao gồm thư mục con) thay vì src/build-tweaks/
+          # TÌM KIẾM: Quét trong src/ (bao gồm thư mục con)
           TARGET_CONTROL=$(grep -lE "^Name:.*$DISPLAY_NAME" src/**/control | head -n 1)
           
           if [ -z "$TARGET_CONTROL" ]; then
@@ -51,32 +51,44 @@ jobs:
           PROJECT_FOLDER=$(basename "$DIR")
           CONTROL="$DIR/control"
           
-          # Xử lý metadata
+          # 1. XỬ LÝ METADATA CƠ BẢN
           TWEAK_NAME=$(grep "^Name:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//;s/ *$//')
           SAFE_NAME=$(echo "$TWEAK_NAME" | tr -d '()' | tr -d ' ') 
           REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
           USER_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f1)
           DEPICTION_URL="https://raw.githubusercontent.com/$USER_NAME/$REPO_NAME/main/depictions/${SAFE_NAME}.json"
           
+          # 2. TỰ ĐỘNG GÁN TRƯỜNG THIẾU (Gộp sửa)
+          # Gán SileoDepiction
           if grep -q "^SileoDepiction:" "$CONTROL"; then
             sed -i '' "s|^SileoDepiction:.*|SileoDepiction: $DEPICTION_URL|" "$CONTROL"
           else
             echo "SileoDepiction: $DEPICTION_URL" >> "$CONTROL"
           fi
 
-          echo "proj_name=$PROJECT_FOLDER" >> $GITHUB_OUTPUT
-          echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
-          echo "safe_name=$SAFE_NAME" >> $GITHUB_OUTPUT
-          echo "tweak_name=$TWEAK_NAME" >> $GITHUB_OUTPUT
+          # Gán Section (Nếu chưa có)
+          if ! grep -q "^Section:" "$CONTROL"; then
+            echo "Section: Tweaks" >> "$CONTROL"
+          fi
 
-          # --- TỰ ĐỘNG TĂNG VERSION ---
+          # Gán Architecture (Nếu chưa có)
+          if ! grep -q "^Architecture:" "$CONTROL"; then
+            echo "Architecture: iphoneos-arm" >> "$CONTROL"
+          fi
+
+          # 3. TỰ ĐỘNG TĂNG VERSION (Nhảy số thực tế)
           current_ver=$(grep "^Version:" "$CONTROL" | cut -d' ' -f2)
           IFS='.' read -r major minor patch <<< "$current_ver"
           new_ver="$major.$minor.$((patch + 1))"
           sed -i '' "s/Version: $current_ver/Version: $new_ver/" "$CONTROL"
+          
+          echo "proj_name=$PROJECT_FOLDER" >> $GITHUB_OUTPUT
+          echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
+          echo "safe_name=$SAFE_NAME" >> $GITHUB_OUTPUT
+          echo "tweak_name=$TWEAK_NAME" >> $GITHUB_OUTPUT
           echo "proj_ver=$new_ver" >> $GITHUB_OUTPUT
 
-          # --- QUÉT CHỨC NĂNG (CHANGELOG) ---
+          # 4. QUÉT CHANGELOG (NEW/FIX)
           SOURCE=$(find "$DIR" -maxdepth 1 \( -name "*.x" -o -name "*.xm" \) | head -n 1)
           if [ -n "$SOURCE" ] && [ -f "$SOURCE" ]; then
             news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || true)
@@ -93,7 +105,7 @@ jobs:
           echo -e "### ✨ Tính năng mới\n$news\n\n### 🐛 Sửa lỗi\n$fixes" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          # --- BUILD ---
+          # 5. THỰC HIỆN BUILD
           make -C "$DIR" clean package FINALPACKAGE=1 || make -C "$DIR" package FINALPACKAGE=1
           mkdir -p deb_output
           find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
@@ -114,16 +126,16 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Dọn dẹp rác theos
+          # Dọn rác build
           rm -rf theos/ .theos/ obj/ packages/
           find . -name "obj" -type d -exec rm -rf {} + 2>/dev/null || true
           find . -name "packages" -type d -exec rm -rf {} + 2>/dev/null || true
 
-          # SỬA ĐỔI: Loại trừ src/ khỏi việc reset mạnh tay để giữ lại version mới tăng
+          # LƯU Ý: Add src/ để lưu vĩnh viễn Version mới và Section mới
           git add src/ debs/ Packages Packages.bz2 depictions/
           
           if git diff --cached --quiet; then
-            echo "ℹ️ Không có thay đổi nào cần commit."
+            echo "ℹ️ Không có thay đổi."
           else
             git commit -m "build(${{ steps.metadata.outputs.safe_name }}): v${{ steps.metadata.outputs.proj_ver }}"
             git pull origin main --rebase
