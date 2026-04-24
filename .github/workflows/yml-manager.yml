@@ -3,18 +3,15 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'Chon chuc nang'
         type: choice
-        required: true
+        description: 'Chon chuc nang'
         options:
           - backup
           - restore
           - delete
       target_file:
-        description: 'Chon ban sao luu'
         type: choice
-        required: false
-        default: '(none)'
+        description: 'Chon ban sao luu'
         options:
           # OPTIONS-START
           - '(none)'
@@ -24,7 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      workflows: write
     steps:
       - uses: actions/checkout@v4
       - name: Run Logic
