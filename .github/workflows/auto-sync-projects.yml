@@ -23,16 +23,16 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: ⚙️ Chạy Script Dashboard 3 Cấp
+      - name: ⚙️ Chạy Script Dashboard (Chống Spam)
         run: |
           cat << 'EOF' > sync_projects.py
           import os
           import glob
-          import json
           import re
 
-          tweaks, apps, new_projs, all_projs = [], [], [], []
+          tweaks, apps, new_projs = [], [], []
 
+          # 1. Quét dự án
           for path in glob.glob('src/**/control', recursive=True):
               name, version, section = None, '1.0.0', None
               try:
@@ -45,51 +45,38 @@ jobs:
               
               if name:
                   dir_path = os.path.dirname(path)
-                  all_projs.append({'name': name, 'version': version, 'path': dir_path})
                   item = f"| **{name}** | `{version}` | [📂 Source]({dir_path}) |"
-                  
                   if section is None: new_projs.append(item)
                   elif 'App' in section: apps.append(item)
                   else: tweaks.append(item)
-
-          all_projs.sort(key=lambda x: x['name'].lower())
 
           def make_table(rows):
               if not rows: return ""
               return "| Dự án | Phiên bản | Link |\n|:---|:---:|:---:|\n" + "\n".join(rows)
 
-          new_section = f"### ✨ DỰ ÁN MỚI (CHỜ BUILD)\n{make_table(new_projs)}\n" if new_projs else ""
-          tweak_section = f"### 🛠️ TWEAKS\n{make_table(tweaks)}\n" if tweaks else ""
-          app_section = f"### 📱 APPS\n{make_table(apps)}\n" if apps else ""
+          # 2. Tạo nội dung
+          dash_body = ""
+          if new_projs: dash_body += f"### ✨ DỰ ÁN MỚI (CHỜ BUILD)\n{make_table(new_projs)}\n\n"
+          if tweaks: dash_body += f"### 🛠️ TWEAKS\n{make_table(tweaks)}\n\n"
+          if apps: dash_body += f"### 📱 APPS\n{make_table(apps)}\n\n"
+          
+          if not dash_body: dash_body = "> ⚠️ Chưa có dự án nào trong src/"
 
-          dashboard = f"<details>\n<summary><b>🚀 Xem danh sách dự án</b></summary>\n\n{new_section}\n{tweak_section}\n{app_section}\n</details>"
+          dashboard = f"<details>\n<summary><b>🚀 BẤM VÀO ĐÂY ĐỂ XEM DANH SÁCH DỰ ÁN</b></summary>\n<br>\n\n{dash_body}\n</details>"
 
-          # Cập nhật README
+          # 3. Ghi vào README (Xóa cũ - Ghi mới)
           readme_path = 'README.md'
           if os.path.exists(readme_path):
-              with open(readme_path, 'r', encoding='utf-8') as f: content = f.read()
-              pattern = r'().*?()'
-              if re.search(pattern, content, flags=re.DOTALL):
-                  new_content = re.sub(pattern, f'\\1\n{dashboard}\n\\2', content, flags=re.DOTALL)
-                  with open(readme_path, 'w', encoding='utf-8') as f: f.write(new_content)
-
-          # Đồng bộ build-tweaks.yml
-          target_yml = '.github/workflows/build-tweaks.yml'
-          if os.path.exists(target_yml):
-              options = ['(none)'] + [p['name'] for p in all_projs]
-              with open(target_yml, 'r', encoding='utf-8') as f: yml_content = f.read()
-              match = re.search(r'([ \t]*)# OPTIONS-START', yml_content)
-              indent = match.group(1) if match else '          '
-              yml_opts_str = '\n'.join([f"{indent}- '{opt}'" for opt in options])
-              new_yml = re.sub(r'(# OPTIONS-START\n).*?(\n[ \t]*# OPTIONS-END)', f'\\1{yml_opts_str}\\2', yml_content, flags=re.DOTALL)
-              with open(target_yml, 'w', encoding='utf-8') as f: f.write(new_yml)
+              with open(readme_path, 'r', encoding='utf-8') as f:
+                  content = f.read()
+              
+              # Regex cực mạnh để xóa sạch nội dung giữa 2 marker
+              pattern = r'.*?'
+              replacement = f'\n{dashboard}\n'
+              
+              if "" in content:
+                  new_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
+                  with open(readme_path, 'w', encoding='utf-8') as f:
+                      f.write(new_content)
           EOF
           python sync_projects.py
-          rm sync_projects.py
-
-      - name: 🚀 Commit & Push
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add README.md .github/workflows/build-tweaks.yml
-          git diff-index --quiet HEAD -- || (git commit -m "chore: sync projects" && git push)
