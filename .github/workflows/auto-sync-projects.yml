@@ -11,7 +11,59 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      workflows: write # Cấp quyền tối thượng để robot sửa được file .yml
+      workflows: write # QUYỀN QUAN TRỌNG: Cho phép robot sửa file .yml
 
     steps:
-# ... các bước sau giữ nguyên ...
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 Cập nhật Menu Build (Logic sạch)
+        run: |
+          cat << 'EOF' > sync_menu.py
+          import os
+          import glob
+          import re
+
+          # 1. QUÉT TÊN TRONG FILE CONTROL (VÙNG CẤM src/build-tweaks/)
+          names = ["(none)"]
+          for path in glob.glob('src/build-tweaks/*/control'):
+              try:
+                  with open(path, 'r', encoding='utf-8') as f:
+                      for line in f:
+                          if line.startswith('Name:'):
+                              name = line.split(':', 1)[1].strip()
+                              if name: names.append(name)
+              except: continue
+
+          # Sắp xếp (none) lên đầu, còn lại theo bảng chữ cái
+          names.sort(key=lambda x: (x != "(none)", x.lower()))
+
+          # 2. GHI ĐÈ VÀO MENU TRONG build-tweaks.yml
+          build_yml = '.github/workflows/build-tweaks.yml'
+          if os.path.exists(build_yml):
+              with open(build_yml, 'r', encoding='utf-8') as f:
+                  content = f.read()
+              
+              # Tạo chuỗi danh sách options với đúng thụt đầu dòng của YML
+              opts_str = "\n".join([f"          - '{n}'" for n in names])
+              
+              # Logic thay thế nằm giữa 2 thẻ Marker
+              pattern = r'(# OPTIONS-START\n).*?(\n[ \t]*# OPTIONS-END)'
+              new_content = re.sub(pattern, f'\\1{opts_str}\\2', content, flags=re.DOTALL)
+              
+              with open(build_yml, 'w', encoding='utf-8') as f:
+                  f.write(new_content)
+              print(f"✅ Đã cập nhật {len(names)-1} dự án vào Menu Build.")
+          else:
+              print("❌ Không tìm thấy file build-tweaks.yml")
+          EOF
+          python3 sync_menu.py
+
+      - name: 🚀 Push Menu mới lên Repo
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/build-tweaks.yml
+          git diff --cached --quiet || (git commit -m "chore: sync build menu options" && git push)
