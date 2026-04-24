@@ -33,11 +33,7 @@
 - `depictions/` → Trang mô tả tweak
 - `src/… ` → Mã nguồn
 - `apps.json` → Repo IPA
-
 ---
-
-## 📦 Danh sách Dự án Tweak
-
 
 ---
 
