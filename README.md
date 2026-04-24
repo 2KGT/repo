@@ -37,19 +37,10 @@
 ---
 
 ## 📦 Danh sách Dự án Tweak
-> Cập nhật tự động lúc: 2026-04-24 09:40:00 UTC
 
-| Tên Dự án | Phiên bản | Trạng thái | Thư mục nguồn |
-|-----------|-----------|------------|---------------|
-| (none) | - | ⚠️ Default | - |
-| Aa1 | 1.0.0 | ✅ Active | [📁 Xem](https://github.com/2KGT/repo/tree/main/src/build-tweaks/Aa1) |
-| AB2 | 1.0.0 | ✅ Active | [📁 Xem](https://github.com/2KGT/repo/tree/main/src/build-tweaks/AB2) |
-| Ab3 | 1.0.0 | ✅ Active | [📁 Xem](https://github.com/2KGT/repo/tree/main/src/build-tweaks/Ab3) |
-| aB4 | 1.0.0 | ✅ Active | [📁 Xem](https://github.com/2KGT/repo/tree/main/src/build-tweaks/aB4) |
-| ab5 | 1.0.0 | ✅ Active | [📁 Xem](https://github.com/2KGT/repo/tree/main/src/build-tweaks/ab5) |
 
 ---
 
-**Cập nhật thường xuyên** | **Chất lượng cao**
+**Cập nhật thường xuyên** | **Chất lượng **
 
 Made with ❤️ by Kyic
