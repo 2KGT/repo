@@ -32,6 +32,7 @@ jobs:
           import glob
           import json
           import re
+          from datetime import datetime
 
           # 1. Quét dự án và phân loại
           tweaks = []
@@ -40,63 +41,53 @@ jobs:
 
           for path in glob.glob('src/build-tweaks/**/control', recursive=True):
               name, version, section = None, '1.0.0', 'Tweaks'
-              with open(path, 'r', encoding='utf-8') as f:
-                  for line in f:
-                      if line.startswith('Name:'): name = line.split(':', 1)[1].strip()
-                      if line.startswith('Version:'): version = line.split(':', 1)[1].strip()
-                      if line.startswith('Section:'): section = line.split(':', 1)[1].strip()
+              try:
+                  with open(path, 'r', encoding='utf-8') as f:
+                      for line in f:
+                          if line.startswith('Name:'): name = line.split(':', 1)[1].strip()
+                          if line.startswith('Version:'): version = line.split(':', 1)[1].strip()
+                          if line.startswith('Section:'): section = line.split(':', 1)[1].strip()
+              except: continue
               
               if name:
                   dir_path = os.path.dirname(path)
                   all_projects.append({'name': name, 'version': version, 'path': dir_path})
-                  
-                  # Format item cho Grid
                   item = f"<b>{name}</b><br><code>v{version}</code><br><a href='./{dir_path}'>📂 Source</a>"
-                  
-                  if 'App' in section:
-                      apps.append(item)
-                  else:
-                      tweaks.append(item)
+                  if 'App' in section: apps.append(item)
+                  else: tweaks.append(item)
 
-          # Sắp xếp theo tên
           all_projects.sort(key=lambda x: x['name'].lower())
 
-          # 2. Hàm tạo bảng lưới (Grid) 3 cột bằng HTML
+          # 2. Hàm tạo bảng lưới
           def build_grid(items):
-              if not items: return "<p align='center'><i>Chưa có dữ liệu trong mục này</i></p>"
-              html = "<table width='100%'>\n  <tr>"
+              if not items: return "<p align='center'><i>Chưa có dữ liệu</i></p>"
+              html = "<table width='100%'><tr>"
               for i, item in enumerate(items):
-                  if i > 0 and i % 3 == 0:
-                      html += "\n  </tr>\n  <tr>"
-                  html += f"\n    <td align='center' width='33%' style='border: 1px solid #444; padding: 10px;'>{item}</td>"
-              
-              # Thêm các ô trống nếu hàng cuối không đủ 3 cột
+                  if i > 0 and i % 3 == 0: html += "</tr><tr>"
+                  html += f"<td align='center' width='33%' style='border: 1px solid #444; padding: 10px;'>{item}</td>"
               count = len(items)
               while count % 3 != 0:
-                  html += "\n    <td width='33%'></td>"
+                  html += "<td width='33%'></td>"
                   count += 1
-              html += "\n  </tr>\n</table>"
+              html += "</tr></table>"
               return html
 
-          # 3. Tạo khối Dashboard xổ xuống
+          # 3. Tạo Dashboard (Dùng biến Python thay cho $(date))
+          current_date = datetime.now().strftime('%Y-%m-%d')
           dashboard = f"""
-<details>
-<summary align="center">🚀 <b>BẤM VÀO ĐÂY ĐỂ XEM DANH SÁCH DỰ ÁN</b></summary>
-<br>
+          <details>
+          <summary align="center">🚀 <b>BẤM VÀO ĐÂY ĐỂ XEM DANH SÁCH DỰ ÁN</b></summary>
+          <br>
+          <h3 align="center">🛠️ TWEAKS</h3>
+          {build_grid(tweaks)}
+          <br>
+          <h3 align="center">📱 APPS</h3>
+          {build_grid(apps)}
+          <p align="right"><i>Cập nhật tự động: {current_date}</i></p>
+          </details>
+          """
 
-<h3 align="center">🛠️ TWEAKS</h3>
-{build_grid(tweaks)}
-
-<br>
-
-<h3 align="center">📱 APPS</h3>
-{build_grid(apps)}
-
-<p align="right"><i>Cập nhật tự động: $(date -u +'%Y-%m-%d')</i></p>
-</details>
-"""
-
-          # 4. Ghi file PROJECTS.json (để lưu trữ data)
+          # 4. Lưu JSON
           with open('PROJECTS.json', 'w', encoding='utf-8') as f:
               json.dump(all_projects, f, indent=2, ensure_ascii=False)
 
@@ -105,31 +96,25 @@ jobs:
           if os.path.exists(readme_path):
               with open(readme_path, 'r', encoding='utf-8') as f:
                   content = f.read()
-              
               pattern = r'().*?()'
               if re.search(pattern, content, flags=re.DOTALL):
                   new_readme = re.sub(pattern, f'\\1\n{dashboard}\n\\2', content, flags=re.DOTALL)
                   with open(readme_path, 'w', encoding='utf-8') as f:
                       f.write(new_readme)
-                  print("✅ Đã cập nhật Dashboard Grid vào README.md")
 
-          # 6. Cập nhật build-tweaks.yml (Đồng bộ options)
+          # 6. Đồng bộ options Workflow Build
           target_yml = '.github/workflows/build-tweaks.yml'
           if os.path.exists(target_yml):
               options = ['(none)'] + [p['name'] for p in all_projects]
               with open(target_yml, 'r', encoding='utf-8') as f:
                   yml_content = f.read()
-              
               match = re.search(r'([ \t]*)# OPTIONS-START', yml_content)
               indent = match.group(1) if match else '          '
               yml_opts_str = '\n'.join([f"{indent}- '{opt}'" for opt in options])
-              
               pattern_yml = r'(# OPTIONS-START\n).*?(\n[ \t]*# OPTIONS-END)'
               new_yml = re.sub(pattern_yml, f'\\1{yml_opts_str}\\2', yml_content, flags=re.DOTALL)
               with open(target_yml, 'w', encoding='utf-8') as f:
                   f.write(new_yml)
-              print("✅ Đã đồng bộ options vào build-tweaks.yml")
-
           EOF
           python sync_projects.py
           rm sync_projects.py
@@ -140,8 +125,8 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add PROJECTS.json README.md .github/workflows/build-tweaks.yml
           if git diff-index --quiet HEAD --; then
-            echo "No changes to commit"
+            echo "No changes"
           else
-            git commit -m "chore: update dashboard grid & sync options"
+            git commit -m "chore: update dashboard grid"
             git push
           fi
