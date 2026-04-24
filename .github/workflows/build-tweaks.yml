@@ -103,11 +103,16 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config diff.ignoreSubmodules all
           
           git add debs/ Packages Packages.bz2 src/build-tweaks/
           git diff --cached --quiet || git commit -m "build(${{ steps.metadata.outputs.safe_name }}): v${{ steps.metadata.outputs.proj_ver }}"
-          git pull origin main --rebase --autostash
+          
+          # Dọn rác triệt để trước khi pull/push
+          rm -rf theos/ .theos/
+          find . -name "obj" -type d -exec rm -rf {} +
+          find . -name "packages" -type d -exec rm -rf {} +
+          
+          git pull origin main --rebase
           git push origin main
 
       - name: Create Release
@@ -182,9 +187,14 @@ jobs:
           
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config diff.ignoreSubmodules all
           
           git add depictions/
           git diff --cached --quiet || git commit -m "docs: update dynamic depiction for ${SAFE_NAME}"
-          git pull origin main --rebase --autostash
+          
+          # Dọn rác lần cuối (nếu có) trước khi pull/push
+          rm -rf theos/ .theos/
+          find . -name "obj" -type d -exec rm -rf {} +
+          find . -name "packages" -type d -exec rm -rf {} +
+          
+          git pull origin main --rebase
           git push origin main
