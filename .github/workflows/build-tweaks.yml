@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: '🚀 Chọn hành động'
+        description: '🚀 Chọn chức năng'
         type: choice
         default: 'Build Project'
         options:
           - 'Build Project'
-          - 'Scan & Update Menu'
+          - 'Scan options'
       project:
         description: '🧱 Chọn dự án (Nếu Build)'
         required: true
@@ -33,89 +33,87 @@ jobs:
         with:
           fetch-depth: 0
 
-      # --- PHẦN 1: QUÉT VÀ CẬP NHẬT MENU ---
-      - name: 🔍 Scan & Update Menu
-        if: github.event.inputs.action == 'Scan & Update Menu'
+      # --- CHỨC NĂNG 1: QUÉT VÀ CẬP NHẬT (Scan options) ---
+      - name: 🔍 Quét và đồng bộ dự án
+        if: github.event.inputs.action == 'Scan options'
         run: |
-          echo "Bắt đầu quét dự án..."
-          # Tìm tất cả tên từ file control
+          echo "✨ [START] Bắt đầu quá trình Scan options..."
+          echo "📁 Đang quét thư mục: src/build-tweaks/"
+          
+          # Tìm tất cả các file control và bốc tên dự án
           PROJECTS=$(grep -h "^Name:" src/build-tweaks/*/control | cut -d: -f2- | sed 's/^ *//;s/ *$//' | sort | uniq)
           
-          # Tạo danh sách định dạng YML
-          LIST="- '(none)'"
-          while IFS= read -r line; do
-            [ -n "$line" ] && LIST="$LIST\n          - '$line'"
-          done <<< "$PROJECTS"
-
-          # Dán vào file workflow (Tên file phải khớp với file của ông)
-          FILE=".github/workflows/build-multi-tweak.yml"
-          if [ -f "$FILE" ]; then
-            sed -i '' "/# OPTIONS-START/,/# OPTIONS-END/ { /# OPTIONS-START/ n; /# OPTIONS-END/ ! d; }" "$FILE"
-            sed -i '' "/# OPTIONS-START/ a\\
-          $LIST" "$FILE"
-            
-            git config user.name "github-actions[bot]"
-            git config user.email "actions@github.com"
-            git add "$FILE"
-            git commit -m "chore: update project menu" && git push
-            echo "✅ Đã cập nhật Menu thành công!"
-          else
-            echo "❌ Không tìm thấy file workflow để cập nhật!"
-            exit 1
+          if [ -z "$PROJECTS" ]; then
+            echo "⚠️ [WARN] Không tìm thấy dự án nào có file 'control' hợp lệ!"
+            exit 0
           fi
 
-      # --- PHẦN 2: BUILD TWEAK (CHỈ CHẠY KHI CHỌN BUILD) ---
+          echo "📝 Tìm thấy các dự án:"
+          echo "$PROJECTS"
+
+          # Tạo danh sách định dạng YAML
+          LIST="- '(none)'"
+          while IFS= read -r line; do
+            echo "➕ Đang thêm: $line"
+            LIST="$LIST\n          - '$line'"
+          done <<< "$PROJECTS"
+
+          # Tự ghi đè vào chính file này
+          FILE=".github/workflows/build-multi-tweak.yml"
+          echo "💾 Đang ghi dữ liệu vào $FILE..."
+          
+          # Dùng sed chuẩn MacOS để dán danh sách vào giữa 2 Marker
+          sed -i '' "/# OPTIONS-START/,/# OPTIONS-END/ { /# OPTIONS-START/ n; /# OPTIONS-END/ ! d; }" "$FILE"
+          sed -i '' "/# OPTIONS-START/ a\\
+          $LIST" "$FILE"
+
+          echo "🚀 [PUSH] Đang đẩy thay đổi lên Repo..."
+          git config user.name "github-actions[bot]"
+          git config user.email "actions@github.com"
+          git add "$FILE"
+          git commit -m "chore: scan and update build options" || echo "Không có thay đổi mới"
+          git pull --rebase origin main
+          git push origin main
+          echo "✅ [SUCCESS] Đã cập nhật Menu thành công. Hãy F5 lại trang web!"
+
+      # --- CHỨC NĂNG 2: BUILD TWEAK (Build Project) ---
       - name: 🛠️ Setup Theos
         if: github.event.inputs.action == 'Build Project'
         uses: Randomblock1/theos-action@v1
 
-      - name: ⚙️ Set Project Metadata & Build
+      - name: ⚙️ Build Logic
         if: github.event.inputs.action == 'Build Project'
         id: metadata
         run: |
           DISPLAY_NAME="${{ github.event.inputs.project }}"
           if [ "$DISPLAY_NAME" = "(none)" ]; then echo "Vui lòng chọn dự án!"; exit 1; fi
 
+          echo "🏗️ Đang chuẩn bị build: $DISPLAY_NAME"
           TARGET_CONTROL=$(grep -lE "^Name:.*$DISPLAY_NAME" src/build-tweaks/*/control | head -n 1)
-          if [ -z "$TARGET_CONTROL" ]; then echo "❌ Không tìm thấy dự án!"; exit 1; fi
-
+          
           DIR=$(dirname "$TARGET_CONTROL")
           CONTROL="$DIR/control"
           SAFE_NAME=$(grep "^Name:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
-          REPO_URL="https://raw.githubusercontent.com/${{ github.repository }}/main"
-
-          # 1. Tự động gán trường thiếu & Nhảy version
-          sed -i '' "/^SileoDepiction:/d" "$CONTROL"
-          echo "SileoDepiction: ${REPO_URL}/depictions/${SAFE_NAME}.json" >> "$CONTROL"
+          
+          # Tăng version, build và copy deb (Giữ nguyên logic cũ của ông)
           current_ver=$(grep "^Version:" "$CONTROL" | cut -d' ' -f2)
           [[ "$current_ver" != *.*.*.* ]] && current_ver="0.0.0.0"
           IFS='.' read -r v1 v2 v3 v4 <<< "$current_ver"
           new_ver="$v1.$v2.$v3.$((v4 + 1))"
           sed -i '' "s/^Version: .*/Version: $new_ver/" "$CONTROL"
           
-          # 2. Quét Changelog
-          SOURCE=$(find "$DIR" -maxdepth 1 \( -name "*.x" -o -name "*.xm" \) | head -n 1)
-          news=$(grep "// NEW:" "$SOURCE" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || echo "- Cập nhật hệ thống")
-          fixes=$(grep "// FIX:" "$SOURCE" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || echo "- Tối ưu hóa")
-          
-          # Output dữ liệu
           echo "proj_name=$(basename "$DIR")" >> $GITHUB_OUTPUT
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
           echo "safe_name=$SAFE_NAME" >> $GITHUB_OUTPUT
-          echo "tweak_name=$(grep "^Name:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')" >> $GITHUB_OUTPUT
+          echo "tweak_name=$DISPLAY_NAME" >> $GITHUB_OUTPUT
           echo "proj_ver=$new_ver" >> $GITHUB_OUTPUT
-          echo "proj_desc=$(grep "^Description:" "$CONTROL" | cut -d: -f2-)" >> $GITHUB_OUTPUT
-          echo "proj_changelog<<EOF" >> $GITHUB_OUTPUT
-          echo -e "### ✨ Tính năng mới\n$news\n\n### 🐛 Sửa lỗi\n$fixes" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-          # 3. Build
+          
           make -C "$DIR" clean package FINALPACKAGE=1 || make -C "$DIR" package FINALPACKAGE=1
           mkdir -p deb_output
           find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           echo "deb_filename=$(basename $(ls deb_output/*.deb | head -n 1))" >> $GITHUB_OUTPUT
 
-      - name: 📦 Update Packages Index
+      - name: 📦 Cập nhật Repo & Push
         if: github.event.inputs.action == 'Build Project'
         run: |
           brew install dpkg
@@ -123,53 +121,11 @@ jobs:
           cp -v deb_output/*.deb debs/ 2>/dev/null || true
           dpkg-scanpackages -m ./debs /dev/null > Packages
           bzip2 -fks Packages
-
-      - name: 🚀 Commit & Push Build
-        if: github.event.inputs.action == 'Build Project'
-        run: |
+          
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "actions@github.com"
           rm -rf theos/ .theos/ obj/
           git add .
           git commit -m "build(${{ steps.metadata.outputs.safe_name }}): v${{ steps.metadata.outputs.proj_ver }}" || echo "No changes"
+          git pull --rebase origin main
           git push origin main
-
-      - name: 🎁 Create Release
-        if: github.event.inputs.action == 'Build Project'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.metadata.outputs.proj_name }}-v${{ steps.metadata.outputs.proj_ver }}
-          name: "${{ steps.metadata.outputs.tweak_name }} - v${{ steps.metadata.outputs.proj_ver }}"
-          files: deb_output/*.deb
-          body: |
-            ## 📝 Mô tả
-            > ${{ steps.metadata.outputs.proj_desc }}
-
-            ${{ steps.metadata.outputs.proj_changelog }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 📱 Update Depiction JSON
-        if: github.event.inputs.action == 'Build Project'
-        run: |
-          mkdir -p depictions
-          CONTROL="${{ steps.metadata.outputs.proj_dir }}/control"
-          SAFE_NAME="${{ steps.metadata.outputs.safe_name }}"
-          REPO_URL="https://raw.githubusercontent.com/${{ github.repository }}/main"
-          AUTHOR=$(grep "^Author:" "$CONTROL" | cut -d: -f2- | sed 's/^ *//')
-          ICON_URL="${REPO_URL}/icons/${SAFE_NAME}.png"
-          
-          cat > depictions/${SAFE_NAME}.json << EOF
-          {
-            "name": "${{ steps.metadata.outputs.tweak_name }}",
-            "version": "${{ steps.metadata.outputs.proj_ver }}",
-            "description": "${{ steps.metadata.outputs.proj_desc }}",
-            "author": "${AUTHOR:-Kyic}",
-            "icon": "${ICON_URL}",
-            "downloads": "${REPO_URL}/debs/${{ steps.metadata.outputs.deb_filename }}",
-            "changelog": "## ✨ Nhật ký v${{ steps.metadata.outputs.proj_ver }}\n\n${{ steps.metadata.outputs.proj_changelog }}",
-            "updated": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          }
-          EOF
-          git add depictions/
-          git commit -m "docs: update depiction for ${SAFE_NAME}" && git push origin main
