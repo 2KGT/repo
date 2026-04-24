@@ -110,7 +110,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add debs/ Packages Packages.bz2 src/build-tweaks/
-          git diff --cached --quiet || (git commit -m "build(${{ steps.metadata.outputs.safe_name }}): v${{ steps.metadata.outputs.proj_ver }}" && git pull origin main --rebase && git push origin main)
+          git diff --cached --quiet || (git commit -m "build(${{ steps.metadata.outputs.safe_name }}): v${{ steps.metadata.outputs.proj_ver }}" && git stash --include-untracked && git pull origin main --rebase && git push origin main)
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -185,8 +185,8 @@ jobs:
           }
           EOF
           
-          # 4. Đẩy JSON lên Repo
+          # 4. Đẩy JSON lên Repo (Có kèm git stash để chống lỗi)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add depictions/
-          git diff --cached --quiet || (git commit -m "docs: update dynamic depiction for ${SAFE_NAME}" && git pull origin main --rebase && git push origin main)
+          git diff --cached --quiet || (git commit -m "docs: update dynamic depiction for ${SAFE_NAME}" && git stash --include-untracked && git pull origin main --rebase && git push origin main)
