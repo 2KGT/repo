@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: '🚀 Chọn chức năng(type)'
+        description: '🚀 Chọn chức năng'
         type: choice
         default: 'Build Project'
         options:
           - 'Build Project'
-          - 'Scan options'
+          - 'Scan Options'
       project:
-        description: '🧱 Chọn dự án (Build)'
+        description: '🧱 Chọn dự án'
         required: true
         type: choice
         default: '(none)'
@@ -59,7 +59,7 @@ jobs:
           done <<< "$PROJECTS"
 
           # Tự ghi đè vào chính file này
-          FILE=".github/workflows/build-multi-tweak.yml"
+         FILE=".github/workflows/build-multi-tweak.yml"
           echo "💾 Đang ghi dữ liệu vào $FILE..."
           
           # Dùng sed chuẩn MacOS để dán danh sách vào giữa 2 Marker
