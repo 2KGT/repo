@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: '🚀 Chọn chức năng'
+        description: '🚀 Chọn chức năng(type)'
         type: choice
         default: 'Build Project'
         options:
           - 'Build Project'
           - 'Scan options'
       project:
-        description: '🧱 Chọn dự án (Nếu Build)'
+        description: '🧱 Chọn dự án (Build)'
         required: true
         type: choice
         default: '(none)'
