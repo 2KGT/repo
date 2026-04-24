@@ -11,32 +11,35 @@
 <h1 align="center">Kyic Repository</h1>
 
 <p align="center">
-  Repo chuyên cung cấp tweak & IPA chất lượng cao cho iOS
+  Repo chuyên cung cấp Tweak & IPA chất lượng cao cho iOS
 </p>
 
 ---
 
-## 📦 Các tweak hiện có
+## 🚀 Danh sách dự án tự động
+*Dưới đây là danh sách các dự án đang được duy trì trong Repo, được cập nhật tự động mỗi khi có phiên bản mới.*
 
-### AutoAC
+| Tên Project | Phiên bản | Đường dẫn |
+|---|---|---|
+| **AutoAC** | `1.0.0` | `src/build-tweaks/AutoAC` |
+---
+
+## 🛠️ Chi tiết các Tweak nổi bật
+
+### ✨ AutoAC
 **Tweak YouTube mạnh mẽ**
 
-- Xoá bộ nhớ đệm YouTube thông minh
-- Ẩn banner quảng cáo
-- Hoạt động tốt trên cả Jailbreak và Non-Jailbreak
+* **Xoá bộ nhớ đệm:** Tự động dọn dẹp cache YouTube thông minh.
+* **Chặn quảng cáo:** Ẩn các banner quảng cáo gây phiền nhiễu.
+* **Tương thích:** Hoạt động ổn định trên cả thiết bị Jailbreak và Non-Jailbreak.
 
 ---
 
-## 📂 Cấu trúc repo
+## 📌 Hướng dẫn sử dụng
+1. Copy link repo: `https://2kgt.github.io/repo/`
+2. Mở trình quản lý gói (Sileo, Zebra, Cydia).
+3. Thêm nguồn và cài đặt tweak bạn yêu thích.
 
-- `debs/` → File `.deb` cho Sileo/Zebra
-- `depictions/` → Trang mô tả tweak
-- `src/… ` → Mã nguồn
-- `apps.json` → Repo IPA
----
-
----
-
-**Cập nhật thường xuyên** | **Chất lượng **
-
-Made with ❤️ by Kyic
+<p align="center">
+  Made with ❤️ by <b>Kyic</b>
+</p>
