@@ -1,0 +1,104 @@
+name: "🛡️ YML Manager Pro"
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: '🚀 Chọn chức năng'
+        required: true
+        type: choice
+        default: 'backup'
+        options:
+          - 'backup'
+          - 'restore'
+          - 'delete'
+      target_file:
+        description: '📄 Chọn File/Bản sao lưu (Dùng cho Restore/Delete)'
+        required: false
+        type: choice
+        default: '(none)'
+        options:
+          # OPTIONS-START
+          - '(none)'
+          # OPTIONS-END
+
+jobs:
+  manage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      workflows: write
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ⚙️ Xử lý Logic (Python)
+        run: |
+          python3 -c "
+          import os, glob, re, shutil
+
+          action = '${{ github.event.inputs.action }}'
+          target = '${{ github.event.inputs.target_file }}'
+          
+          # --- 1. CHỨC NĂNG SAO LƯU ---
+          if action == 'backup':
+              os.makedirs('src/sync-yml', exist_ok=True)
+              for f in glob.glob('.github/workflows/*.yml'):
+                  name = os.path.basename(f).replace('.yml', '')
+                  dest_dir = f'src/sync-yml/{name}'
+                  os.makedirs(dest_dir, exist_ok=True)
+                  
+                  # Tìm số thứ tự lớn nhất hiện có
+                  existing = glob.glob(f'{dest_dir}/*-{name}.yml')
+                  nums = [int(os.path.basename(x).split('-')[0]) for x in existing if os.path.basename(x).split('-')[0].isdigit()]
+                  next_num = max(nums) + 1 if nums else 1
+                  
+                  shutil.copy2(f, f'{dest_dir}/{next_num}-{name}.yml')
+                  print(f'✅ Đã sao lưu: {next_num}-{name}.yml')
+
+          # --- 2. CHỨC NĂNG KHÔI PHỤC ---
+          elif action == 'restore' and target != '(none)':
+              # target có dạng: src/sync-yml/name/1-name.yml
+              if os.path.exists(target):
+                  filename = os.path.basename(target)
+                  # Xóa số thứ tự: 1-build.yml -> build.yml
+                  original_name = re.sub(r'^\d+-', '', filename)
+                  shutil.copy2(target, f'.github/workflows/{original_name}')
+                  print(f'♻️ Đã khôi phục {original_name} từ bản {filename}')
+
+          # --- 3. CHỨC NĂNG XÓA ---
+          elif action == 'delete' and target != '(none)':
+              if os.path.exists(target):
+                  os.remove(target)
+                  print(f'🗑️ Đã xóa bản sao lưu: {target}')
+          "
+
+      - name: 🔄 Cập nhật Menu Options cho lần sau
+        run: |
+          python3 -c "
+          import os, glob, re
+          
+          # Quét tất cả bản sao lưu trong src/sync-yml/
+          backups = ['(none)']
+          for f in glob.glob('src/sync-yml/**/*.yml', recursive=True):
+              backups.append(f)
+          
+          backups.sort()
+          
+          yml_path = '.github/workflows/yml-manager.yml'
+          if os.path.exists(yml_path):
+              with open(yml_path, 'r') as f: content = f.read()
+              opts = '\n'.join([f'          - \'{b}\'' for b in backups])
+              new_content = re.sub(r'(# OPTIONS-START\n).*?(\n[ \t]*# OPTIONS-END)', f'\\1{opts}\\2', content, flags=re.DOTALL)
+              with open(yml_path, 'w') as f: f.write(new_content)
+          "
+
+      - name: 🚀 Commit & Push Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/ src/sync-yml/
+          git diff --cached --quiet || (git commit -m "chore: yml manager update (${{ github.event.inputs.action }})" && git push)
