@@ -14,12 +14,12 @@ jobs:
       workflows: write
 
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: 🐍 Cập nhật Menu Build
+      - name: Update Menu Build
         run: |
           cat << 'EOF' > sync_menu.py
           import os, glob, re
@@ -29,23 +29,23 @@ jobs:
                   with open(path, 'r', encoding='utf-8') as f:
                       for line in f:
                           if line.startswith('Name:'):
-                              name = line.split(':', 1)[1].strip()
-                              if name: names.append(name)
+                              n = line.split(':', 1)[1].strip()
+                              if n: names.append(n)
               except: continue
           names.sort(key=lambda x: (x != "(none)", x.lower()))
-          build_yml = '.github/workflows/build-tweaks.yml'
-          if os.path.exists(build_yml):
-              with open(build_yml, 'r', encoding='utf-8') as f: content = f.read()
+          yml = '.github/workflows/build-tweaks.yml'
+          if os.path.exists(yml):
+              with open(yml, 'r', encoding='utf-8') as f: content = f.read()
               opts = "\n".join([f"          - '{n}'" for n in names])
               pattern = r'(# OPTIONS-START\n).*?(\n[ \t]*# OPTIONS-END)'
               new_content = re.sub(pattern, f'\\1{opts}\\2', content, flags=re.DOTALL)
-              with open(build_yml, 'w', encoding='utf-8') as f: f.write(new_content)
+              with open(yml, 'w', encoding='utf-8') as f: f.write(new_content)
           EOF
           python3 sync_menu.py
 
-      - name: 🚀 Push Menu mới
+      - name: Push Changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .github/workflows/build-tweaks.yml
-          git diff --cached --quiet || (git commit -m "chore: sync build menu options" && git push)
+          git diff --cached --quiet || (git commit -m "chore: sync build menu" && git push)
