@@ -25,46 +25,59 @@ jobs:
       - name: Generate Options & Documents
         run: |
           echo "🔄 Đang quét dự án & tạo tài liệu..."
-          
+
           # Khởi tạo file Markdown & JSON
-          cat > PROJECTS.md << EOF
+          cat > PROJECTS.md << 'EOF'
           # 📦 Danh sách Dự án Tweak
           > Cập nhật tự động lúc: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
 
           | Tên Dự án | Phiên bản | Trạng thái | Thư mục nguồn |
           |-----------|-----------|------------|---------------|
           EOF
-          
+
           echo "[" > PROJECTS.json
           > new_opts.txt
           COUNT=0
-          
-          # Quét tất cả file control, thu thập dữ liệu và sắp xếp
-          find src/build-tweaks -name control | sort | while read -r filepath; do
+          FIRST=true
+
+          # Quét tất cả file control (sử dụng while read đúng cách để tránh subshell)
+          find src/build-tweaks -name control -print0 | sort -z | while IFS= read -r -d '' filepath; do
             dir=$(dirname "$filepath")
             NAME=$(awk -F': ' '/^Name:/ {print $2}' "$filepath" | xargs)
             VER=$(awk -F': ' '/^Version:/ {print $2}' "$filepath" | xargs)
             REPO_URL="https://github.com/${{ github.repository }}/tree/main/$dir"
-            
-            # Ghi vào new_opts.txt (10 spaces indent)
-            [ -n "$NAME" ] && echo "          - $NAME" >> new_opts.txt
-            
-            # Ghi vào JSON
-            [ $COUNT -gt 0 ] && echo "," >> PROJECTS.json
-            echo "{\"name\":\"$NAME\",\"version\":\"$VER\",\"url\":\"$REPO_URL\"}" >> PROJECTS.json
-            
-            # Ghi vào Markdown
-            echo "| $NAME | $VER | ✅ Active | [📁 Xem]($REPO_URL) |" >> PROJECTS.md
-            
-            COUNT=$((COUNT + 1))
+
+            if [ -n "$NAME" ]; then
+              # Ghi options với indentation 2 spaces (chuẩn YAML)
+              if [ "$FIRST" = true ]; then
+                echo "        - $NAME" >> new_opts.txt
+                FIRST=false
+              else
+                echo "        - $NAME" >> new_opts.txt
+              fi
+
+              # Ghi JSON
+              if [ $COUNT -gt 0 ]; then
+                echo "," >> PROJECTS.json
+              fi
+              echo "{\"name\":\"$NAME\",\"version\":\"$VER\",\"url\":\"$REPO_URL\"}" >> PROJECTS.json
+
+              # Ghi Markdown
+              echo "| $NAME | $VER | ✅ Active | [📁 Xem]($REPO_URL) |" >> PROJECTS.md
+
+              COUNT=$((COUNT + 1))
+            fi
           done
-          
+
           echo "]" >> PROJECTS.json
+
+          echo "✅ Tìm thấy $COUNT dự án."
 
       - name: Update Target Workflow
         run: |
           cat << 'EOF' > update_yaml.py
-          import re, os
+          import re
+          import os
 
           path = '.github/workflows/build-tweaks.yml'
           if not os.path.exists(path):
@@ -73,33 +86,49 @@ jobs:
 
           with open('new_opts.txt', 'r') as f:
               new_opts = f.read().rstrip()
-              
-          with open(path, 'r') as f:
+
+          with open(path, 'r', encoding='utf-8') as f:
               content = f.read()
 
-          # Đã fix Regex: (?=\n *jobs:) để bỏ qua mọi lỗi thụt lề của chữ jobs:
-          pattern = r'( {8}options:\n)(.*?)(?=\n *jobs:)'
-          match = re.search(pattern, content, flags=re.DOTALL)
+          # Regex cải thiện: tìm block options: và lấy đến trước jobs: (bất kể thụt lề)
+          # Hỗ trợ cả options: có thể nằm dưới strategy: matrix:
+          pattern = r'(?P<indent>^\s+options:)\s*\n(?P<content>.*?)(?=\n\s+jobs:|\Z)'
+          match = re.search(pattern, content, flags=re.DOTALL | re.MULTILINE)
 
           if match:
-              current_opts = match.group(2).rstrip()
-              if current_opts != new_opts:
+              current_opts = match.group('content').rstrip()
+              indent = match.group('indent')
+
+              if current_opts.strip() != new_opts.strip():
                   print("🔄 Options thay đổi, tiến hành cập nhật...")
-                  new_content = re.sub(pattern, f"\\1{new_opts}", content, flags=re.DOTALL)
-                  with open(path, 'w') as f:
+                  # Thay thế block cũ bằng block mới (giữ nguyên indentation của "options:")
+                  replacement = f"{indent}\n{new_opts}"
+                  new_content = re.sub(pattern, replacement, content, flags=re.DOTALL | re.MULTILINE)
+
+                  with open(path, 'w', encoding='utf-8') as f:
                       f.write(new_content)
+                  print("✅ Đã cập nhật build-tweaks.yml")
               else:
-                  print("✅ Options khớp, bỏ qua ghi đè YAML.")
+                  print("✅ Options không thay đổi, bỏ qua.")
           else:
-              print("⚠️ Không tìm thấy block options: trong file YAML.")
+              print("⚠️ Không tìm thấy block 'options:' trong file YAML.")
+              print("   Vui lòng kiểm tra xem workflow build-tweaks.yml có chứa 'options:' không.")
           EOF
 
           python3 update_yaml.py
-          rm update_yaml.py new_opts.txt
+          rm -f update_yaml.py new_opts.txt
 
       - name: Commit & Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
           git add .github/workflows/build-tweaks.yml PROJECTS.md PROJECTS.json
-          git diff --cached --quiet || (git commit -m "docs: auto sync projects and build options" && git push)
+
+          if git diff --cached --quiet; then
+            echo "✅ Không có thay đổi nào cần commit."
+          else
+            git commit -m "docs: auto sync projects and build options"
+            git push
+            echo "🚀 Đã push thay đổi."
+          fi
