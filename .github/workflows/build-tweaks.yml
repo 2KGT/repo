@@ -22,17 +22,17 @@ jobs:
     permissions:
       contents: write
     steps:
+      ## --- GIAI ĐOẠN 1: CHUẨN BỊ MÁY MÓC ---
       - name: 📥 Checkout Repository
-        # Đã xoá SHA, dùng tag v4 cực kỳ ổn định
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: 🛠️ Setup Theos
-        # Đã xoá SHA, dùng tag v1 chuẩn cho Theos
+      - name: 🛠️ Setup Toolchain (Theos)
         uses: randomblock1/theos-action@v1
 
-      - name: ⚙️ Build Logic (Semantic Versioning)
+      ## --- GIAI ĐOẠN 2: SẢN XUẤT (BUILD) ---
+      - name: ⚙️ Build Logic (SemVer)
         id: metadata
         run: |
           DP_NAME="${{ github.event.inputs.project }}"
@@ -42,7 +42,7 @@ jobs:
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
-          # Đọc và tăng version X.Y.Z
+          # Tăng version X.Y.Z chuẩn chuyên nghiệp
           CURRENT_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           if [[ $CURRENT_VER =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
               MAJOR=${BASH_REMATCH[1]}
@@ -53,12 +53,12 @@ jobs:
               NEW_VER="0.0.1"
           fi
           
-          # Cập nhật file Control
+          # Cập nhật thông tin Control
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
 
-          # Biên dịch
+          # Biên dịch sản phẩm
           make -C "$DIR" clean package FINALPACKAGE=1
           mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           
@@ -67,11 +67,17 @@ jobs:
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
           echo "deb_file=$(basename $(ls deb_output/*.deb | head -n 1))" >> $GITHUB_OUTPUT
 
-      - name: 📦 Update Assets & Media JSON
+      ## --- GIAI ĐOẠN 3: ĐÓNG GÓI & DÁN NHÃN (METADATA) ---
+      - name: 📦 Update Assets & Depictions
+        id: assets
         run: |
           brew install dpkg
           mkdir -p debs depictions/images icons
+          
+          # Chuyển hàng vào kho debs
           cp -v deb_output/*.deb debs/
+          
+          # Quét kho hàng tạo danh sách Packages
           dpkg-scanpackages -m ./debs /dev/null > Packages && bzip2 -fks Packages
           
           SAFE="${{ steps.metadata.outputs.safe_name }}"
@@ -80,6 +86,7 @@ jobs:
           PKG=$(grep "^Package:" "$CTRL" | cut -d' ' -f2)
           DESC=$(grep "^Description:" "$CTRL" | cut -d: -f2- | sed 's/^ *//')
           
+          # Tạo file JSON mô tả cho Sileo
           cat > depictions/${SAFE}.json << EOF
           {
             "name": "${{ github.event.inputs.project }}",
@@ -95,28 +102,34 @@ jobs:
               "${URL}/depictions/images/${SAFE}3.png"
             ],
             "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
-            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "• Cập nhật phiên bản mới nhất\n• Tối ưu hóa căn phòng build"}]
+            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "• Cập nhật phiên bản mới nhất\n• Tối ưu hóa quy trình sản xuất"}]
           }
           EOF
 
+      ## --- GIAI ĐOẠN 4: GIAO HÀNG (GIT DEPLOY) ---
+      - name: 🚀 Deployment to GitHub
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          rm -rf deb_output/
+          
+          # DỌN DẸP RÁC TRƯỚC KHI COMMIT (Quan trọng để tránh lỗi 128)
+          DIR="${{ steps.metadata.outputs.proj_dir }}"
+          rm -rf deb_output/ theos/ .theos/ "$DIR/packages" "$DIR/.theos" "$DIR/obj"
           
           git add .
           git commit -m "📦 Release $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
           
+          # Chiến thuật Reset & Force Push để đảm bảo thông suốt
           git fetch origin main
-          git rebase origin/main || (git stash && git rebase origin/main && git stash pop)
-          git push origin main
+          git reset --soft origin/main
+          git add .
+          git commit --amend --no-edit || git commit -m "📦 Release $SAFE v${{ steps.metadata.outputs.proj_ver }}"
+          git push origin main --force
 
+      ## --- GIAI ĐOẠN 5: VỆ SINH CUỐI CÙNG ---
       - name: 🧹 Final Room Cleanup
         if: always()
         run: |
-          # Dọn dẹp sân khấu sau khi đã Push thành công
-          DIR="${{ steps.metadata.outputs.proj_dir }}"
-          if [ -d "$DIR" ]; then
-            rm -rf "$DIR/packages" "$DIR/.theos" "$DIR/obj"
-          fi
-          rm -rf theos/ .theos/
-          echo "Phòng đã trống, mời bạn vào diễn lần sau!"
+          echo "Hàng đã giao xong. Đang quét dọn căn phòng trống..."
+          rm -rf *output* rm -rf .theos/
+          echo "Sẵn sàng cho buổi biểu diễn tiếp theo!"

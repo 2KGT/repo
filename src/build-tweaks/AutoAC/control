@@ -1,6 +1,6 @@
 Package: com.kyic.autoac
 Name: AutoAC
-Version: 0.0.0.1
+Version: 0.0.1
 Architecture: iphoneos-arm64
 Section: Tweaks
 Priority: optional
