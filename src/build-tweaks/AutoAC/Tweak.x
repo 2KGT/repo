@@ -7,11 +7,10 @@
 @end
 
 static NSString *const kAutoCSmartCleanKey = @"AutoC_SmartClean_Enabled";
-static BOOL isYouTube = NO;
-static BOOL isFacebook = NO;
+static NSString *const kRemoveAdsKey = @"AutoC_RemoveAds_Enabled";
 
 // =========================================================
-// 🚀 LOGIC XOÁ RÁC
+// 🚀 LOGIC XOÁ RÁC CHIẾN LƯỢC
 // =========================================================
 
 static void performDeepClean(BOOL isAuto) {
@@ -19,7 +18,7 @@ static void performDeepClean(BOOL isAuto) {
     NSFileManager *fm = [NSFileManager defaultManager];
     NSString *homePath = NSHomeDirectory();
     
-    NSArray *trashPaths = @[@"/Library/Caches", @"/Library/Application Support/YouTube", @"/Library/Application Support/Google/YouTube", @"/tmp", @"/Library/Caches/com.facebook.Facebook"];
+    NSArray *trashPaths = @[@"/Library/Caches", @"/Library/Application Support/YouTube", @"/tmp", @"/Library/Caches/com.facebook.Facebook"];
     
     for (NSString *relPath in trashPaths) {
         NSString *fullPath = [homePath stringByAppendingPathComponent:relPath];
@@ -34,68 +33,89 @@ static void performDeepClean(BOOL isAuto) {
             UIAlertController *done = [UIAlertController alertControllerWithTitle:@"Hoàn tất" message:@"Hệ thống đã được làm sạch" preferredStyle:UIAlertControllerStyleAlert];
             [done addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleDefault handler:nil]];
             
-            UIViewController *top = [UIApplication sharedApplication].windows.firstObject.rootViewController;
+            UIWindow *window = [UIApplication sharedApplication].windows.firstObject;
+            UIViewController *top = window.rootViewController;
             while(top.presentedViewController) top = top.presentedViewController;
             [top presentViewController:done animated:YES completion:nil];
         });
     }
 }
 
-#pragma mark - 💎 GIAO DIỆN CÔNG TẮC GẠT (LIQUID SWITCH)
+#pragma mark - 💎 GIAO DIỆN CÔNG TẮC (LIQUID GLASS)
 
-@interface AutoACSwitchVC : UIViewController
-@property (nonatomic, strong) UISwitch *toggle;
+@interface AutoACSettingsVC : UIViewController
 @end
 
-@implementation AutoACSwitchVC
+@implementation AutoACSettingsVC
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Tạo nhãn văn bản
-    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(20, 10, 150, 30)];
-    label.text = @"Tự động tối ưu";
-    label.font = [UIFont systemFontOfSize:16];
-    [self.view addSubview:label];
-
-    // Tạo nút công tắc gạt chuẩn iOS
-    self.toggle = [[UISwitch alloc] initWithFrame:CGRectMake(self.view.frame.size.width - 150, 10, 0, 0)];
-    self.toggle.on = [[NSUserDefaults standardUserDefaults] boolForKey:kAutoCSmartCleanKey];
-    [self.toggle addTarget:self action:@selector(switchChanged:) forControlEvents:UIControlEventValueChanged];
-    [self.view addSubview:self.toggle];
     
-    // Tự động căn chỉnh nút gạt sang phải (Auto Layout đơn giản)
-    self.toggle.translatesAutoresizingMaskIntoConstraints = NO;
+    // Công tắc 1: Tự động tối ưu
+    UILabel *l1 = [[UILabel alloc] initWithFrame:CGRectMake(20, 10, 200, 30)];
+    l1.text = @"Tự động tối ưu";
+    l1.font = [UIFont systemFontOfSize:16];
+    [self.view addSubview:l1];
+
+    UISwitch *sw1 = [[UISwitch alloc] init];
+    sw1.on = [[NSUserDefaults standardUserDefaults] boolForKey:kAutoCSmartCleanKey];
+    [sw1 addTarget:self action:@selector(autoCleanChanged:) forControlEvents:UIControlEventValueChanged];
+    [self.view addSubview:sw1];
+    sw1.translatesAutoresizingMaskIntoConstraints = NO;
+
+    // Công tắc 2: Xoá Ads banner tag
+    UILabel *l2 = [[UILabel alloc] initWithFrame:CGRectMake(20, 55, 200, 30)];
+    l2.text = @"Xoá Ads banner tag";
+    l2.font = [UIFont systemFontOfSize:16];
+    [self.view addSubview:l2];
+
+    UISwitch *sw2 = [[UISwitch alloc] init];
+    sw2.on = [[NSUserDefaults standardUserDefaults] boolForKey:kRemoveAdsKey];
+    [sw2 addTarget:self action:@selector(removeAdsChanged:) forControlEvents:UIControlEventValueChanged];
+    [self.view addSubview:sw2];
+    sw2.translatesAutoresizingMaskIntoConstraints = NO;
+
     [NSLayoutConstraint activateConstraints:@[
-        [self.toggle.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-25],
-        [self.toggle.centerYAnchor constraintEqualToAnchor:self.view.centerYAnchor]
+        [sw1.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-25],
+        [sw1.topAnchor constraintEqualToAnchor:self.view.topAnchor constant:10],
+        [sw2.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-25],
+        [sw2.topAnchor constraintEqualToAnchor:self.view.topAnchor constant:55]
     ]];
 }
 
-- (void)switchChanged:(UISwitch *)sender {
-    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:kAutoCSmartCleanKey];
+- (void)autoCleanChanged:(UISwitch *)s {
+    [[NSUserDefaults standardUserDefaults] setBool:s.isOn forKey:kAutoCSmartCleanKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+- (void)removeAdsChanged:(UISwitch *)s {
+    [[NSUserDefaults standardUserDefaults] setBool:s.isOn forKey:kRemoveAdsKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 @end
 
 static void showAutoACMenu() {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Tối ưu hệ thống" message:@"\n\n" preferredStyle:UIAlertControllerStyleActionSheet];
+    // Tiêu đề Tối ưu hệ thống (Chữ thường)
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Tối ưu hệ thống" message:@"\n\n\n\n" preferredStyle:UIAlertControllerStyleActionSheet];
     
-    // Chèn ViewController chứa nút gạt vào Action Sheet
-    AutoACSwitchVC *switchVC = [[AutoACSwitchVC alloc] init];
-    switchVC.preferredContentSize = CGSizeMake(270, 50);
-    [alert setValue:switchVC forKey:@"contentViewController"];
+    AutoACSettingsVC *settingsVC = [[AutoACSettingsVC alloc] init];
+    settingsVC.preferredContentSize = CGSizeMake(270, 100);
+    [alert setValue:settingsVC forKey:@"contentViewController"];
     
+    // --- NÚT XOÁ THỦ CÔNG (DÒNG CHỮ ĐỎ ĐÂY RỒI) ---
     [alert addAction:[UIAlertAction actionWithTitle:@"Dọn dẹp sâu" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
         performDeepClean(NO);
     }]];
     
-    [alert addAction:[UIAlertAction actionWithTitle:@"Hủy bỏ" style:UIAlertActionStyleCancel handler:nil]];
+    // Nút Đóng thay cho Hủy bỏ
+    [alert addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleCancel handler:nil]];
 
-    UIViewController *top = [UIApplication sharedApplication].windows.firstObject.rootViewController;
+    UIWindow *window = [UIApplication sharedApplication].windows.firstObject;
     if (@available(iOS 13.0, *)) {
         for (UIWindowScene* s in [UIApplication sharedApplication].connectedScenes)
             if (s.activationState == UISceneActivationStateForegroundActive)
-                for (UIWindow* w in s.windows) if (w.isKeyWindow) { top = w.rootViewController; break; }
+                for (UIWindow* w in s.windows) if (w.isKeyWindow) { window = w; break; }
     }
+    UIViewController *top = window.rootViewController;
     while(top.presentedViewController) top = top.presentedViewController;
     [top presentViewController:alert animated:YES completion:nil];
 }
@@ -104,8 +124,8 @@ static void showAutoACMenu() {
 %hook YTHeaderView
 - (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
     %orig;
-    CGPoint loc = [[touches anyObject] locationInView:(UIView *)self];
-    if (loc.x < ((UIView *)self).frame.size.width / 3.0) showAutoACMenu();
+    UIView *v = (UIView *)self;
+    if ([[touches anyObject] locationInView:v].x < v.frame.size.width / 3.0) showAutoACMenu();
 }
 %end
 
@@ -124,8 +144,4 @@ static void showAutoACMenu() {
             });
         }
     }];
-    
-    NSString *bid = [[NSBundle mainBundle] bundleIdentifier];
-    isYouTube = [bid isEqualToString:@"com.google.ios.youtube"];
-    isFacebook = [bid isEqualToString:@"com.facebook.Facebook"];
 }
