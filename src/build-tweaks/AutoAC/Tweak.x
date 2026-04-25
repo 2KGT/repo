@@ -1,47 +1,112 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
+static NSString *const kAutoCSmartCleanKey = @"AutoC_SmartClean_Enabled";
 static BOOL isYouTube = NO;
 static BOOL isFacebook = NO;
 
-// Bộ nhớ đệm lưu trữ Class (Tăng tốc độ cuộn tối đa)
-static NSMutableSet *knownAdClasses = nil;
-static NSMutableSet *knownSafeClasses = nil;
-
 // =========================================================
-// AUTO C OPTIMIZED - Tích hợp chung YouTube & Facebook (Hiệu suất cao)
+// 🛠 CÔNG CỤ DỌN DẸP
 // =========================================================
 
-#pragma mark - 1. Xoá cache (Chạy ngầm 1 lần lúc khởi động)
-static void smartClearAppCache(void) {
+// 1. Dọn dẹp thông minh (Smart Clean) - Chỉ xoá rác nhẹ
+static void performSmartClean() {
+    [[NSURLCache sharedURLCache] removeAllCachedResponses];
+    // Xoá các phản hồi mạng cũ để làm nhẹ máy
+}
+
+// 2. Dọn dẹp sâu (Deep Clean) - Xoá sạch gốc rễ
+static void performDeepClean() {
+    [[NSURLCache sharedURLCache] removeAllCachedResponses];
     NSFileManager *fm = [NSFileManager defaultManager];
-    NSString *cacheBase = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
+    NSString *cachePath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
     
-    NSArray *cacheFolders = @[
-        @"com.google.ios.youtube", @"com.google.ios.youtube/Caches", @"YouTube", @"YTData", @"com.google.youtube",
-        @"com.facebook.Facebook", @"FBCache", @"FBMediaCache", @"FBVideoCache"
+    // Danh sách các "ổ rác" lớn của cả 2 app
+    NSArray *allTrash = @[
+        @"com.google.ios.youtube", @"YouTube", @"YTData", @"v3", @"Storage",
+        @"com.facebook.Facebook", @"FBCache", @"FBMediaCache", @"FBVideoCache", @"FBInternal", @"MsysQueries"
     ];
     
-    for (NSString *folder in cacheFolders) {
-        NSString *fullPath = [cacheBase stringByAppendingPathComponent:folder];
-        if (![fm fileExistsAtPath:fullPath]) continue;
-        
-        NSArray *contents = [fm contentsOfDirectoryAtPath:fullPath error:nil];
-        for (NSString *file in contents) {
-            NSString *itemPath = [fullPath stringByAppendingPathComponent:file];
-            NSDictionary *attrs = [fm attributesOfItemAtPath:itemPath error:nil];
-            
-            if (attrs && ([[NSDate date] timeIntervalSinceDate:[attrs fileModificationDate]] > 259200 || 
-                          [attrs fileSize] > 20971520 || 
-                          [file containsString:@"video"] || 
-                          [file containsString:@"thumbnail"] || 
-                          [file containsString:@"image"])) {
-                [fm removeItemAtPath:itemPath error:nil];
-            }
+    for (NSString *folder in allTrash) {
+        NSString *fullPath = [cachePath stringByAppendingPathComponent:folder];
+        if ([fm fileExistsAtPath:fullPath]) {
+            [fm removeItemAtPath:fullPath error:nil];
+            [fm createDirectoryAtPath:fullPath withIntermediateDirectories:YES attributes:nil error:nil];
         }
     }
 }
 
+#pragma mark - LẮNG NGHE & TỰ ĐỘNG (3 GIÂY)
+@interface AutoACManager : NSObject
+@end
+
+@implementation AutoACManager
++ (void)load {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        [[NSNotificationCenter defaultCenter] addObserver:self 
+            selector:@selector(startAutoClean) 
+            name:UIApplicationDidBecomeActiveNotification 
+            object:nil];
+    });
+}
+
++ (void)startAutoClean {
+    BOOL isEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:kAutoCSmartCleanKey];
+    if (isEnabled && (isYouTube || isFacebook)) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
+            performSmartClean();
+        });
+    }
+}
+@end
+
+#pragma mark - GIAO DIỆN ĐIỀU KHIỂN (MENU)
+
+// Hàm hiển thị Menu điều khiển chung
+static void showAutoACMenu() {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"🚀 AutoAC Optimizer" 
+                                                                   message:@"Quản lý tài nguyên ứng dụng" 
+                                                            preferredStyle:UIAlertControllerStyleActionSheet];
+    
+    // Nút Dọn sâu (Thủ công)
+    [alert addAction:[UIAlertAction actionWithTitle:@"🔥 DỌN DẸP SÂU (Thủ công)" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
+        performDeepClean();
+        // Thông báo cho người dùng
+    }]];
+    
+    // Công tắc Tự động thông minh
+    BOOL currentStatus = [[NSUserDefaults standardUserDefaults] boolForKey:kAutoCSmartCleanKey];
+    NSString *toggleTitle = currentStatus ? @"✅ Tự động thông minh: BẬT" : @"❌ Tự động thông minh: TẮT";
+    
+    [alert addAction:[UIAlertAction actionWithTitle:toggleTitle style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+        [[NSUserDefaults standardUserDefaults] setBool:!currentStatus forKey:kAutoCSmartCleanKey];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+    }]];
+    
+    [alert addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleCancel handler:nil]];
+    
+    [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:alert animated:YES completion:nil];
+}
+
+// --- Hook YouTube: Nhấn vào Logo ---
+%hook YTHeaderLogoView
+- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    %orig;
+    showAutoACMenu();
+}
+%end
+
+// --- Hook Facebook: Nhấn vào Thanh tìm kiếm (Hoặc logo nếu có) ---
+// Ở Facebook, ta có thể chọn hook vào thanh điều hướng chính
+%hook FBNavigationBarTitleView
+- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    %orig;
+    showAutoACMenu();
+}
+%end
+
+#pragma mark - KHỞI TẠO
 %ctor {
     NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
     if ([bundleID isEqualToString:@"com.google.ios.youtube"]) {
@@ -50,73 +115,9 @@ static void smartClearAppCache(void) {
         isFacebook = YES;
     }
 
-    // Khởi tạo bộ nhớ đệm
     if (isYouTube || isFacebook) {
-        knownAdClasses = [[NSMutableSet alloc] init];
-        knownSafeClasses = [[NSMutableSet alloc] init];
-    }
-
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
-        smartClearAppCache();
-    });
-}
-
-#pragma mark - 2. Chặn quảng cáo (An toàn Layout & Cache Class)
-%hook UIView
-
-- (void)didMoveToWindow {
-    %orig;
-    if (!self.window) return;
-    if (!isYouTube && !isFacebook) return;
-
-    NSString *className = NSStringFromClass([self class]);
-    
-    // 1. Kiểm tra nhanh trong bộ nhớ đệm (Tốc độ O(1), không tốn CPU)
-    if ([knownAdClasses containsObject:className]) {
-        self.hidden = YES;
-        self.alpha = 0;
-        self.frame = CGRectZero; // Ép tàng hình và triệt tiêu kích thước, tránh crash UI
-        return;
-    }
-    if ([knownSafeClasses containsObject:className]) {
-        return;
-    }
-
-    // 2. Nếu Class mới xuất hiện, tiến hành phân tích
-    BOOL isAd = NO;
-
-    if (isYouTube) {
-        if ([className containsString:@"Shopping"] ||
-            [className containsString:@"ProductSticker"] ||
-            [className containsString:@"ProductPin"] ||
-            [className containsString:@"ytOverlayProductStickerHost"] ||
-            [className containsString:@"Sponsored"] ||
-            [className containsString:@"Offer"] ||
-            [className containsString:@"Merch"] ||
-            [className containsString:@"Banner"]) {
-            isAd = YES;
-        }
-    } else if (isFacebook) {
-        if ([className containsString:@"Sponsored"] ||
-            [className containsString:@"AdView"] ||
-            [className containsString:@"Banner"] ||
-            [className containsString:@"ProductTag"] ||
-            [className containsString:@"Commerce"] ||
-            [className containsString:@"Shopping"] ||
-            [className containsString:@"MarketplaceAd"] ||
-            [className containsString:@"FBAd"]) {
-            isAd = YES;
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:kAutoCSmartCleanKey] == nil) {
+            [[NSUserDefaults standardUserDefaults] setBool:YES forKey:kAutoCSmartCleanKey];
         }
     }
-
-    // 3. Lưu kết quả vào bộ nhớ đệm và thực thi
-    if (isAd) {
-        [knownAdClasses addObject:className];
-        self.hidden = YES;
-        self.alpha = 0;
-        self.frame = CGRectZero;
-    } else {
-        [knownSafeClasses addObject:className];
-    }
 }
-%end
