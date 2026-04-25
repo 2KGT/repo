@@ -6,22 +6,18 @@ static BOOL isYouTube = NO;
 static BOOL isFacebook = NO;
 
 // =========================================================
-// 🛠 CÔNG CỤ DỌN DẸP
+// 🛠 CÔNG CỤ DỌN DẸP THÔNG MINH & SÂU
 // =========================================================
 
-// 1. Dọn dẹp thông minh (Smart Clean) - Chỉ xoá rác nhẹ
 static void performSmartClean() {
     [[NSURLCache sharedURLCache] removeAllCachedResponses];
-    // Xoá các phản hồi mạng cũ để làm nhẹ máy
 }
 
-// 2. Dọn dẹp sâu (Deep Clean) - Xoá sạch gốc rễ
 static void performDeepClean() {
     [[NSURLCache sharedURLCache] removeAllCachedResponses];
     NSFileManager *fm = [NSFileManager defaultManager];
     NSString *cachePath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
     
-    // Danh sách các "ổ rác" lớn của cả 2 app
     NSArray *allTrash = @[
         @"com.google.ios.youtube", @"YouTube", @"YTData", @"v3", @"Storage",
         @"com.facebook.Facebook", @"FBCache", @"FBMediaCache", @"FBVideoCache", @"FBInternal", @"MsysQueries"
@@ -36,7 +32,7 @@ static void performDeepClean() {
     }
 }
 
-#pragma mark - LẮNG NGHE & TỰ ĐỘNG (3 GIÂY)
+#pragma mark - 🚀 TỰ ĐỘNG DỌN DẸP (3 GIÂY)
 @interface AutoACManager : NSObject
 @end
 
@@ -61,21 +57,17 @@ static void performDeepClean() {
 }
 @end
 
-#pragma mark - GIAO DIỆN ĐIỀU KHIỂN (MENU)
+#pragma mark - 📱 GIAO DIỆN ĐIỀU KHIỂN (FIX DEPRECATED)
 
-// Hàm hiển thị Menu điều khiển chung
 static void showAutoACMenu() {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"🚀 AutoAC Optimizer" 
                                                                    message:@"Quản lý tài nguyên ứng dụng" 
                                                             preferredStyle:UIAlertControllerStyleActionSheet];
     
-    // Nút Dọn sâu (Thủ công)
     [alert addAction:[UIAlertAction actionWithTitle:@"🔥 DỌN DẸP SÂU (Thủ công)" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
         performDeepClean();
-        // Thông báo cho người dùng
     }]];
     
-    // Công tắc Tự động thông minh
     BOOL currentStatus = [[NSUserDefaults standardUserDefaults] boolForKey:kAutoCSmartCleanKey];
     NSString *toggleTitle = currentStatus ? @"✅ Tự động thông minh: BẬT" : @"❌ Tự động thông minh: TẮT";
     
@@ -85,11 +77,33 @@ static void showAutoACMenu() {
     }]];
     
     [alert addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleCancel handler:nil]];
-    
-    [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:alert animated:YES completion:nil];
+
+    // --- ĐOẠN MÃ SỬA LỖI .keyWindow (CÁCH 1) ---
+    UIViewController *topController = nil;
+    if (@available(iOS 13.0, *)) {
+        for (UIWindowScene* windowScene in [UIApplication sharedApplication].connectedScenes) {
+            if (windowScene.activationState == UISceneActivationStateForegroundActive) {
+                for (UIWindow *window in windowScene.windows) {
+                    if (window.isKeyWindow) {
+                        topController = window.rootViewController;
+                        break;
+                    }
+                }
+            }
+        }
+    } else {
+        topController = [UIApplication sharedApplication].keyWindow.rootViewController;
+    }
+
+    if (topController) {
+        while (topController.presentedViewController) {
+            topController = topController.presentedViewController;
+        }
+        [topController presentViewController:alert animated:YES completion:nil];
+    }
 }
 
-// --- Hook YouTube: Nhấn vào Logo ---
+// --- Hook YouTube & Facebook ---
 %hook YTHeaderLogoView
 - (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
     %orig;
@@ -97,8 +111,6 @@ static void showAutoACMenu() {
 }
 %end
 
-// --- Hook Facebook: Nhấn vào Thanh tìm kiếm (Hoặc logo nếu có) ---
-// Ở Facebook, ta có thể chọn hook vào thanh điều hướng chính
 %hook FBNavigationBarTitleView
 - (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
     %orig;
@@ -108,16 +120,18 @@ static void showAutoACMenu() {
 
 #pragma mark - KHỞI TẠO
 %ctor {
-    NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
-    if ([bundleID isEqualToString:@"com.google.ios.youtube"]) {
-        isYouTube = YES;
-    } else if ([bundleID isEqualToString:@"com.facebook.Facebook"]) {
-        isFacebook = YES;
-    }
+    @autoreleasepool {
+        NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
+        if ([bundleID isEqualToString:@"com.google.ios.youtube"]) {
+            isYouTube = YES;
+        } else if ([bundleID isEqualToString:@"com.facebook.Facebook"]) {
+            isFacebook = YES;
+        }
 
-    if (isYouTube || isFacebook) {
-        if ([[NSUserDefaults standardUserDefaults] objectForKey:kAutoCSmartCleanKey] == nil) {
-            [[NSUserDefaults standardUserDefaults] setBool:YES forKey:kAutoCSmartCleanKey];
+        if (isYouTube || isFacebook) {
+            if ([[NSUserDefaults standardUserDefaults] objectForKey:kAutoCSmartCleanKey] == nil) {
+                [[NSUserDefaults standardUserDefaults] setBool:YES forKey:kAutoCSmartCleanKey];
+            }
         }
     }
 }
