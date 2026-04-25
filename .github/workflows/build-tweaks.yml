@@ -16,6 +16,8 @@ on:
         options:
           # OPTIONS-START
           - '(none)'
+          - AutoAC
+          - AutoDL
           # OPTIONS-END
 
 env:
