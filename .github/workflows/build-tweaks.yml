@@ -23,13 +23,11 @@ jobs:
       contents: write
     steps:
       - name: 📥 Checkout Repository
-        # Sử dụng SHA thay cho actions/checkout@v4 để tuân thủ quy tắc bảo mật của repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 
         with:
           fetch-depth: 0
 
       - name: 🛠️ Setup Theos
-        # Sử dụng SHA thay cho randomblock1/theos-action@v1
         uses: randomblock1/theos-action@3034989679698d28a3915f070c7e2b6946973809
 
       - name: ⚙️ Build Logic
@@ -52,6 +50,7 @@ jobs:
           NVER="$v1.$v2.$v3.$((v4 + 1))"
           sed -i '' "s/^Version: .*/Version: $NVER/" "$CTRL"
 
+          # Build
           make -C "$DIR" clean package FINALPACKAGE=1
           mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           
@@ -65,27 +64,15 @@ jobs:
           brew install dpkg
           mkdir -p debs depictions/images icons
           
-          # 1. Đưa file deb mới vào kho
           cp -v deb_output/*.deb debs/
+          dpkg-scanpackages -m ./debs /dev/null > Packages && bzip2 -fks Packages
           
-          # 2. Quét kho tạo Packages
-          dpkg-scanpackages -m ./debs /dev/null > Packages
-          bzip2 -fks Packages
-          
-          # 3. Tạo JSON đầy đủ Media
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           URL="${{ env.BASE_URL }}"
           CTRL="${{ steps.metadata.outputs.proj_dir }}/control"
           PKG=$(grep "^Package:" "$CTRL" | cut -d' ' -f2)
           DESC=$(grep "^Description:" "$CTRL" | cut -d: -f2- | sed 's/^ *//')
           
-          BANNER=""; [ -f "depictions/images/${SAFE}-banner.png" ] && BANNER="${URL}/depictions/images/${SAFE}-banner.png"
-          VIDEO=""; [ -f "depictions/images/${SAFE}.mp4" ] && VIDEO="${URL}/depictions/images/${SAFE}.mp4"
-          SS_JSON=""
-          for i in {1..5}; do
-            [ -f "depictions/images/${SAFE}${i}.png" ] && SS_JSON="${SS_JSON}${SS_JSON:+,}\"${URL}/depictions/images/${SAFE}${i}.png\""
-          done
-
           cat > depictions/${SAFE}.json << EOF
           {
             "name": "${{ github.event.inputs.project }}",
@@ -93,24 +80,37 @@ jobs:
             "version": "${{ steps.metadata.outputs.proj_ver }}",
             "description": "$DESC",
             "icon": "${URL}/icons/${SAFE}.png",
-            "banner": "$BANNER",
-            "video": "$VIDEO",
-            "screenshots": [$SS_JSON],
+            "banner": "${URL}/depictions/images/${SAFE}-banner.png",
+            "video": "${URL}/depictions/images/${SAFE}.mp4",
+            "screenshots": [
+              "${URL}/depictions/images/${SAFE}1.png",
+              "${URL}/depictions/images/${SAFE}2.png",
+              "${URL}/depictions/images/${SAFE}3.png"
+            ],
             "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
-            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "- Phát hành bản build mới nhất"}]
+            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "- Cập nhật phiên bản mới nhất"}]
           }
           EOF
 
-          # 4. CHIẾN THUẬT GIT: Xử lý triệt để xung đột
+          # THỰC HIỆN CÔNG VIỆC CHÍNH
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           
-          rm -rf theos/ .theos/ obj/ deb_output/
-          
           git add .
           git commit -m "📦 Build $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
-          
           git fetch origin main
-          git rebase origin/main || (git stash && git rebase origin/main && git stash pop)
-          
+          git rebase origin/main
           git push origin main
+
+      - name: 🧹 Final Room Cleanup
+        if: always() # Chạy ngay cả khi các bước trên thành công hay thất bại
+        run: |
+          echo "Đang dọn dẹp căn phòng để đón lần diễn tiếp theo..."
+          # Dọn dẹp thư mục build của dự án cụ thể
+          DIR="${{ steps.metadata.outputs.proj_dir }}"
+          if [ -d "$DIR" ]; then
+            rm -rf "$DIR/packages" "$DIR/.theos" "$DIR/obj"
+          fi
+          # Dọn dẹp trạm trung chuyển và rác hệ thống
+          rm -rf deb_output/
+          echo "Căn phòng đã trống và sạch sẽ!"
