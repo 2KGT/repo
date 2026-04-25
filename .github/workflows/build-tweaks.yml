@@ -1,14 +1,15 @@
 name: Build Multi Tweak
+
 on:
   workflow_dispatch:
     inputs:
       action:
-        description: '🚀 Chon chuc nang'
+        description: 'Function options'
         type: choice
         default: 'Build Project'
         options: [Build Project, Scan Options]
       project:
-        description: '🧱 Chon du an'
+        description: 'Construction options'
         required: true
         type: choice
         default: '(none)'
@@ -56,51 +57,79 @@ jobs:
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           URL="https://raw.githubusercontent.com/${{ github.repository }}/main"
+          
+          # 1. Gán SileoDepiction & Meta
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
           echo "SileoDepiction: ${URL}/depictions/${SAFE}.json" >> "$CTRL"
+          [ "$(grep -c "^Section:" "$CTRL")" -eq 0 ] && echo "Section: Tweaks" >> "$CTRL"
+          [ "$(grep -c "^Architecture:" "$CTRL")" -eq 0 ] && echo "Architecture: iphoneos-arm" >> "$CTRL"
+
+          # 2. Nhảy Version
           VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           [[ "$VER" != *.*.*.* ]] && VER="0.0.0.0"
           IFS='.' read -r v1 v2 v3 v4 <<< "$VER"
           NVER="$v1.$v2.$v3.$((v4 + 1))"
           sed -i '' "s/^Version: .*/Version: $NVER/" "$CTRL"
+
+          # 3. Quét Changelog
           SRC=$(find "$DIR" -maxdepth 1 \( -name "*.x" -o -name "*.xm" \) | head -n 1)
-          NEWS=$(grep "// NEW:" "$SRC" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || echo "- Update")
-          FIXS=$(grep "// FIX:" "$SRC" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || echo "- Fixes")
+          NEWS=$(grep "// NEW:" "$SRC" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || echo "- Cập nhật hệ thống")
+          FIXS=$(grep "// FIX:" "$SRC" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || echo "- Tối ưu hóa")
+
+          # 4. Export dữ liệu
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
           echo "proj_ver=$NVER" >> $GITHUB_OUTPUT
           echo "tweak_name=$DP_NAME" >> $GITHUB_OUTPUT
           echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo -e "### NEW\n$NEWS\n\n### FIX\n$FIXS" >> $GITHUB_OUTPUT
+          echo -e "### ✨ Tính năng mới\n$NEWS\n\n### 🐛 Sửa lỗi\n$FIXS" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+
+          # 5. Build
           make -C "$DIR" clean package FINALPACKAGE=1 || make -C "$DIR" package FINALPACKAGE=1
           mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           echo "deb_file=$(basename $(ls deb_output/*.deb | head -n 1))" >> $GITHUB_OUTPUT
-      - name: 📦 Update Repo & Depiction
+
+      - name: 📦 Update Repo & Depiction JSON
         if: github.event.inputs.action == 'Build Project'
         run: |
           brew install dpkg
           mkdir -p debs depictions
           cp -v deb_output/*.deb debs/ 2>/dev/null || true
           dpkg-scanpackages -m ./debs /dev/null > Packages && bzip2 -fks Packages
+          
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           URL="https://raw.githubusercontent.com/${{ github.repository }}/main"
-          DESC=$(grep "^Description:" "${{ steps.metadata.outputs.proj_dir }}/control" | cut -d: -f2- | sed 's/^ *//')
+          CTRL="${{ steps.metadata.outputs.proj_dir }}/control"
+          DESC=$(grep "^Description:" "$CTRL" | cut -d: -f2- | sed 's/^ *//')
+          
+          # Tự động quét Media
+          BANNER=""; [ -f "depictions/images/${SAFE}-banner.png" ] && BANNER="${URL}/depictions/images/${SAFE}-banner.png"
+          VIDEO=""; [ -f "depictions/images/${SAFE}.mp4" ] && VIDEO="${URL}/depictions/images/${SAFE}.mp4"
+          SS_JSON=""
+          for i in {1..5}; do
+            [ -f "depictions/images/${SAFE}${i}.png" ] && SS_JSON="${SS_JSON}${SS_JSON:+,}\"${URL}/depictions/images/${SAFE}${i}.png\""
+          done
+
+          # Ghi JSON đầy đủ
           cat > depictions/${SAFE}.json << EOF
           {
             "name": "${{ steps.metadata.outputs.tweak_name }}",
             "version": "${{ steps.metadata.outputs.proj_ver }}",
             "description": "$DESC",
             "icon": "${URL}/icons/${SAFE}.png",
-            "screenshots": ["${URL}/depictions/images/${SAFE}1.png"],
+            "banner": "$BANNER",
+            "video": "$VIDEO",
+            "screenshots": [$SS_JSON],
             "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
             "changelog": "${{ steps.metadata.outputs.changelog }}"
           }
           EOF
+
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           rm -rf theos/ .theos/ obj/
           git add .
-          git commit -m "build: ${{ steps.metadata.outputs.safe_name }} v${{ steps.metadata.outputs.proj_ver }}" || exit 0
+          git commit -m "build: $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
           git pull --rebase origin main
           git push origin main
