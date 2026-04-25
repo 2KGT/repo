@@ -23,14 +23,14 @@ jobs:
       contents: write
     steps:
       - name: 📥 Checkout Repository
-        # SHA chuẩn cho actions/checkout@v4.2.2
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 
+        # Đã xoá SHA, dùng tag v4 cực kỳ ổn định
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: 🛠️ Setup Theos
-        # SHA chuẩn cho randomblock1/theos-action@v1.1.0 (Fix lỗi không tìm thấy)
-        uses: randomblock1/theos-action@065b93196901844f2e96bc430e71616c60be562b
+        # Đã xoá SHA, dùng tag v1 chuẩn cho Theos
+        uses: randomblock1/theos-action@v1
 
       - name: ⚙️ Build Logic (Semantic Versioning)
         id: metadata
@@ -42,10 +42,8 @@ jobs:
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
-          # Đọc Version hiện tại
+          # Đọc và tăng version X.Y.Z
           CURRENT_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
-          
-          # Tăng Version chuẩn X.Y.Z (Major.Minor.Patch)
           if [[ $CURRENT_VER =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
               MAJOR=${BASH_REMATCH[1]}
               MINOR=${BASH_REMATCH[2]}
@@ -55,9 +53,7 @@ jobs:
               NEW_VER="0.0.1"
           fi
           
-          echo "Nâng cấp: $CURRENT_VER -> $NEW_VER"
-
-          # Cập nhật Control
+          # Cập nhật file Control
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
@@ -99,14 +95,12 @@ jobs:
               "${URL}/depictions/images/${SAFE}3.png"
             ],
             "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
-            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "• Cập nhật phiên bản mới nhất\n• Tối ưu hiệu năng build"}]
+            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "• Cập nhật phiên bản mới nhất\n• Tối ưu hóa căn phòng build"}]
           }
           EOF
 
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          
-          # Dọn dẹp sơ bộ
           rm -rf deb_output/
           
           git add .
@@ -119,8 +113,10 @@ jobs:
       - name: 🧹 Final Room Cleanup
         if: always()
         run: |
+          # Dọn dẹp sân khấu sau khi đã Push thành công
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           if [ -d "$DIR" ]; then
             rm -rf "$DIR/packages" "$DIR/.theos" "$DIR/obj"
           fi
           rm -rf theos/ .theos/
+          echo "Phòng đã trống, mời bạn vào diễn lần sau!"
