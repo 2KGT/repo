@@ -25,8 +25,7 @@ jobs:
   process:
     runs-on: macos-latest
     permissions:
-      contents: write
-      workflows: write 
+      contents: write # Chỉ giữ lại quyền cơ bản nhất để tránh lỗi hệ thống
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
@@ -38,20 +37,18 @@ jobs:
         run: |
           FILE=".github/workflows/build-tweaks.yml"
           
-          # 1. Lấy danh sách Name, làm sạch, thêm gạch đầu dòng và khoảng trắng chuẩn YAML
-          # Lệnh này sẽ tạo ra định dạng:           - 'Tên Dự Án'
-          PROJS=$(grep -h "^Name:" src/build-tweaks/*/control | cut -d: -f2- | sed "s/^ *//;s/ *$//" | sort | uniq | sed "s/^/- '/;s/$/'/")
+          # 1. Lấy danh sách Name từ file control (Dùng -h để không hiện đường dẫn tệp)
+          # Thêm lệnh sed để định dạng đúng chuẩn YAML ngay từ đầu
+          PROJS=$(grep -h "^Name:" src/build-tweaks/*/control | cut -d: -f2- | sed "s/^ *//;s/ *$//" | sort | uniq | sed "s/^/          - '/;s/$/'/")
           
-          # 2. Tạo nội dung chèn (giữ đúng 10 khoảng trắng thụt lề của file YAML)
+          # 2. Tạo nội dung chèn mới
+          # Xóa sạch khoảng trắng thừa để tránh lỗi parse YAML
           LIST="          - '(none)'"
           if [ ! -z "$PROJS" ]; then
-            # Chuyển danh sách thành khối có thụt lề
-            FORMATTED_PROJS=$(echo "$PROJS" | sed 's/^/          /')
-            LIST="$LIST"$'\n'"$FORMATTED_PROJS"
+            LIST="$LIST"$'\n'"$PROJS"
           fi
 
-          # 3. Sử dụng Perl để thay thế (Perl ổn định nhất trên macOS)
-          # Nó sẽ tìm từ tag START đến tag END và thay bằng LIST mới
+          # 3. Sử dụng Perl để thay thế khối Options (Perl ổn định hơn sed trên macOS)
           perl -i -0777 -pe "s/(# OPTIONS-START).*?(# OPTIONS-END)/\$1\n$LIST\n          \$2/s" "$FILE"
           
           # 4. Lưu và đẩy lên
@@ -72,6 +69,7 @@ jobs:
           DP_NAME="${{ github.event.inputs.project }}"
           [ "$DP_NAME" = "(none)" ] && exit 1
           
+          # Tìm file control mà không để dính đường dẫn tệp vào biến
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
