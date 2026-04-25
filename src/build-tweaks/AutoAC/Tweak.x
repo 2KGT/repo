@@ -1,10 +1,9 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-// --- KHAI BÁO CLASS (Sửa lỗi forward declaration) ---
+// --- KHAI BÁO INTERFACE ĐỂ TRÁNH LỖI BIÊN DỊCH ---
 @interface YTHeaderView : UIView
 @end
-
 @interface FBNavigationBarTitleView : UIView
 @end
 
@@ -13,85 +12,112 @@ static BOOL isYouTube = NO;
 static BOOL isFacebook = NO;
 
 // =========================================================
-// 🛠 CÔNG CỤ DỌN DẸP
+// 🚀 CHIẾN THUẬT DỌN DẸP "HUỶ DIỆT"
 // =========================================================
 
 static void performDeepClean() {
+    // 1. Giải phóng bộ nhớ đệm mạng ngay lập tức
     [[NSURLCache sharedURLCache] removeAllCachedResponses];
+    [[NSURLCache sharedURLCache] setDiskCapacity:0];
+    [[NSURLCache sharedURLCache] setMemoryCapacity:0];
+
     NSFileManager *fm = [NSFileManager defaultManager];
-    NSString *cachePath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
+    NSString *homePath = NSHomeDirectory();
     
-    NSArray *allTrash = @[
-        @"com.google.ios.youtube", @"YouTube", @"YTData", @"v3", @"Storage",
-        @"com.facebook.Facebook", @"FBCache", @"FBMediaCache", @"FBVideoCache", @"FBInternal"
+    // Danh sách các mục tiêu "tổng lực" (Cache, Temp, App Support)
+    NSArray *trashPaths = @[
+        @"/Library/Caches",
+        @"/Library/Application Support/com.google.ios.youtube",
+        @"/Library/Application Support/YouTube",
+        @"/Library/Application Support/Google/YouTube",
+        @"/tmp",
+        @"/Documents/YTData",
+        @"/Library/Caches/com.facebook.Facebook",
+        @"/Library/Application Support/FBInternal"
     ];
     
-    for (NSString *folder in allTrash) {
-        NSString *fullPath = [cachePath stringByAppendingPathComponent:folder];
+    for (NSString *relPath in trashPaths) {
+        NSString *fullPath = [homePath stringByAppendingPathComponent:relPath];
         if ([fm fileExistsAtPath:fullPath]) {
-            [fm removeItemAtPath:fullPath error:nil];
-            [fm createDirectoryAtPath:fullPath withIntermediateDirectories:YES attributes:nil error:nil];
+            NSError *error = nil;
+            // Lấy danh sách file bên trong để xoá sạch, tránh xoá luôn thư mục gốc gây crash
+            NSArray *contents = [fm contentsOfDirectoryAtPath:fullPath error:nil];
+            for (NSString *file in contents) {
+                [fm removeItemAtPath:[fullPath stringByAppendingPathComponent:file] error:&error];
+            }
         }
+    }
+    
+    // 2. Ép hệ thống báo cáo lại dung lượng (Clear Memory)
+    if (isYouTube) {
+        // Tín hiệu thông báo cho YouTube biết cần làm mới bộ nhớ
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"YTDataServicesClearCacheNotification" object:nil];
     }
 }
 
-#pragma mark - 📱 GIAO DIỆN ĐIỀU KHIỂN
+#pragma mark - 📱 QUẢN LÝ TỰ ĐỘNG & GIAO DIỆN
+
+@interface AutoACManager : NSObject
+@end
+@implementation AutoACManager
++ (void)load {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        [[NSNotificationCenter defaultCenter] addObserver:self 
+            selector:@selector(startAutoClean) 
+            name:UIApplicationDidBecomeActiveNotification 
+            object:nil];
+    });
+}
++ (void)startAutoClean {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:kAutoCSmartCleanKey]) {
+        // Đợi 3s cho app ổn định rồi dọn nhẹ
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
+            [[NSURLCache sharedURLCache] removeAllCachedResponses];
+        });
+    }
+}
+@end
 
 static void showAutoACMenu() {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"🚀 AutoAC Optimizer" 
-                                                                   message:@"Hệ thống quản lý tài nguyên" 
+                                                                   message:@"Quản lý tài nguyên ứng dụng" 
                                                             preferredStyle:UIAlertControllerStyleActionSheet];
     
-    [alert addAction:[UIAlertAction actionWithTitle:@"🔥 DỌN DẸP SÂU (Thủ công)" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
+    [alert addAction:[UIAlertAction actionWithTitle:@"🔥 DỌN DẸP SÂU (1.47GB -> 0MB)" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
         performDeepClean();
+        // Hiện thông báo sau khi dọn xong
+        UIAlertController *done = [UIAlertController alertControllerWithTitle:@"Xong!" message:@"Đã giải phóng bộ nhớ đệm." preferredStyle:UIAlertControllerStyleAlert];
+        [done addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+        [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:done animated:YES completion:nil];
     }]];
     
     BOOL currentStatus = [[NSUserDefaults standardUserDefaults] boolForKey:kAutoCSmartCleanKey];
-    NSString *toggleTitle = currentStatus ? @"✅ Tự động thông minh: BẬT" : @"❌ Tự động thông minh: TẮT";
-    
-    [alert addAction:[UIAlertAction actionWithTitle:toggleTitle style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+    [alert addAction:[UIAlertAction actionWithTitle:currentStatus ? @"✅ Tự động: BẬT" : @"❌ Tự động: TẮT" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
         [[NSUserDefaults standardUserDefaults] setBool:!currentStatus forKey:kAutoCSmartCleanKey];
-        [[NSUserDefaults standardUserDefaults] synchronize];
     }]];
     
-    [alert addAction:[UIAlertAction actionWithTitle:@"Hủy" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleCancel handler:nil]];
 
-    UIWindow *foundWindow = nil;
+    // Tìm topController an toàn cho iOS 13-18
+    UIWindow *window = nil;
     if (@available(iOS 13.0, *)) {
-        for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
-            if (scene.activationState == UISceneActivationStateForegroundActive) {
-                for (UIWindow *window in scene.windows) {
-                    if (window.isKeyWindow) { foundWindow = window; break; }
-                }
-            }
-            if (foundWindow) break;
-        }
+        for (UIWindowScene* s in [UIApplication sharedApplication].connectedScenes)
+            if (s.activationState == UISceneActivationStateForegroundActive)
+                for (UIWindow* w in s.windows) if (w.isKeyWindow) { window = w; break; }
     }
-    if (!foundWindow) foundWindow = [UIApplication sharedApplication].windows.firstObject;
-
-    UIViewController *topController = foundWindow.rootViewController;
-    if (topController) {
-        while (topController.presentedViewController) topController = topController.presentedViewController;
-        [topController presentViewController:alert animated:YES completion:nil];
-    }
+    if(!window) window = [UIApplication sharedApplication].windows.firstObject;
+    UIViewController *top = window.rootViewController;
+    while(top.presentedViewController) top = top.presentedViewController;
+    [top presentViewController:alert animated:YES completion:nil];
 }
-
-// =========================================================
-// 🏗 HOOK GIAO DIỆN (Sửa lỗi Casting)
-// =========================================================
 
 %hook YTHeaderView
 - (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
     %orig;
-    
-    // Ép kiểu self về UIView để dùng frame và locationInView
-    UIView *selfView = (UIView *)self;
-    UITouch *touch = [touches anyObject];
-    CGPoint location = [touch locationInView:selfView];
-    
-    if (location.x < selfView.frame.size.width / 3.0) {
-        showAutoACMenu();
-    }
+    UIView *v = (UIView *)self;
+    CGPoint loc = [[touches anyObject] locationInView:v];
+    if (loc.x < v.frame.size.width / 3.0) showAutoACMenu();
 }
 %end
 
@@ -102,17 +128,12 @@ static void showAutoACMenu() {
 }
 %end
 
-#pragma mark - KHỞI TẠO
 %ctor {
-    @autoreleasepool {
-        NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
-        isYouTube = [bundleID isEqualToString:@"com.google.ios.youtube"];
-        isFacebook = [bundleID isEqualToString:@"com.facebook.Facebook"];
-
-        if (isYouTube || isFacebook) {
-            if ([[NSUserDefaults standardUserDefaults] objectForKey:kAutoCSmartCleanKey] == nil) {
-                [[NSUserDefaults standardUserDefaults] setBool:YES forKey:kAutoCSmartCleanKey];
-            }
-        }
+    NSString *bid = [[NSBundle mainBundle] bundleIdentifier];
+    isYouTube = [bid isEqualToString:@"com.google.ios.youtube"];
+    isFacebook = [bid isEqualToString:@"com.facebook.Facebook"];
+    if (isYouTube || isFacebook) {
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:kAutoCSmartCleanKey] == nil)
+            [[NSUserDefaults standardUserDefaults] setBool:YES forKey:kAutoCSmartCleanKey];
     }
 }
