@@ -1,91 +1,90 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import <Photos/Photos.h>
 
-// Ép kiểu để trình biên dịch không bắt lỗi class lạ
-@interface UIView (AutoAC)
-- (UIViewController *)_viewControllerForAncestor;
-@end
-
-static NSString *const kAutoCSmartCleanKey = @"AutoC_SmartClean_Enabled";
-static NSString *const kRemoveAdsKey = @"AutoC_RemoveAds_Enabled";
+// --- BIẾN CẤU HÌNH ---
+static BOOL kAutoClean = YES;
+static BOOL kFastDownload = NO;
+static BOOL kRemoveAds = YES;
 
 // =========================================================
-// 🚀 LOGIC DỌN DẸP
+// 🚫 DIỆT QUẢNG CÁO BANNER & TAG BÁN HÀNG
 // =========================================================
 
-static void performDeepClean(BOOL isAuto) {
-    [[NSURLCache sharedURLCache] removeAllCachedResponses];
-    NSFileManager *fm = [NSFileManager defaultManager];
-    NSString *cachePath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
-    
-    // Quét sạch các thư mục rác
-    NSArray *targets = @[@"com.google.ios.youtube", @"com.facebook.Facebook", @"tmp"];
-    for (NSString *target in targets) {
-        NSString *path = [cachePath stringByAppendingPathComponent:target];
-        [fm removeItemAtPath:path error:nil];
-    }
-}
+%hook YTAdSlotContainerView
+- (void)layoutSubviews { if (kRemoveAds) return; %orig; }
+- (void)setHidden:(BOOL)hidden { %orig(kRemoveAds ? YES : hidden); }
+%end
 
-#pragma mark - 💎 GIAO DIỆN & KÍCH HOẠT
-
-static void showAutoACMenu(UIView *fromView) {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Tối ưu hệ thống" 
-                                                                   message:@"Thiết lập quản lý tài nguyên" 
-                                                            preferredStyle:UIAlertControllerStyleActionSheet];
-    
-    [alert addAction:[UIAlertAction actionWithTitle:@"Dọn dẹp sâu" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
-        performDeepClean(NO);
-    }]];
-    
-    [alert addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleCancel handler:nil]];
-
-    // Tìm ViewController để hiển thị
-    UIWindow *window = [UIApplication sharedApplication].windows.firstObject;
-    UIViewController *top = window.rootViewController;
-    while (top.presentedViewController) top = top.presentedViewController;
-    [top presentViewController:alert animated:YES completion:nil];
-}
-
-// =========================================================
-// 🛠 HOOK "DIỆT" LỖI: SỬ DỤNG GESTURE THAY VÌ TOUCHES
-// =========================================================
-
-// Hook vào trung tâm tiêu đề của cả 2 app
-%hook UINavigationBar
-- (void)layoutSubviews {
-    %orig;
-    
-    // Kiểm tra xem đã gắn nút kích hoạt chưa để tránh gắn trùng
-    BOOL alreadyHasGesture = NO;
-    for (UIGestureRecognizer *g in self.gestureRecognizers) {
-        if ([g.name isEqualToString:@"AutoACGesture"]) {
-            alreadyHasGesture = YES;
-            break;
+%hook YTSlimVideoMetadataSectionView
+- (void)layoutSubviews { 
+    %orig; 
+    if (kRemoveAds) {
+        // Diệt tag bán hàng/shopee/banner dưới video
+        for (UIView *sub in self.subviews) {
+            if ([NSStringFromClass([sub class]) containsString:@"Promotion"]) [sub setHidden:YES];
         }
-    }
-    
-    if (!alreadyHasGesture) {
-        // Tạo một vùng nhấn giữ (Long Press) 1 giây vào Header để hiện Menu
-        // Cách này cực kỳ ổn định và không sợ nhấn nhầm khi lướt app
-        UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleAutoACGesture:)];
-        longPress.minimumPressDuration = 1.0;
-        longPress.name = @"AutoACGesture";
-        [self addGestureRecognizer:longPress];
-    }
-}
-
-%new
-- (void)handleAutoACGesture:(UILongPressGestureRecognizer *)gesture {
-    if (gesture.state == UIGestureRecognizerStateBegan) {
-        showAutoACMenu(self);
     }
 }
 %end
 
-%ctor {
-    [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidBecomeActiveNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:kAutoCSmartCleanKey]) {
-            performDeepClean(YES);
-        }
+// =========================================================
+// 📥 LOGIC TẢI & THÔNG BÁO HOÀN TẤT
+// =========================================================
+
+static void finalizeDownload(NSURL *fileURL) {
+    [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+        [PHAssetChangeRequest creationRequestForAssetFromVideoAtFileURL:fileURL];
+    } completionHandler:^(BOOL success, NSError *error) {
+        // THÔNG BÁO ĐÃ TẢI XONG
+        dispatch_async(dispatch_get_main_queue(), ^{
+            UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleSuccess];
+            [haptic impactOccurred]; // Rung nhẹ khi xong
+            
+            // Hiện HUD báo hoàn tất (v3.6)
+            // updateHUD(@"Tải về hoàn tất! ✅\nĐã lưu vào Ảnh", YES);
+        });
     }];
 }
+
+// =========================================================
+// ⚙️ TÍCH HỢP VÀO CÀI ĐẶT YOUTUBE (NATIVE)
+// =========================================================
+
+%hook YTSettingsViewController
+- (void)viewDidLoad {
+    %orig;
+    // Sử dụng YouGroupSettings để tạo danh sách trong Cài đặt YouTube
+    [self registerAutoACSettings];
+}
+
+%new
+- (void)registerAutoACSettings {
+    // Tạo mục AutoAC trong Cài đặt
+    // Gom nhóm: Tải nhanh, Diệt Ads, Dọn dẹp cache
+}
+%end
+
+// =========================================================
+// 🛠 NÚT DỌN CACHE THỦ CÔNG & XEM TRẠNG THÁI
+// =========================================================
+
+%hook YTHeaderLogoView
+%new
+- (void)autoAC_ReviewStatus {
+    // Nhấn giữ Logo: 
+    // 1. Hiện lại HUD trạng thái tải cuối cùng.
+    // 2. Hiện 1 nút "Dọn dẹp ngay" cực nhỏ phía dưới HUD để nhấn thủ công.
+}
+%end
+
+%hook YTVideoOverlayView
+%new
+- (void)handleAutoACDownload {
+    if (kFastDownload) {
+        // Tải ngay 1080p
+    } else {
+        // Hiện Popup chọn chất lượng: 4K, 1080p, MP3...
+    }
+}
+%end
