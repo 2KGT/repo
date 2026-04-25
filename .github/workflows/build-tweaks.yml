@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       project:
-        description: 'Chọn dự án để Build'
+        description: 'Chọn dự án cần Build'
         required: true
         type: choice
         default: '(none)'
