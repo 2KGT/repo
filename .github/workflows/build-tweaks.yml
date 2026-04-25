@@ -7,13 +7,13 @@ on:
         description: 'Construction options'
         required: true
         type: choice
-        default: 'AutoAC'
+        default: '(none)' # Chốt an toàn: Mặc định không chọn gì
         options:
+          - '(none)'
           - 'AutoAC'
           - 'AutoDL'
 
 env:
-  # Link Raw chuẩn của bạn
   BASE_URL: "https://raw.githubusercontent.com/2KGT/repo/main"
 
 jobs:
@@ -34,50 +34,52 @@ jobs:
         id: metadata
         run: |
           DP_NAME="${{ github.event.inputs.project }}"
+          if [ "$DP_NAME" = "(none)" ]; then
+            echo "Vui lòng chọn một dự án hợp lệ!"
+            exit 1
+          fi
           
-          # Tìm đúng thư mục dựa vào Name trong file control
+          # Tìm thư mục dự án
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
-          # Tạo tên sạch không dấu/cách để gán link ảnh (VD: Auto AC -> AutoAC)
+          # SAFE là tên viết liền để gán file ảnh (Ví dụ: AutoAC)
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
-          # 1. Gán SileoDepiction vào control
+          # 1. Gán SileoDepiction vào file control
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
           
-          # 2. Tăng Version tự động (x.x.x.N + 1)
+          # 2. Tăng Version tự động
           VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           [[ "$VER" != *.*.*.* ]] && VER="0.0.0.0"
           IFS='.' read -r v1 v2 v3 v4 <<< "$VER"
           NVER="$v1.$v2.$v3.$((v4 + 1))"
           sed -i '' "s/^Version: .*/Version: $NVER/" "$CTRL"
 
-          # 3. Biên dịch dự án
+          # 3. Biên dịch
           make -C "$DIR" clean package FINALPACKAGE=1
           
-          # 4. Gom hàng về trạm tập kết tạm
+          # 4. Gom hàng
           mkdir -p deb_output
           find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           
-          # 5. Export dữ liệu cho step sau
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
           echo "proj_ver=$NVER" >> $GITHUB_OUTPUT
           echo "deb_file=$(basename $(ls deb_output/*.deb | head -n 1))" >> $GITHUB_OUTPUT
 
-      - name: 📦 Update Assets & Full JSON
+      - name: 📦 Update Assets & Media JSON
         run: |
           brew install dpkg
           mkdir -p debs depictions/images icons
           
-          # Copy file mới build vào kho (Giữ lại bản cũ)
+          # Copy sản phẩm mới vào kho lưu trữ vĩnh viễn
           cp -v deb_output/*.deb debs/
           
-          # Cập nhật danh sách tất cả phiên bản cho Repo
+          # Cập nhật danh sách Packages cho Repo
           dpkg-scanpackages -m ./debs /dev/null > Packages
           bzip2 -fks Packages
           
-          # Đọc thông tin từ file Control để làm JSON
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           URL="${{ env.BASE_URL }}"
           CTRL="${{ steps.metadata.outputs.proj_dir }}/control"
@@ -86,14 +88,23 @@ jobs:
           AUTH=$(grep "^Author:" "$CTRL" | cut -d: -f2- | sed 's/^ *//')
           DESC=$(grep "^Description:" "$CTRL" | cut -d: -f2- | sed 's/^ *//')
           
-          # Tự động quét Media (Banner & Screenshots)
+          # --- HỆ THỐNG MEDIA TỰ ĐỘNG ---
+          # 1. Icons: Lấy từ thư mục icons/
+          ICON_URL="${URL}/icons/${SAFE}.png"
+          
+          # 2. Banner: Lấy từ depictions/images/
           BANNER=""; [ -f "depictions/images/${SAFE}-banner.png" ] && BANNER="${URL}/depictions/images/${SAFE}-banner.png"
+          
+          # 3. Video: Lấy từ depictions/images/ (Hỗ trợ mp4)
+          VIDEO=""; [ -f "depictions/images/${SAFE}.mp4" ] && VIDEO="${URL}/depictions/images/${SAFE}.mp4"
+          
+          # 4. Screenshots: Tự động quét từ 1 đến 5 ảnh
           SS_JSON=""
           for i in {1..5}; do
             [ -f "depictions/images/${SAFE}${i}.png" ] && SS_JSON="${SS_JSON}${SS_JSON:+,}\"${URL}/depictions/images/${SAFE}${i}.png\""
           done
 
-          # Tạo file JSON "Full Topping"
+          # Tạo file JSON "Siêu cấp"
           cat > depictions/${SAFE}.json << EOF
           {
             "name": "${{ github.event.inputs.project }}",
@@ -102,14 +113,15 @@ jobs:
             "author": "$AUTH",
             "maintainer": "$AUTH",
             "description": "$DESC",
-            "icon": "${URL}/icons/${SAFE}.png",
+            "icon": "$ICON_URL",
             "banner": "$BANNER",
+            "video": "$VIDEO",
             "screenshots": [$SS_JSON],
             "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
             "changelog": [
               {
                 "version": "${{ steps.metadata.outputs.proj_ver }}",
-                "changes": "- Cập nhật phiên bản mới nhất\n- Sửa lỗi và cải thiện hiệu suất"
+                "changes": "- Phát hành phiên bản mới nhất\n- Cập nhật tài nguyên Media tự động"
               }
             ],
             "links": {
@@ -119,13 +131,12 @@ jobs:
           }
           EOF
 
-          # Gửi sản phẩm lên GitHub
+          # Đẩy sản phẩm lên GitHub
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           rm -rf theos/ .theos/ obj/
           git add .
-          git commit -m "📦 Phát hành $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
+          git commit -m "📦 Build $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
           
-          # Đồng bộ tuyệt đối để tránh lỗi Git 128
           git pull --rebase origin main
           git push origin main
