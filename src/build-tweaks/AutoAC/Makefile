@@ -10,16 +10,14 @@ TWEAK_NAME = AutoAC
 AutoAC_FILES = Tweak.x
 
 # Cấu hình CFLAGS (Bôi trơn trình biên dịch)
-# -fobjc-arc: Bật quản lý bộ nhớ tự động
-# -Wno-deprecated-declarations: Bịt miệng các cảnh báo "lỗi thời" như keyWindow
-# -Wno-unused-variable: Bỏ qua cảnh báo biến không sử dụng
-AutoAC_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-unused-variable
+AutoAC_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-unused-variable -Wno-unused-function
 
-# Thư viện liên kết
+# Thư viện và Framework cần thiết
+AutoAC_FRAMEWORKS = UIKit Foundation Photos CoreGraphics
 AutoAC_LIBRARIES = substrate
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
-# Lệnh dọn dẹp sau khi build xong cục bộ
+# Lệnh dọn dẹp sau khi build xong
 after-install::
 	install.exec "killall -9 YouTube Facebook" || true
