@@ -23,12 +23,14 @@ jobs:
       contents: write
     steps:
       - name: 📥 Checkout Repository
-        uses: actions/checkout@v4
+        # Sử dụng SHA thay cho actions/checkout@v4 để tuân thủ quy tắc bảo mật của repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 
         with:
           fetch-depth: 0
 
       - name: 🛠️ Setup Theos
-        uses: Randomblock1/theos-action@v1
+        # Sử dụng SHA thay cho randomblock1/theos-action@v1
+        uses: randomblock1/theos-action@3034989679698d28a3915f070c7e2b6946973809
 
       - name: ⚙️ Build Logic
         id: metadata
@@ -99,19 +101,16 @@ jobs:
           }
           EOF
 
-          # 4. CHIẾN THUẬT GIT MỚI: Reset để đẩy (Bỏ qua lỗi 128)
+          # 4. CHIẾN THUẬT GIT: Xử lý triệt để xung đột
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           
-          # Dọn dẹp tuyệt đối máy ảo trước khi commit
           rm -rf theos/ .theos/ obj/ deb_output/
           
           git add .
           git commit -m "📦 Build $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
           
-          # Fetch để biết trạng thái server
           git fetch origin main
-          # Ép máy ảo đi theo server nhưng giữ nguyên các file vừa tạo
           git rebase origin/main || (git stash && git rebase origin/main && git stash pop)
           
           git push origin main
