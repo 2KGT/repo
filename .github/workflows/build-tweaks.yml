@@ -40,7 +40,7 @@ jobs:
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
-          # Gán SileoDepiction & Tăng Version
+          # Cập nhật Control & Tăng Version
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
           
@@ -63,14 +63,14 @@ jobs:
           brew install dpkg
           mkdir -p debs depictions/images icons
           
-          # 1. Đưa hàng vào kho
+          # 1. Đưa file deb mới vào kho
           cp -v deb_output/*.deb debs/
           
-          # 2. Quét kho (Tạo file Packages)
+          # 2. Quét kho tạo Packages
           dpkg-scanpackages -m ./debs /dev/null > Packages
           bzip2 -fks Packages
           
-          # 3. Tạo JSON đại diện cho bản mới nhất
+          # 3. Tạo JSON đầy đủ Media
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           URL="${{ env.BASE_URL }}"
           CTRL="${{ steps.metadata.outputs.proj_dir }}/control"
@@ -95,21 +95,23 @@ jobs:
             "video": "$VIDEO",
             "screenshots": [$SS_JSON],
             "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
-            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "- Cập nhật tài nguyên Media"}]
+            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "- Phát hành bản build mới nhất"}]
           }
           EOF
 
-          # 4. GIẢI QUYẾT LỖI 128: Add và Commit ngay lập tức
+          # 4. CHIẾN THUẬT GIT MỚI: Reset để đẩy (Bỏ qua lỗi 128)
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           
-          # Loại bỏ các file rác của Theos để tránh làm nặng Repo
+          # Dọn dẹp tuyệt đối máy ảo trước khi commit
           rm -rf theos/ .theos/ obj/ deb_output/
           
           git add .
           git commit -m "📦 Build $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
           
-          # 5. Đẩy lên với chiến thuật Reset nếu có xung đột
+          # Fetch để biết trạng thái server
           git fetch origin main
-          git pull --rebase origin main
+          # Ép máy ảo đi theo server nhưng giữ nguyên các file vừa tạo
+          git rebase origin/main || (git stash && git rebase origin/main && git stash pop)
+          
           git push origin main
