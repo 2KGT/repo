@@ -10,14 +10,13 @@ static NSString *const kAutoCSmartCleanKey = @"AutoC_SmartClean_Enabled";
 static NSString *const kRemoveAdsKey = @"AutoC_RemoveAds_Enabled";
 
 // =========================================================
-// 🚀 LOGIC XOÁ RÁC CHIẾN LƯỢC
+// 🚀 LOGIC HỆ THỐNG (GIỮ NGUYÊN HIỆU NĂNG SÂU)
 // =========================================================
 
 static void performDeepClean(BOOL isAuto) {
     [[NSURLCache sharedURLCache] removeAllCachedResponses];
     NSFileManager *fm = [NSFileManager defaultManager];
     NSString *homePath = NSHomeDirectory();
-    
     NSArray *trashPaths = @[@"/Library/Caches", @"/Library/Application Support/YouTube", @"/tmp", @"/Library/Caches/com.facebook.Facebook"];
     
     for (NSString *relPath in trashPaths) {
@@ -30,9 +29,8 @@ static void performDeepClean(BOOL isAuto) {
 
     if (!isAuto) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            UIAlertController *done = [UIAlertController alertControllerWithTitle:@"Hoàn tất" message:@"Hệ thống đã được làm sạch" preferredStyle:UIAlertControllerStyleAlert];
+            UIAlertController *done = [UIAlertController alertControllerWithTitle:nil message:@"Hệ thống đã sạch sẽ" preferredStyle:UIAlertControllerStyleAlert];
             [done addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleDefault handler:nil]];
-            
             UIWindow *window = [UIApplication sharedApplication].windows.firstObject;
             UIViewController *top = window.rootViewController;
             while(top.presentedViewController) top = top.presentedViewController;
@@ -41,72 +39,67 @@ static void performDeepClean(BOOL isAuto) {
     }
 }
 
-#pragma mark - 💎 GIAO DIỆN CÔNG TẮC (LIQUID GLASS)
+#pragma mark - 💎 GIAO DIỆN KÍNH LỎNG SIÊU CẤP (LIQUID TABLE)
 
-@interface AutoACSettingsVC : UIViewController
+@interface AutoACSettingsVC : UITableViewController
 @end
 
 @implementation AutoACSettingsVC
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
-    // Công tắc 1: Tự động tối ưu
-    UILabel *l1 = [[UILabel alloc] initWithFrame:CGRectMake(20, 10, 200, 30)];
-    l1.text = @"Tự động tối ưu";
-    l1.font = [UIFont systemFontOfSize:16];
-    [self.view addSubview:l1];
-
-    UISwitch *sw1 = [[UISwitch alloc] init];
-    sw1.on = [[NSUserDefaults standardUserDefaults] boolForKey:kAutoCSmartCleanKey];
-    [sw1 addTarget:self action:@selector(autoCleanChanged:) forControlEvents:UIControlEventValueChanged];
-    [self.view addSubview:sw1];
-    sw1.translatesAutoresizingMaskIntoConstraints = NO;
-
-    // Công tắc 2: Xoá Ads banner tag
-    UILabel *l2 = [[UILabel alloc] initWithFrame:CGRectMake(20, 55, 200, 30)];
-    l2.text = @"Xoá Ads banner tag";
-    l2.font = [UIFont systemFontOfSize:16];
-    [self.view addSubview:l2];
-
-    UISwitch *sw2 = [[UISwitch alloc] init];
-    sw2.on = [[NSUserDefaults standardUserDefaults] boolForKey:kRemoveAdsKey];
-    [sw2 addTarget:self action:@selector(removeAdsChanged:) forControlEvents:UIControlEventValueChanged];
-    [self.view addSubview:sw2];
-    sw2.translatesAutoresizingMaskIntoConstraints = NO;
-
-    [NSLayoutConstraint activateConstraints:@[
-        [sw1.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-25],
-        [sw1.topAnchor constraintEqualToAnchor:self.view.topAnchor constant:10],
-        [sw2.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-25],
-        [sw2.topAnchor constraintEqualToAnchor:self.view.topAnchor constant:55]
-    ]];
+    self.tableView.scrollEnabled = NO;
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
+    self.tableView.backgroundColor = [UIColor clearColor];
 }
 
-- (void)autoCleanChanged:(UISwitch *)s {
-    [[NSUserDefaults standardUserDefaults] setBool:s.isOn forKey:kAutoCSmartCleanKey];
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return 2;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"Cell"];
+    cell.backgroundColor = [UIColor clearColor];
+    cell.textLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+
+    UISwitch *sw = [[UISwitch alloc] init];
+    if (indexPath.row == 0) {
+        cell.textLabel.text = @"Tự động tối ưu";
+        sw.on = [[NSUserDefaults standardUserDefaults] boolForKey:kAutoCSmartCleanKey];
+        [sw addTarget:self action:@selector(sw1Changed:) forControlEvents:UIControlEventValueChanged];
+    } else {
+        cell.textLabel.text = @"Xoá Ads banner tag";
+        sw.on = [[NSUserDefaults standardUserDefaults] boolForKey:kRemoveAdsKey];
+        [sw addTarget:self action:@selector(sw2Changed:) forControlEvents:UIControlEventValueChanged];
+    }
+    cell.accessoryView = sw;
+    return cell;
+}
+
+- (void)sw1Changed:(UISwitch *)sender {
+    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:kAutoCSmartCleanKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
-- (void)removeAdsChanged:(UISwitch *)s {
-    [[NSUserDefaults standardUserDefaults] setBool:s.isOn forKey:kRemoveAdsKey];
+- (void)sw2Changed:(UISwitch *)sender {
+    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:kRemoveAdsKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 @end
 
 static void showAutoACMenu() {
-    // Tiêu đề Tối ưu hệ thống (Chữ thường)
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Tối ưu hệ thống" message:@"\n\n\n\n" preferredStyle:UIAlertControllerStyleActionSheet];
+    // Action Sheet với thông điệp rỗng để dành chỗ cho TableView
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Tối ưu hệ thống" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
     
-    AutoACSettingsVC *settingsVC = [[AutoACSettingsVC alloc] init];
-    settingsVC.preferredContentSize = CGSizeMake(270, 100);
-    [alert setValue:settingsVC forKey:@"contentViewController"];
+    AutoACSettingsVC *tableVC = [[AutoACSettingsVC alloc] initWithStyle:UITableViewStylePlain];
+    // Chiều cao 110 là vừa khít cho 2 dòng nội dung sắc nét
+    tableVC.preferredContentSize = CGSizeMake(270, 110);
+    [alert setValue:tableVC forKey:@"contentViewController"];
     
-    // --- NÚT XOÁ THỦ CÔNG (DÒNG CHỮ ĐỎ ĐÂY RỒI) ---
     [alert addAction:[UIAlertAction actionWithTitle:@"Dọn dẹp sâu" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
         performDeepClean(NO);
     }]];
     
-    // Nút Đóng thay cho Hủy bỏ
     [alert addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleCancel handler:nil]];
 
     UIWindow *window = [UIApplication sharedApplication].windows.firstObject;
@@ -120,7 +113,7 @@ static void showAutoACMenu() {
     [top presentViewController:alert animated:YES completion:nil];
 }
 
-// --- HOOKS ---
+// --- HOOK KÍCH HOẠT ---
 %hook YTHeaderView
 - (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
     %orig;
