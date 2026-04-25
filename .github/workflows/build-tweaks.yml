@@ -16,8 +16,6 @@ on:
         options:
           # OPTIONS-START
           - '(none)'
-          - AutoAC
-          - AutoDL
           # OPTIONS-END
 
 env:
@@ -26,40 +24,33 @@ env:
 jobs:
   process:
     runs-on: macos-latest
-    permissions:
-      contents: write # Chỉ giữ lại quyền cơ bản nhất để tránh lỗi hệ thống
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # --- PHẦN 1: SCAN OPTIONS (Sửa lỗi hiển thị đường dẫn) ---
       - name: 🔍 Scan & Update Options
         if: github.event.inputs.action == 'Scan Options'
         run: |
           FILE=".github/workflows/build-tweaks.yml"
           
-          # 1. Lấy danh sách Name từ file control (Dùng -h để không hiện đường dẫn tệp)
-          # Thêm lệnh sed để định dạng đúng chuẩn YAML ngay từ đầu
+          # Lấy danh sách Name sạch sẽ, không dính đường dẫn tệp (-h)
           PROJS=$(grep -h "^Name:" src/build-tweaks/*/control | cut -d: -f2- | sed "s/^ *//;s/ *$//" | sort | uniq | sed "s/^/          - '/;s/$/'/")
           
-          # 2. Tạo nội dung chèn mới
-          # Xóa sạch khoảng trắng thừa để tránh lỗi parse YAML
           LIST="          - '(none)'"
-          if [ ! -z "$PROJS" ]; then
-            LIST="$LIST"$'\n'"$PROJS"
-          fi
+          [ ! -z "$PROJS" ] && LIST="$LIST"$'\n'"$PROJS"
 
-          # 3. Sử dụng Perl để thay thế khối Options (Perl ổn định hơn sed trên macOS)
           perl -i -0777 -pe "s/(# OPTIONS-START).*?(# OPTIONS-END)/\$1\n$LIST\n          \$2/s" "$FILE"
           
-          # 4. Lưu và đẩy lên
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           git add "$FILE"
           git commit -m "chore: update tweak list" || exit 0
           git push origin main
 
+      # --- PHẦN 2: BUILD PROJECT (Sửa lỗi Exit code 128) ---
       - name: 🛠️ Setup Theos
         if: github.event.inputs.action == 'Build Project'
         uses: Randomblock1/theos-action@v1
@@ -71,16 +62,13 @@ jobs:
           DP_NAME="${{ github.event.inputs.project }}"
           [ "$DP_NAME" = "(none)" ] && exit 1
           
-          # Tìm file control mà không để dính đường dẫn tệp vào biến
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
-          # Gán link chuẩn Raw
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
           
-          # Tăng version
           VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           [[ "$VER" != *.*.*.* ]] && VER="0.0.0.0"
           IFS='.' read -r v1 v2 v3 v4 <<< "$VER"
@@ -94,7 +82,7 @@ jobs:
           echo "proj_ver=$NVER" >> $GITHUB_OUTPUT
           echo "deb_file=$(basename $(ls deb_output/*.deb | head -n 1))" >> $GITHUB_OUTPUT
 
-      - name: 📦 Update Assets
+      - name: 📦 Update Assets & Push
         if: github.event.inputs.action == 'Build Project'
         run: |
           brew install dpkg
@@ -104,29 +92,27 @@ jobs:
           
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           URL="${{ env.BASE_URL }}"
-          ICON="${URL}/icons/${SAFE}.png"
-          BANNER=""; [ -f "depictions/images/${SAFE}-banner.png" ] && BANNER="${URL}/depictions/images/${SAFE}-banner.png"
           
-          SS_JSON=""
-          for i in {1..5}; do
-            [ -f "depictions/images/${SAFE}${i}.png" ] && SS_JSON="${SS_JSON}${SS_JSON:+,}\"${URL}/depictions/images/${SAFE}${i}.png\""
-          done
-
+          # Tạo JSON Depiction
           cat > depictions/${SAFE}.json << EOF
           {
             "name": "${{ github.event.inputs.project }}",
             "version": "${{ steps.metadata.outputs.proj_ver }}",
-            "icon": "$ICON",
-            "banner": "$BANNER",
-            "screenshots": [$SS_JSON],
+            "icon": "${URL}/icons/${SAFE}.png",
             "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}"
           }
           EOF
 
+          # QUAN TRỌNG: Sửa lỗi 128 bằng cách add trước khi pull
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
+          
+          # Dọn dẹp thư mục build để tránh file rác gây lỗi git
           rm -rf theos/ .theos/ obj/
+          
           git add .
           git commit -m "build: $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
+          
+          # Pull rebase sau khi đã commit các thay đổi local
           git pull --rebase origin main
           git push origin main
