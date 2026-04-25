@@ -23,18 +23,14 @@ jobs:
       contents: write
     steps:
       - name: 📥 Checkout Repository
-        # SHA chuẩn cho actions/checkout@v4.1.1
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 
         with:
           fetch-depth: 0
 
       - name: 🛠️ Setup Theos
-        # ĐÃ CẬP NHẬT: SHA chính xác cho randomblock1/theos-action (v1.1.0)
-        uses: randomblock1/theos-action@v1
-        # Lưu ý: Nếu GitHub vẫn ép dùng SHA cho cái này, bạn hãy dùng:
-        # uses: randomblock1/theos-action@433604f653457222370ca981274d817ed6b0800d
+        uses: randomblock1/theos-action@433604f653457222370ca981274d817ed6b0800d
 
-      - name: ⚙️ Build Logic
+      - name: ⚙️ Build Logic (Semantic Versioning)
         id: metadata
         run: |
           DP_NAME="${{ github.event.inputs.project }}"
@@ -44,22 +40,35 @@ jobs:
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
-          # Cập nhật Control & Tăng Version
+          # ĐỌC VERSION HIỆN TẠI
+          CURRENT_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
+          
+          # LOGIC TĂNG VERSION: Tách chuỗi X.Y.Z
+          # Nếu version chỉ có 1 số (vd: 1.0), nó sẽ tự đưa về chuẩn 1.0.0
+          if [[ $CURRENT_VER =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              MAJOR=${BASH_REMATCH[1]}
+              MINOR=${BASH_REMATCH[2]}
+              PATCH=${BASH_REMATCH[3]}
+              NEW_VER="$MAJOR.$MINOR.$((PATCH + 1))"
+          else
+              # Trường hợp version lạ, reset về 0.0.1
+              NEW_VER="0.0.1"
+          fi
+          
+          echo "Nâng cấp từ $CURRENT_VER lên $NEW_VER"
+
+          # Cập nhật file Control
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
-          
-          VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
-          [[ "$VER" != *.*.*.* ]] && VER="0.0.0.0"
-          IFS='.' read -r v1 v2 v3 v4 <<< "$VER"
-          NVER="$v1.$v2.$v3.$((v4 + 1))"
-          sed -i '' "s/^Version: .*/Version: $NVER/" "$CTRL"
+          sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
 
+          # Biên dịch
           make -C "$DIR" clean package FINALPACKAGE=1
           mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
-          echo "proj_ver=$NVER" >> $GITHUB_OUTPUT
+          echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
           echo "deb_file=$(basename $(ls deb_output/*.deb | head -n 1))" >> $GITHUB_OUTPUT
 
       - name: 📦 Update Assets & Media JSON
@@ -91,20 +100,18 @@ jobs:
               "${URL}/depictions/images/${SAFE}3.png"
             ],
             "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
-            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "- Cập nhật phiên bản mới nhất"}]
+            "changelog": [
+                {"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "• Cập nhật phiên bản $SAFE\n• Tối ưu hóa hệ thống build\n• Sửa lỗi và cải thiện hiệu suất"}
+            ]
           }
           EOF
 
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           
-          # Dọn dẹp Workspace
-          rm -rf theos/ .theos/ obj/ deb_output/
-          
           git add .
           git commit -m "📦 Build $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
           
-          # Chiến thuật Fetch & Rebase
           git fetch origin main
           git rebase origin/main || (git stash && git rebase origin/main && git stash pop)
           git push origin main
