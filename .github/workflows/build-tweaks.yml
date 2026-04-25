@@ -23,12 +23,12 @@ jobs:
       contents: write
     steps:
       - name: 📥 Checkout Repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 
+        uses: actions/checkout@v4 # Dùng tag v4 cho ổn định
         with:
           fetch-depth: 0
 
       - name: 🛠️ Setup Theos
-        uses: randomblock1/theos-action@3034989679698d28a3915f070c7e2b6946973809
+        uses: randomblock1/theos-action@v1 # Dùng tag v1
 
       - name: ⚙️ Build Logic
         id: metadata
@@ -88,11 +88,10 @@ jobs:
               "${URL}/depictions/images/${SAFE}3.png"
             ],
             "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
-            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "- Cập nhật phiên bản mới nhất"}]
+            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "- Phát hành bản build mới nhất"}]
           }
           EOF
 
-          # THỰC HIỆN CÔNG VIỆC CHÍNH
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           
@@ -103,14 +102,9 @@ jobs:
           git push origin main
 
       - name: 🧹 Final Room Cleanup
-        if: always() # Chạy ngay cả khi các bước trên thành công hay thất bại
+        if: always()
         run: |
-          echo "Đang dọn dẹp căn phòng để đón lần diễn tiếp theo..."
-          # Dọn dẹp thư mục build của dự án cụ thể
+          echo "Dọn dẹp căn phòng..."
           DIR="${{ steps.metadata.outputs.proj_dir }}"
-          if [ -d "$DIR" ]; then
-            rm -rf "$DIR/packages" "$DIR/.theos" "$DIR/obj"
-          fi
-          # Dọn dẹp trạm trung chuyển và rác hệ thống
+          [ -d "$DIR" ] && rm -rf "$DIR/packages" "$DIR/.theos" "$DIR/obj"
           rm -rf deb_output/
-          echo "Căn phòng đã trống và sạch sẽ!"
