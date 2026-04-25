@@ -1,18 +1,6 @@
 {
   "name": "AutoAC",
-  "version": "1.0.7",
-  "description": "AutoAC - tự động xoá cache + xoá Ads, banner tag sản phẩm trong ứng dụng YouTube.",
-  "changelog": ""### ✨ Tính năng mới\n- Cập nhật hệ thống\n\n### 🐛 Sửa lỗi\n- Tối ưu hóa"",
-  
+  "version": "0.0.0.1",
   "icon": "https://raw.githubusercontent.com/2KGT/repo/main/icons/AutoAC.png",
-  "banner": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC-banner.png",
-  
-  "screenshots": [
-    "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC1.png",
-    "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC2.png",
-    "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC3.png",
-    "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC4.png"
-  ],
-  
-  "updated": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+  "downloads": "https://raw.githubusercontent.com/2KGT/repo/main/debs/com.kyic.autoac_0.0.0.1_iphoneos-arm64.deb"
 }

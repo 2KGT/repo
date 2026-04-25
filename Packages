@@ -4,7 +4,7 @@ Architecture: iphoneos-arm
 Maintainer: Eevee
 Installed-Size: 168
 Depends: mobilesubstrate (>= 0.9.5000)
-Filename: ./youtubefix_1.0_arm.deb
+Filename: ./debs/youtubefix_1.0_arm.deb
 Size: 3340
 MD5sum: d99e00f006098a79723750b6988d6226
 SHA1: f83d4ed4d2aab84a1c9cef1a2f0e1066006ea5ce
@@ -15,12 +15,31 @@ Author: Eevee
 Name: YouTube Fix
 
 Package: com.kyic.autoac
+Version: 0.0.0.1
+Architecture: iphoneos-arm64
+Maintainer: Kyic
+Installed-Size: 168
+Depends: firmware (>= 14.0)
+Filename: ./debs/com.kyic.autoac_0.0.0.1_iphoneos-arm64.deb
+Size: 5584
+MD5sum: d4ac853853f38f2f3f2fddbc95d5c92e
+SHA1: a31ec595f029d2f6c0de569ed2039ccc43440386
+SHA256: 50610ba41a33d42e9954876ee9b7d5668f4d91e7f55b5988773122424f187dd1
+Section: Tweaks
+Priority: optional
+Description: AutoAC - tự động xoá cache + xoá Ads, banner tag sản phẩm trong ứng dụng YouTube.
+Author: Kyic
+Icon: https://2kgt.github.io/repo/icons/autoac.png
+Name: AutoAC
+Sileodepiction: https://raw.githubusercontent.com/2KGT/repo/main/depictions/AutoAC.json
+
+Package: com.kyic.autoac
 Version: 1.0.7
 Architecture: iphoneos-arm64
 Maintainer: Kyic
 Installed-Size: 168
 Depends: firmware (>= 14.0)
-Filename: ./com.kyic.autoac_1.0.7_iphoneos-arm64.deb
+Filename: ./debs/com.kyic.autoac_1.0.7_iphoneos-arm64.deb
 Size: 5236
 MD5sum: f37d838070bc23a6f1709440e0168183
 SHA1: d1345b1703c6b58c7b7984be38e650cf2512e496
@@ -39,7 +58,7 @@ Architecture: iphoneos-arm64
 Maintainer: PoomSmart
 Installed-Size: 56
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0)
-Filename: ./noytmpremium_1.0.2_arm64.deb
+Filename: ./debs/noytmpremium_1.0.2_arm64.deb
 Size: 3394
 MD5sum: 07f3dcf11503613ea0608ad97e89816e
 SHA1: 33e3689a3db5f0cc4dfd874a6003fa8a7b819933
@@ -57,7 +76,7 @@ Architecture: iphoneos-arm
 Maintainer: PoomSmart
 Installed-Size: 56
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0)
-Filename: ./noytpremium_1.0.7_arm.deb
+Filename: ./debs/noytpremium_1.0.7_arm.deb
 Size: 2842
 MD5sum: c8822406448994c0a0b1e316501b2da2
 SHA1: bbdd609cd6007ba0cfaa7982821ff4782b6a5843
@@ -75,7 +94,7 @@ Architecture: iphoneos-arm64
 Maintainer: PoomSmart <unicorn03.glimmer@icloud.com>
 Installed-Size: 114
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0)
-Filename: ./yougroupsettings_1.0.9_arm64.deb
+Filename: ./debs/yougroupsettings_1.0.9_arm64.deb
 Size: 5232
 MD5sum: ceb50fb35a2325ae81348f137ff27433
 SHA1: a86296e9d88e630449527d8efe83ef20975c0df3
@@ -94,7 +113,7 @@ Architecture: iphoneos-arm
 Maintainer: PoomSmart <unicorn03.glimmer@icloud.com>
 Installed-Size: 106
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0)
-Filename: ./yougroupsettings_1.0.9_arm.deb
+Filename: ./debs/yougroupsettings_1.0.9_arm.deb
 Size: 5242
 MD5sum: 8d8c094e34840c50ead8c958b0eac8f6
 SHA1: 596d4c5afcd8fe93bab3cf59c36ff3e33e54ae7b
@@ -113,7 +132,7 @@ Architecture: iphoneos-arm64
 Maintainer: PoomSmart
 Installed-Size: 128
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytvideooverlay (>= 2.3.2)
-Filename: ./youmute_1.4.0_arm64.deb
+Filename: ./debs/youmute_1.4.0_arm64.deb
 Size: 6048
 MD5sum: edc5b15720b34d9cc36aa95fe31d7086
 SHA1: aa68f1d3bce1f0ba2ff832a391bd4177db5ff5b2
@@ -131,7 +150,7 @@ Architecture: iphoneos-arm
 Maintainer: PoomSmart
 Installed-Size: 112
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytvideooverlay (>= 2.3.2)
-Filename: ./youmute_1.4.0_arm.deb
+Filename: ./debs/youmute_1.4.0_arm.deb
 Size: 6198
 MD5sum: 151fc1b208fa9105da9f6d74c0069029
 SHA1: 6501bf2a689b1d75317249dbf676b25bd4ffdc12
@@ -145,18 +164,18 @@ Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/youmute.json
 
 Package: com.ps.youpip
 Version: 1.12.10
-Architecture: iphoneos-arm
+Architecture: iphoneos-arm64
 Maintainer: PoomSmart
-Installed-Size: 196
+Installed-Size: 212
 Depends: mobilesubstrate, com.ps.ytvideooverlay (>= 2.0.0), firmware (>= 11.0), firmware (>= 14.0) | gsc.ipad | com.ps.forceinpicture (>= 1.0.1)
 Conflicts: com.spicat.youpip
 Replaces: com.spicat.youpip
 Provides: com.spicat.youpip
-Filename: ./youpip_1.12.10_arm.deb
-Size: 25506
-MD5sum: bf4844635210c76e026df1c507e699d1
-SHA1: e400652e5fb36a9a1c9f00e9660317326d48be6d
-SHA256: 1e24c929cd0470f099c093d9dd3d02a03c6612c42aeef99ff00538dd78233524
+Filename: ./debs/youpip_1.12.10_arm64.deb
+Size: 25330
+MD5sum: 32cf7cb2b8dbb1d6ba292d1fbfff099b
+SHA1: 0170d80abee09c11b3dd6a0f75fda149b17c79b2
+SHA256: 3f22f3ea14effd64a9cc68f3aefde173c277de6a3f2bad09e5a332275d7ad92f
 Section: Tweaks
 Description: Enables native PiP in iOS YouTube app.
 Author: PoomSmart
@@ -166,18 +185,18 @@ Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/youpip.json
 
 Package: com.ps.youpip
 Version: 1.12.10
-Architecture: iphoneos-arm64
+Architecture: iphoneos-arm
 Maintainer: PoomSmart
-Installed-Size: 212
+Installed-Size: 196
 Depends: mobilesubstrate, com.ps.ytvideooverlay (>= 2.0.0), firmware (>= 11.0), firmware (>= 14.0) | gsc.ipad | com.ps.forceinpicture (>= 1.0.1)
 Conflicts: com.spicat.youpip
 Replaces: com.spicat.youpip
 Provides: com.spicat.youpip
-Filename: ./youpip_1.12.10_arm64.deb
-Size: 25330
-MD5sum: 32cf7cb2b8dbb1d6ba292d1fbfff099b
-SHA1: 0170d80abee09c11b3dd6a0f75fda149b17c79b2
-SHA256: 3f22f3ea14effd64a9cc68f3aefde173c277de6a3f2bad09e5a332275d7ad92f
+Filename: ./debs/youpip_1.12.10_arm.deb
+Size: 25506
+MD5sum: bf4844635210c76e026df1c507e699d1
+SHA1: e400652e5fb36a9a1c9f00e9660317326d48be6d
+SHA256: 1e24c929cd0470f099c093d9dd3d02a03c6612c42aeef99ff00538dd78233524
 Section: Tweaks
 Description: Enables native PiP in iOS YouTube app.
 Author: PoomSmart
@@ -192,7 +211,7 @@ Maintainer: PoomSmart
 Installed-Size: 108
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytvideooverlay (>= 2.2.0)
 Conflicts: com.lyvendia.ytspeed
-Filename: ./youspeed_1.6.6_arm64.deb
+Filename: ./debs/youspeed_1.6.6_arm64.deb
 Size: 11956
 MD5sum: d671f41744bb5a5f32d9ad94c30d9c89
 SHA1: 45f0b18b26df913c91aeca90837750a04876e8d1
@@ -211,7 +230,7 @@ Maintainer: PoomSmart
 Installed-Size: 92
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytvideooverlay (>= 2.2.0)
 Conflicts: com.lyvendia.ytspeed
-Filename: ./youspeed_1.6.6_arm.deb
+Filename: ./debs/youspeed_1.6.6_arm.deb
 Size: 12130
 MD5sum: b351b096edbee16abd3382f08bd66bd5
 SHA1: 0d38455c807632e3a43939cce996abad1d5e3f5a
@@ -229,7 +248,7 @@ Architecture: iphoneos-arm64
 Maintainer: PoomSmart
 Installed-Size: 2380
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.youspeed | firmware (>= 15.0), com.ps.ytclassicvideoquality | firmware (>= 15.0), weeb.lillie.youtubedislikesreturn (>= 1.13.9) | firmware (>= 15.0)
-Filename: ./ytlegacy_1.9.2_arm64.deb
+Filename: ./debs/ytlegacy_1.9.2_arm64.deb
 Size: 227334
 MD5sum: e8b48ff3526375532e540beaa3298501
 SHA1: c59cb1e39a38e280fc2ca8110f69c88f6622f31a
@@ -248,7 +267,7 @@ Maintainer: PoomSmart
 Installed-Size: 56
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytreexplore
 Conflicts: com.ps.ytshortsprogress, com.miro.ytnoshorts
-Filename: ./ytunshorts_1.3.1_arm.deb
+Filename: ./debs/ytunshorts_1.3.1_arm.deb
 Size: 3272
 MD5sum: 5e24e9313e8a3ed072821a3bc78ce16d
 SHA1: 4dfa72e3cf924c9aad1af3b0d989b6aa4b812ab4
@@ -265,7 +284,7 @@ Maintainer: PoomSmart
 Installed-Size: 56
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytreexplore
 Conflicts: com.ps.ytshortsprogress, com.miro.ytnoshorts
-Filename: ./ytunshorts_1.3.1_arm64.deb
+Filename: ./debs/ytunshorts_1.3.1_arm64.deb
 Size: 3356
 MD5sum: 2ab4ee43ae059fc3f699b4f5acf2b334
 SHA1: 01bc5cd5e64dabdd613d2cb6fefd6bb26f3f20ab
@@ -281,7 +300,7 @@ Architecture: iphoneos-arm64
 Maintainer: PoomSmart
 Installed-Size: 144
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0)
-Filename: ./ytvideooverlay_2.3.5_arm64.deb
+Filename: ./debs/ytvideooverlay_2.3.5_arm64.deb
 Size: 16258
 MD5sum: e04ce8fa25491d8b6ffcb7c6fa225519
 SHA1: d7df7c2ab8dc970beae4ac77d6288a354a367017
@@ -299,7 +318,7 @@ Architecture: iphoneos-arm
 Maintainer: PoomSmart
 Installed-Size: 128
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0)
-Filename: ./ytvideooverlay_2.3.5_arm.deb
+Filename: ./debs/ytvideooverlay_2.3.5_arm.deb
 Size: 16312
 MD5sum: 23e3dd7f153f1d4e90d8da2c1baada80
 SHA1: 52396294a57763e3c658649b8bf9cf8097aa2cb0
@@ -313,15 +332,15 @@ Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/ytvideooverlay.
 
 Package: com.ps.ytx
 Version: 1.7.19
-Architecture: iphoneos-arm64
+Architecture: iphoneos-arm
 Maintainer: PoomSmart
-Installed-Size: 72
+Installed-Size: 56
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytabgoodies
-Filename: ./ytx_1.7.19_arm64.deb
-Size: 5684
-MD5sum: 043c6e792611c9c4d4501c90d9794153
-SHA1: fb5e68562a652452607ce48af202e25212a9023c
-SHA256: 4c42a461ec2838962614a97f7f4d3a77a39bf073145fd7543bdbd2a255bbc7c2
+Filename: ./debs/YoutubeX_1.7.19_arm.deb
+Size: 5728
+MD5sum: 1fe505d84bec2e5b24d2bb26e48ac48f
+SHA1: 18ee76c6192cba0e15d11ae97d8db7bc37776f93
+SHA256: 5c4203245b9eafa05fd356f21e7613788146dcad6abcda3ae193b6d1b6cc26a5
 Section: Tweaks
 Description: A YouTube improvement tweak.
 Author: PoomSmart
@@ -331,15 +350,15 @@ Sileodepiction: https://poomsmart.github.io/repo/sileodepictions/ytx.json
 
 Package: com.ps.ytx
 Version: 1.7.19
-Architecture: iphoneos-arm
+Architecture: iphoneos-arm64
 Maintainer: PoomSmart
-Installed-Size: 56
+Installed-Size: 72
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 11.0), com.ps.ytabgoodies
-Filename: ./YoutubeX_1.7.19_arm.deb
-Size: 5728
-MD5sum: 1fe505d84bec2e5b24d2bb26e48ac48f
-SHA1: 18ee76c6192cba0e15d11ae97d8db7bc37776f93
-SHA256: 5c4203245b9eafa05fd356f21e7613788146dcad6abcda3ae193b6d1b6cc26a5
+Filename: ./debs/ytx_1.7.19_arm64.deb
+Size: 5684
+MD5sum: 043c6e792611c9c4d4501c90d9794153
+SHA1: fb5e68562a652452607ce48af202e25212a9023c
+SHA256: 4c42a461ec2838962614a97f7f4d3a77a39bf073145fd7543bdbd2a255bbc7c2
 Section: Tweaks
 Description: A YouTube improvement tweak.
 Author: PoomSmart
@@ -353,7 +372,7 @@ Architecture: iphoneos-arm64e
 Maintainer: dylv
 Installed-Size: 1092
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 14.0), preferenceloader
-Filename: ./liquidass_6.alpha _arm64e.deb
+Filename: ./debs/liquidass_6.alpha _arm64e.deb
 Size: 186944
 MD5sum: f17a0e79995aedd0f3557899e666e4ae
 SHA1: 4693d95c16586a9381f8b41f14cbf8ef49742b9d

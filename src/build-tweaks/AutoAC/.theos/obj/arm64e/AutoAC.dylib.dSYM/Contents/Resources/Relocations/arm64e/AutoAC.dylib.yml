@@ -2,12 +2,15 @@
 triple:          'arm64e-apple-darwin'
 binary-path:     '/Users/runner/work/repo/repo/src/build-tweaks/AutoAC/.theos/obj/arm64e/AutoAC.dylib'
 relocations:
-  - { offset: 0x1E, size: 0x8, addend: 0x0, symName: __logosLocalInit, symObjAddr: 0x0, symBinAddr: 0x4000, symSize: 0xE4 }
-  - { offset: 0x45, size: 0x8, addend: 0x0, symName: '__logos_orig$_ungrouped$YTAppDelegate$application$didFinishLaunchingWithOptions$', symObjAddr: 0x7998, symBinAddr: 0xC0A8, symSize: 0x0 }
-  - { offset: 0x1EB0, size: 0x8, addend: 0x0, symName: '__logos_orig$_ungrouped$UIView$didMoveToWindow', symObjAddr: 0x79A0, symBinAddr: 0xC0B0, symSize: 0x0 }
-  - { offset: 0x1FC1, size: 0x8, addend: 0x0, symName: __logosLocalInit, symObjAddr: 0x0, symBinAddr: 0x4000, symSize: 0xE4 }
-  - { offset: 0x20C8, size: 0x8, addend: 0x0, symName: '__logos_method$_ungrouped$YTAppDelegate$application$didFinishLaunchingWithOptions$', symObjAddr: 0xE4, symBinAddr: 0x40E4, symSize: 0xB4 }
-  - { offset: 0x2247, size: 0x8, addend: 0x0, symName: '__logos_method$_ungrouped$YTAppDelegate$smartClearYouTubeCache', symObjAddr: 0x198, symBinAddr: 0x4198, symSize: 0x340 }
-  - { offset: 0x2368, size: 0x8, addend: 0x0, symName: '__logos_method$_ungrouped$UIView$didMoveToWindow', symObjAddr: 0x4D8, symBinAddr: 0x44D8, symSize: 0x130 }
-  - { offset: 0x23E4, size: 0x8, addend: 0x0, symName: '____logos_method$_ungrouped$YTAppDelegate$application$didFinishLaunchingWithOptions$_block_invoke', symObjAddr: 0x608, symBinAddr: 0x4608, symSize: 0x8 }
+  - { offset: 0x1E, size: 0x8, addend: 0x0, symName: __logosLocalCtor_70822397, symObjAddr: 0x0, symBinAddr: 0x4000, symSize: 0x124 }
+  - { offset: 0x37, size: 0x8, addend: 0x0, symName: _knownAdClasses, symObjAddr: 0x3E18, symBinAddr: 0xC0D8, symSize: 0x0 }
+  - { offset: 0xBA, size: 0x8, addend: 0x0, symName: _knownSafeClasses, symObjAddr: 0x3E20, symBinAddr: 0xC0E0, symSize: 0x0 }
+  - { offset: 0xDD, size: 0x8, addend: 0x0, symName: '__logos_orig$_ungrouped$UIView$didMoveToWindow', symObjAddr: 0x3E30, symBinAddr: 0xC0F0, symSize: 0x0 }
+  - { offset: 0x9B4, size: 0x8, addend: 0x0, symName: _isYouTube, symObjAddr: 0x3E28, symBinAddr: 0xC0E8, symSize: 0x0 }
+  - { offset: 0x9D0, size: 0x8, addend: 0x0, symName: _isFacebook, symObjAddr: 0x3E29, symBinAddr: 0xC0E9, symSize: 0x0 }
+  - { offset: 0xAD3, size: 0x8, addend: 0x0, symName: __logosLocalCtor_70822397, symObjAddr: 0x0, symBinAddr: 0x4000, symSize: 0x124 }
+  - { offset: 0xCCE, size: 0x8, addend: 0x0, symName: ____logosLocalCtor_70822397_block_invoke, symObjAddr: 0x124, symBinAddr: 0x4124, symSize: 0x354 }
+  - { offset: 0xDC7, size: 0x8, addend: 0x0, symName: __logosLocalInit, symObjAddr: 0x478, symBinAddr: 0x4478, symSize: 0x50 }
+  - { offset: 0xE0A, size: 0x8, addend: 0x0, symName: '__logos_method$_ungrouped$UIView$didMoveToWindow', symObjAddr: 0x4C8, symBinAddr: 0x44C8, symSize: 0x288 }
+  - { offset: 0xE4C, size: 0x8, addend: 0x0, symName: '__logos_method$_ungrouped$UIView$didMoveToWindow', symObjAddr: 0x4C8, symBinAddr: 0x44C8, symSize: 0x288 }
 ...

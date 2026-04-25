@@ -16,43 +16,42 @@ on:
         options:
           # OPTIONS-START
           - '(none)'
-          - AutoAC
-          - AutoDL
+          - 'AutoAC'
+          - 'AutoDL'
           # OPTIONS-END
 
 env:
+  # Giữ nguyên link Raw mặc định của bạn
   BASE_URL: "https://raw.githubusercontent.com/2KGT/repo/main"
 
 jobs:
   process:
     runs-on: macos-latest
+    permissions:
+      contents: write
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # --- PHẦN 1: SCAN OPTIONS (Sửa lỗi hiển thị đường dẫn) ---
+      # --- PHẦN 1: SCAN OPTIONS (Vẫn giữ để bạn dùng cho các dự án sau này) ---
       - name: 🔍 Scan & Update Options
         if: github.event.inputs.action == 'Scan Options'
         run: |
           FILE=".github/workflows/build-tweaks.yml"
-          
-          # Lấy danh sách Name sạch sẽ, không dính đường dẫn tệp (-h)
           PROJS=$(grep -h "^Name:" src/build-tweaks/*/control | cut -d: -f2- | sed "s/^ *//;s/ *$//" | sort | uniq | sed "s/^/          - '/;s/$/'/")
-          
           LIST="          - '(none)'"
           [ ! -z "$PROJS" ] && LIST="$LIST"$'\n'"$PROJS"
-
           perl -i -0777 -pe "s/(# OPTIONS-START).*?(# OPTIONS-END)/\$1\n$LIST\n          \$2/s" "$FILE"
           
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           git add "$FILE"
           git commit -m "chore: update tweak list" || exit 0
-          git push origin main
+          git push origin main --force
 
-      # --- PHẦN 2: BUILD PROJECT (Sửa lỗi Exit code 128) ---
+      # --- PHẦN 2: BUILD PROJECT ---
       - name: 🛠️ Setup Theos
         if: github.event.inputs.action == 'Build Project'
         uses: Randomblock1/theos-action@v1
@@ -68,15 +67,18 @@ jobs:
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
+          # Gán SileoDepiction vào file control của tweak
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
           
+          # Tăng version tự động
           VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           [[ "$VER" != *.*.*.* ]] && VER="0.0.0.0"
           IFS='.' read -r v1 v2 v3 v4 <<< "$VER"
           NVER="$v1.$v2.$v3.$((v4 + 1))"
           sed -i '' "s/^Version: .*/Version: $NVER/" "$CTRL"
 
+          # Đóng gói
           make -C "$DIR" clean package FINALPACKAGE=1
           mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           
@@ -84,7 +86,7 @@ jobs:
           echo "proj_ver=$NVER" >> $GITHUB_OUTPUT
           echo "deb_file=$(basename $(ls deb_output/*.deb | head -n 1))" >> $GITHUB_OUTPUT
 
-      - name: 📦 Update Assets & Push
+      - name: 📦 Update Assets & Sync Repo
         if: github.event.inputs.action == 'Build Project'
         run: |
           brew install dpkg
@@ -95,7 +97,7 @@ jobs:
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           URL="${{ env.BASE_URL }}"
           
-          # Tạo JSON Depiction
+          # Tạo JSON cho Sileo
           cat > depictions/${SAFE}.json << EOF
           {
             "name": "${{ github.event.inputs.project }}",
@@ -105,16 +107,17 @@ jobs:
           }
           EOF
 
-          # QUAN TRỌNG: Sửa lỗi 128 bằng cách add trước khi pull
+          # XỬ LÝ LỖI 128: Đồng bộ sạch sẽ trước khi Push
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           
-          # Dọn dẹp thư mục build để tránh file rác gây lỗi git
           rm -rf theos/ .theos/ obj/
-          
           git add .
           git commit -m "build: $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
           
-          # Pull rebase sau khi đã commit các thay đổi local
-          git pull --rebase origin main
-          git push origin main
+          # Dùng fetch và reset để đảm bảo không bị xung đột unstaged changes
+          git fetch origin main
+          git reset --soft origin/main
+          git add .
+          git commit --amend --no-edit || git commit -m "build: $SAFE v${{ steps.metadata.outputs.proj_ver }}"
+          git push origin main --force
