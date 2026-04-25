@@ -13,13 +13,12 @@ on:
           - 'AutoAC'
           - 'AutoDL'
       publish:
-        description: 'Phát hành deb lên Sileo'
+        description: 'Phát hành lên Sileo (Tăng vơ chính thức)'
         type: boolean
         default: false
 
 env:
   BASE_URL: "https://raw.githubusercontent.com/2KGT/repo/main"
-  # Thiết lập biến môi trường múi giờ cho toàn hệ thống máy ảo
   TZ: "Asia/Ho_Chi_Minh"
 
 jobs:
@@ -35,15 +34,14 @@ jobs:
 
       - name: 🕒 Cài đặt múi giờ Hà Nội (ICT)
         run: |
-          # Ép hệ thống macOS Runner nhận múi giờ Việt Nam
           sudo setup-timezone -z Asia/Ho_Chi_Minh || true
           export TZ="Asia/Ho_Chi_Minh"
-          echo "Thời gian hiện tại trong máy ảo: $(date)"
+          echo "Thời gian hiện tại: $(date)"
 
       - name: 🛠️ Setup Toolchain (Theos)
         uses: randomblock1/theos-action@v1
 
-      - name: ⚙️ Build Logic (SemVer)
+      - name: ⚙️ Build Logic (Smart Versioning)
         id: metadata
         run: |
           DP_NAME="${{ github.event.inputs.project }}"
@@ -53,18 +51,23 @@ jobs:
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
-          # Tăng version X.Y.Z
-          CURRENT_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
+          # Đọc Version từ GitHub (Luôn là bản sạch X.Y.Z)
+          RAW_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
+          
           if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then
-              IFS='.' read -r i1 i2 i3 <<< "$CURRENT_VER"
+              # TĂNG VƠ CHÍNH THỨC
+              IFS='.' read -r i1 i2 i3 <<< "$RAW_VER"
               NEW_VER="$i1.$i2.$((i3 + 1))"
           else
-              NEW_VER="$CURRENT_VER-test"
+              # TẠO VƠ TEST TẠM THỜI (Dựa trên thời gian để không bao giờ trùng)
+              # Ví dụ: 1.0.0-test2045 (20:45)
+              TIME_STAMP=$(date +%H%M)
+              NEW_VER="$RAW_VER-test$TIME_STAMP"
           fi
           
+          # Cập nhật tạm thời vào file để Build
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
           
-          # Build với thời gian đã đồng bộ
           make -C "$DIR" clean package FINALPACKAGE=1
           mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           
@@ -78,10 +81,10 @@ jobs:
         with:
           name: ${{ steps.metadata.outputs.safe_name }}-v${{ steps.metadata.outputs.proj_ver }}
           path: deb_output/*.deb
-          retention-days: 5
+          retention-days: 3
 
       ## --- CHỈ CHẠY NẾU CHỌN PUBLISH ---
-      - name: 📦 Update Repo Metadata
+      - name: 🚀 Cập nhật & Giao hàng (Chỉ khi Publish)
         if: github.event.inputs.publish == 'true'
         run: |
           brew install dpkg
@@ -89,7 +92,7 @@ jobs:
           cp -v deb_output/*.deb debs/
           dpkg-scanpackages -m ./debs /dev/null > Packages && bzip2 -fks Packages
           
-          # Tạo JSON mô tả
+          # Tạo JSON Metadata
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           URL="${{ env.BASE_URL }}"
           PKG=$(grep "^Package:" "${{ steps.metadata.outputs.proj_dir }}/control" | cut -d' ' -f2)
@@ -110,31 +113,26 @@ jobs:
               "${URL}/depictions/images/${SAFE}3.png"
             ],
             "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
-            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "• Phát hành bản build mới nhất (Giờ VN)"}]
+            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "• Phát hành chính thức (ICT)"}]
           }
           EOF
 
-      - name: 🚀 Giao hàng lên Cửa hàng (GitHub)
-        if: github.event.inputs.publish == 'true'
-        run: |
+          # Đẩy lên GitHub
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          
-          # Dọn dẹp rác trước khi commit
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           rm -rf deb_output/ theos/ .theos/ "$DIR/packages" "$DIR/.theos" "$DIR/obj"
           
           git add .
-          git commit -m "🚀 Release $SAFE v${{ steps.metadata.outputs.proj_ver }} (ICT)" || exit 0
-          
+          git commit -m "🚀 Release $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
           git fetch origin main
           git reset --soft origin/main
           git add .
-          git commit --amend --no-edit || git commit -m "Update Repo ICT"
+          git commit --amend --no-edit || git commit -m "Update Repo"
           git push origin main --force
 
-      - name: 🧹 Vệ sinh sau khi diễn
+      - name: 🧹 Vệ sinh
         if: always()
         run: |
           rm -rf deb_output/ .theos/ obj/
-          echo "Hoàn tất quy trình lúc: $(date)"
+          echo "Hoàn tất lúc: $(date)"
