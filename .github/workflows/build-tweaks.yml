@@ -19,7 +19,7 @@ on:
           # OPTIONS-END
 
 env:
-  # Link Raw chuẩn của 2KGT
+  # Link Raw chuẩn của bạn
   BASE_URL: "https://raw.githubusercontent.com/2KGT/repo/main"
 
 jobs:
@@ -27,15 +27,15 @@ jobs:
     runs-on: macos-latest
     permissions:
       contents: write
-      workflows: write
+      actions: write  # Đã sửa từ 'workflows' thành 'actions' để hết lỗi parse
     steps:
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # --- PHẦN 1: QUÉT OPTIONS (Chạy khi chọn Scan Options) ---
-      - name: 🔍 Scan & Update Workflow Options
+      # --- PHẦN 1: SCAN OPTIONS ---
+      - name: 🔍 Scan & Update Options
         if: github.event.inputs.action == 'Scan Options'
         run: |
           PROJS=$(grep -h "^Name:" src/build-tweaks/*/control | cut -d: -f2- | sed 's/^ *//;s/ *$//' | sort | uniq)
@@ -45,21 +45,21 @@ jobs:
           done <<< "$PROJS"
           
           FILE=".github/workflows/build-tweaks.yml"
-          # Sử dụng Perl để thay thế block an toàn trên macOS
+          # Sử dụng Perl với cờ an toàn để thay thế nội dung giữa hai tag
           perl -i -0777 -pe "s/(# OPTIONS-START).*?(# OPTIONS-END)/\$1\n          $LIST\n          \$2/s" "$FILE"
           
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           git add "$FILE"
-          git commit -m "chore: update project list" || exit 0
+          git commit -m "chore: update tweak list" || exit 0
           git push origin main
 
-      # --- PHẦN 2: BUILD LOGIC (Chạy khi chọn Build Project) ---
+      # --- PHẦN 2: BUILD PROJECT ---
       - name: 🛠️ Setup Theos
         if: github.event.inputs.action == 'Build Project'
         uses: Randomblock1/theos-action@v1
 
-      - name: ⚙️ Build & Metadata
+      - name: ⚙️ Build Logic
         if: github.event.inputs.action == 'Build Project'
         id: metadata
         run: |
@@ -68,32 +68,28 @@ jobs:
           
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
-          # Lấy tên sạch để làm ID (VD: My Tweak -> MyTweak)
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
-          # Cập nhật thông tin vào file control
+          # Gán link Depiction vào control
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
-          grep -q "^Section:" "$CTRL" || echo "Section: Tweaks" >> "$CTRL"
-          grep -q "^Architecture:" "$CTRL" || echo "Architecture: iphoneos-arm" >> "$CTRL"
-
-          # Tăng Version tự động (x.x.x.N + 1)
+          
+          # Tăng version
           VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           [[ "$VER" != *.*.*.* ]] && VER="0.0.0.0"
           IFS='.' read -r v1 v2 v3 v4 <<< "$VER"
           NVER="$v1.$v2.$v3.$((v4 + 1))"
           sed -i '' "s/^Version: .*/Version: $NVER/" "$CTRL"
 
-          # Build Package
+          # Build
           make -C "$DIR" clean package FINALPACKAGE=1
           mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           
-          # Export cho step sau
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_ver=$NVER" >> $GITHUB_OUTPUT
           echo "deb_file=$(basename $(ls deb_output/*.deb | head -n 1))" >> $GITHUB_OUTPUT
 
-      - name: 📦 Generate Repository & JSON
+      - name: 📦 Update Repository Assets
         if: github.event.inputs.action == 'Build Project'
         run: |
           brew install dpkg
@@ -104,18 +100,17 @@ jobs:
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           URL="${{ env.BASE_URL }}"
           
-          # Cấu trúc gán link tự động theo tên
+          # Gán link tự động dựa trên cấu trúc tệp
           ICON="${URL}/icons/${SAFE}.png"
           BANNER=""; [ -f "depictions/images/${SAFE}-banner.png" ] && BANNER="${URL}/depictions/images/${SAFE}-banner.png"
           VIDEO=""; [ -f "depictions/images/${SAFE}.mp4" ] && VIDEO="${URL}/depictions/images/${SAFE}.mp4"
           
-          # Quét tối đa 5 ảnh chụp màn hình
           SS_JSON=""
           for i in {1..5}; do
             [ -f "depictions/images/${SAFE}${i}.png" ] && SS_JSON="${SS_JSON}${SS_JSON:+,}\"${URL}/depictions/images/${SAFE}${i}.png\""
           done
 
-          # Tạo file JSON mô tả cho Sileo
+          # Tạo file JSON Depiction
           cat > depictions/${SAFE}.json << EOF
           {
             "name": "${{ github.event.inputs.project }}",
@@ -128,11 +123,10 @@ jobs:
           }
           EOF
 
-          # Đẩy tất cả thay đổi lên GitHub
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           rm -rf theos/ .theos/ obj/
           git add .
-          git commit -m "📦 Build $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
+          git commit -m "build: $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
           git pull --rebase origin main
           git push origin main
