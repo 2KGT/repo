@@ -26,7 +26,6 @@ jobs:
     runs-on: macos-latest
     permissions:
       contents: write
-      # QUAN TRỌNG: Phải có dòng này để Bot có quyền ghi vào file .yml
       workflows: write 
     steps:
       - name: 📥 Checkout
@@ -34,32 +33,34 @@ jobs:
         with:
           fetch-depth: 0
 
-      # --- RÚT GỌN QUÁ TRÌNH QUÉT DỰ ÁN ---
       - name: 🔍 Scan & Update Options
         if: github.event.inputs.action == 'Scan Options'
         run: |
-          # Tìm tất cả file control, lấy dòng Name, xóa khoảng trắng
-          PROJS=$(grep -h "^Name:" src/build-tweaks/*/control | cut -d: -f2- | sed 's/^ *//;s/ *$//' | sort | uniq)
-          
-          # Tạo danh sách text cho YAML
-          LIST="- '(none)'"
-          while IFS= read -r line; do
-            [ -z "$line" ] && continue
-            LIST="${LIST}\n          - '$line'"
-          done <<< "$PROJS"
-          
-          # Ghi vào file workflow (Sử dụng lệnh đơn giản hơn)
           FILE=".github/workflows/build-tweaks.yml"
-          perl -i -0777 -pe "s/(# OPTIONS-START).*?(# OPTIONS-END)/\$1\n          $LIST\n          \$2/s" "$FILE"
           
-          # Đẩy lên GitHub
+          # 1. Lấy danh sách Name, làm sạch, thêm gạch đầu dòng và khoảng trắng chuẩn YAML
+          # Lệnh này sẽ tạo ra định dạng:           - 'Tên Dự Án'
+          PROJS=$(grep -h "^Name:" src/build-tweaks/*/control | cut -d: -f2- | sed "s/^ *//;s/ *$//" | sort | uniq | sed "s/^/- '/;s/$/'/")
+          
+          # 2. Tạo nội dung chèn (giữ đúng 10 khoảng trắng thụt lề của file YAML)
+          LIST="          - '(none)'"
+          if [ ! -z "$PROJS" ]; then
+            # Chuyển danh sách thành khối có thụt lề
+            FORMATTED_PROJS=$(echo "$PROJS" | sed 's/^/          /')
+            LIST="$LIST"$'\n'"$FORMATTED_PROJS"
+          fi
+
+          # 3. Sử dụng Perl để thay thế (Perl ổn định nhất trên macOS)
+          # Nó sẽ tìm từ tag START đến tag END và thay bằng LIST mới
+          perl -i -0777 -pe "s/(# OPTIONS-START).*?(# OPTIONS-END)/\$1\n$LIST\n          \$2/s" "$FILE"
+          
+          # 4. Lưu và đẩy lên
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           git add "$FILE"
-          git commit -m "chore: update project list" || exit 0
+          git commit -m "chore: update tweak list" || exit 0
           git push origin main
 
-      # --- QUÁ TRÌNH DỰNG DỰ ÁN ---
       - name: 🛠️ Setup Theos
         if: github.event.inputs.action == 'Build Project'
         uses: Randomblock1/theos-action@v1
@@ -71,23 +72,21 @@ jobs:
           DP_NAME="${{ github.event.inputs.project }}"
           [ "$DP_NAME" = "(none)" ] && exit 1
           
-          # Tìm đúng thư mục chứa dự án dựa vào Name trong control
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
-          # Gán link chuẩn Raw cho Sileo
+          # Gán link chuẩn Raw
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
           
-          # Tăng version tự động
+          # Tăng version
           VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           [[ "$VER" != *.*.*.* ]] && VER="0.0.0.0"
           IFS='.' read -r v1 v2 v3 v4 <<< "$VER"
           NVER="$v1.$v2.$v3.$((v4 + 1))"
           sed -i '' "s/^Version: .*/Version: $NVER/" "$CTRL"
 
-          # Build .deb
           make -C "$DIR" clean package FINALPACKAGE=1
           mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           
@@ -105,8 +104,6 @@ jobs:
           
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           URL="${{ env.BASE_URL }}"
-          
-          # Tự động gán link Icon/Banner theo tên SAFE
           ICON="${URL}/icons/${SAFE}.png"
           BANNER=""; [ -f "depictions/images/${SAFE}-banner.png" ] && BANNER="${URL}/depictions/images/${SAFE}-banner.png"
           
@@ -115,7 +112,6 @@ jobs:
             [ -f "depictions/images/${SAFE}${i}.png" ] && SS_JSON="${SS_JSON}${SS_JSON:+,}\"${URL}/depictions/images/${SAFE}${i}.png\""
           done
 
-          # Tạo file JSON
           cat > depictions/${SAFE}.json << EOF
           {
             "name": "${{ github.event.inputs.project }}",
