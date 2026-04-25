@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       project:
-        description: 'Chọn dự án cần Build'
+        description: 'Chọn dự án Build'
         required: true
         type: choice
         default: '(none)'
@@ -13,7 +13,7 @@ on:
           - 'AutoAC'
           - 'AutoDL'
       publish:
-        description: 'Phát hành lên Sileo (Tăng vơ chính thức)'
+        description: 'Phát hành lên Sileo'
         type: boolean
         default: false
 
