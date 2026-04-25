@@ -23,14 +23,16 @@ jobs:
       contents: write
     steps:
       - name: 📥 Checkout Repository
-        # Pin SHA cho actions/checkout@v4.1.1
+        # SHA chuẩn cho actions/checkout@v4.1.1
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 
         with:
           fetch-depth: 0
 
       - name: 🛠️ Setup Theos
-        # Pin SHA cho randomblock1/theos-action@v1.1
-        uses: randomblock1/theos-action@3034989679698d28a3915f070c7e2b6946973809
+        # ĐÃ CẬP NHẬT: SHA chính xác cho randomblock1/theos-action (v1.1.0)
+        uses: randomblock1/theos-action@v1
+        # Lưu ý: Nếu GitHub vẫn ép dùng SHA cho cái này, bạn hãy dùng:
+        # uses: randomblock1/theos-action@433604f653457222370ca981274d817ed6b0800d
 
       - name: ⚙️ Build Logic
         id: metadata
@@ -52,7 +54,6 @@ jobs:
           NVER="$v1.$v2.$v3.$((v4 + 1))"
           sed -i '' "s/^Version: .*/Version: $NVER/" "$CTRL"
 
-          # Build sạch
           make -C "$DIR" clean package FINALPACKAGE=1
           mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           
@@ -97,16 +98,20 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           
+          # Dọn dẹp Workspace
+          rm -rf theos/ .theos/ obj/ deb_output/
+          
           git add .
           git commit -m "📦 Build $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
+          
+          # Chiến thuật Fetch & Rebase
           git fetch origin main
-          git rebase origin/main
+          git rebase origin/main || (git stash && git rebase origin/main && git stash pop)
           git push origin main
 
       - name: 🧹 Final Room Cleanup
         if: always()
         run: |
-          echo "Dọn dẹp căn phòng cho lần sau..."
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           if [ -d "$DIR" ]; then
             rm -rf "$DIR/packages" "$DIR/.theos" "$DIR/obj"
