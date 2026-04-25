@@ -19,6 +19,7 @@
 ## 🚀 Danh sách dự án
 *Dưới đây là danh mục các dự án đang được duy trì trong Repo.*
 
+[![Build Multi Tweak](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml/badge.svg)](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml)
 ---
 
 ## 🛠️ Chi tiết các Tweak nổi bật
