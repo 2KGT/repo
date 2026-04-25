@@ -17,6 +17,11 @@ on:
           # OPTIONS-START
           - '(none)'
           # OPTIONS-END
+
+env:
+  # Thiết lập link Raw chuẩn của bạn tại đây
+  BASE_URL: "https://raw.githubusercontent.com/2KGT/repo/main"
+
 jobs:
   process:
     runs-on: macos-latest
@@ -27,6 +32,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: 🔍 Scan Options
         if: github.event.inputs.action == 'Scan Options'
         run: |
@@ -44,9 +50,11 @@ jobs:
           git add "$FILE"
           git commit -m "chore: update options" || exit 0
           git push origin main
+
       - name: 🛠️ Setup Theos
         if: github.event.inputs.action == 'Build Project'
         uses: Randomblock1/theos-action@v1
+
       - name: ⚙️ Build Logic
         if: github.event.inputs.action == 'Build Project'
         id: metadata
@@ -56,27 +64,26 @@ jobs:
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
-          URL="https://raw.githubusercontent.com/${{ github.repository }}/main"
           
-          # 1. Gán SileoDepiction & Meta
+          # Gán link Depiction vào file control
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
-          echo "SileoDepiction: ${URL}/depictions/${SAFE}.json" >> "$CTRL"
+          echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
+          
           [ "$(grep -c "^Section:" "$CTRL")" -eq 0 ] && echo "Section: Tweaks" >> "$CTRL"
           [ "$(grep -c "^Architecture:" "$CTRL")" -eq 0 ] && echo "Architecture: iphoneos-arm" >> "$CTRL"
 
-          # 2. Nhảy Version
+          # Nhảy Version
           VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           [[ "$VER" != *.*.*.* ]] && VER="0.0.0.0"
           IFS='.' read -r v1 v2 v3 v4 <<< "$VER"
           NVER="$v1.$v2.$v3.$((v4 + 1))"
           sed -i '' "s/^Version: .*/Version: $NVER/" "$CTRL"
 
-          # 3. Quét Changelog
+          # Quét Changelog
           SRC=$(find "$DIR" -maxdepth 1 \( -name "*.x" -o -name "*.xm" \) | head -n 1)
           NEWS=$(grep "// NEW:" "$SRC" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || echo "- Cập nhật hệ thống")
           FIXS=$(grep "// FIX:" "$SRC" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || echo "- Tối ưu hóa")
 
-          # 4. Export dữ liệu
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
           echo "proj_ver=$NVER" >> $GITHUB_OUTPUT
@@ -85,7 +92,6 @@ jobs:
           echo -e "### ✨ Tính năng mới\n$NEWS\n\n### 🐛 Sửa lỗi\n$FIXS" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          # 5. Build
           make -C "$DIR" clean package FINALPACKAGE=1 || make -C "$DIR" package FINALPACKAGE=1
           mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           echo "deb_file=$(basename $(ls deb_output/*.deb | head -n 1))" >> $GITHUB_OUTPUT
@@ -99,11 +105,11 @@ jobs:
           dpkg-scanpackages -m ./debs /dev/null > Packages && bzip2 -fks Packages
           
           SAFE="${{ steps.metadata.outputs.safe_name }}"
-          URL="https://raw.githubusercontent.com/${{ github.repository }}/main"
+          URL="${{ env.BASE_URL }}"
           CTRL="${{ steps.metadata.outputs.proj_dir }}/control"
           DESC=$(grep "^Description:" "$CTRL" | cut -d: -f2- | sed 's/^ *//')
           
-          # Tự động quét Media
+          # 1. Link cho ảnh banner, screenshots, video (vào thư mục depictions/images)
           BANNER=""; [ -f "depictions/images/${SAFE}-banner.png" ] && BANNER="${URL}/depictions/images/${SAFE}-banner.png"
           VIDEO=""; [ -f "depictions/images/${SAFE}.mp4" ] && VIDEO="${URL}/depictions/images/${SAFE}.mp4"
           SS_JSON=""
@@ -111,13 +117,16 @@ jobs:
             [ -f "depictions/images/${SAFE}${i}.png" ] && SS_JSON="${SS_JSON}${SS_JSON:+,}\"${URL}/depictions/images/${SAFE}${i}.png\""
           done
 
-          # Ghi JSON đầy đủ
+          # 2. Link cho icon (vào thư mục icons/)
+          ICON_URL="${URL}/icons/${SAFE}.png"
+
+          # Ghi JSON
           cat > depictions/${SAFE}.json << EOF
           {
             "name": "${{ steps.metadata.outputs.tweak_name }}",
             "version": "${{ steps.metadata.outputs.proj_ver }}",
             "description": "$DESC",
-            "icon": "${URL}/icons/${SAFE}.png",
+            "icon": "$ICON_URL",
             "banner": "$BANNER",
             "video": "$VIDEO",
             "screenshots": [$SS_JSON],
