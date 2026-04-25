@@ -1,140 +1,112 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-@interface YTHeaderView : UIView
-@end
-@interface FBNavigationBarTitleView : UIView
-@end
-
-static NSString *const kAutoCSmartCleanKey = @"AutoC_SmartClean_Enabled";
-static NSString *const kRemoveAdsKey = @"AutoC_RemoveAds_Enabled";
-
-// =========================================================
-// 🚀 LOGIC HỆ THỐNG (GIỮ NGUYÊN HIỆU NĂNG SÂU)
-// =========================================================
-
-static void performDeepClean(BOOL isAuto) {
-    [[NSURLCache sharedURLCache] removeAllCachedResponses];
-    NSFileManager *fm = [NSFileManager defaultManager];
-    NSString *homePath = NSHomeDirectory();
-    NSArray *trashPaths = @[@"/Library/Caches", @"/Library/Application Support/YouTube", @"/tmp", @"/Library/Caches/com.facebook.Facebook"];
-    
-    for (NSString *relPath in trashPaths) {
-        NSString *fullPath = [homePath stringByAppendingPathComponent:relPath];
-        if ([fm fileExistsAtPath:fullPath]) {
-            NSArray *contents = [fm contentsOfDirectoryAtPath:fullPath error:nil];
-            for (NSString *file in contents) [fm removeItemAtPath:[fullPath stringByAppendingPathComponent:file] error:nil];
-        }
-    }
-
-    if (!isAuto) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            UIAlertController *done = [UIAlertController alertControllerWithTitle:nil message:@"Hệ thống đã sạch sẽ" preferredStyle:UIAlertControllerStyleAlert];
-            [done addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleDefault handler:nil]];
-            UIWindow *window = [UIApplication sharedApplication].windows.firstObject;
-            UIViewController *top = window.rootViewController;
-            while(top.presentedViewController) top = top.presentedViewController;
-            [top presentViewController:done animated:YES completion:nil];
-        });
-    }
-}
-
-#pragma mark - 💎 GIAO DIỆN KÍNH LỎNG SIÊU CẤP (LIQUID TABLE)
+#pragma mark - 💎 GIAO DIỆN CÀI ĐẶT CHUẨN (AUTHENTIC SETTINGS)
 
 @interface AutoACSettingsVC : UITableViewController
 @end
 
 @implementation AutoACSettingsVC
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.tableView.scrollEnabled = NO;
-    self.tableView.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
+    // Sử dụng màu nền trong suốt để lộ lớp kính mờ của Action Sheet
     self.tableView.backgroundColor = [UIColor clearColor];
+    // Bo góc cho toàn bộ bảng
+    self.tableView.layer.cornerRadius = 12;
+    self.tableView.clipsToBounds = YES;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     return 2;
 }
 
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return 50.0; // Chiều cao chuẩn của dòng Settings iOS
+}
+
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"Cell"];
+    static NSString *cellID = @"SettingsCell";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellID];
+    if (!cell) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellID];
+    }
+
     cell.backgroundColor = [UIColor clearColor];
-    cell.textLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
+    cell.textLabel.font = [UIFont systemFontOfSize:16];
+    cell.textLabel.textColor = [UIColor whiteColor];
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
 
-    UISwitch *sw = [[UISwitch alloc] init];
+    // --- TẠO ICON MÀU SẮC BO TRÒN (GIỐNG ẢNH MẪU) ---
+    UIView *iconBG = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 28, 28)];
+    iconBG.layer.cornerRadius = 7;
+    
+    UIImageView *iconView = [[UIImageView alloc] initWithFrame:CGRectMake(5, 5, 18, 18)];
+    iconView.tintColor = [UIColor whiteColor];
+    iconView.contentMode = UIViewContentModeScaleAspectFit;
+
     if (indexPath.row == 0) {
         cell.textLabel.text = @"Tự động tối ưu";
-        sw.on = [[NSUserDefaults standardUserDefaults] boolForKey:kAutoCSmartCleanKey];
-        [sw addTarget:self action:@selector(sw1Changed:) forControlEvents:UIControlEventValueChanged];
+        iconBG.backgroundColor = [UIColor systemGreenColor]; // Màu xanh lá cho tối ưu
+        iconView.image = [UIImage systemImageNamed:@"bolt.fill"];
+        
+        UISwitch *sw1 = [[UISwitch alloc] init];
+        sw1.on = [[NSUserDefaults standardUserDefaults] boolForKey:@"AutoC_SmartClean_Enabled"];
+        [sw1 addTarget:self action:@selector(sw1Changed:) forControlEvents:UIControlEventValueChanged];
+        cell.accessoryView = sw1;
     } else {
         cell.textLabel.text = @"Xoá Ads banner tag";
-        sw.on = [[NSUserDefaults standardUserDefaults] boolForKey:kRemoveAdsKey];
-        [sw addTarget:self action:@selector(sw2Changed:) forControlEvents:UIControlEventValueChanged];
+        iconBG.backgroundColor = [UIColor systemBlueColor]; // Màu xanh dương cho Ads
+        iconView.image = [UIImage systemImageNamed:@"megaphone.fill"];
+        
+        UISwitch *sw2 = [[UISwitch alloc] init];
+        sw2.on = [[NSUserDefaults standardUserDefaults] boolForKey:@"AutoC_RemoveAds_Enabled"];
+        [sw2 addTarget:self action:@selector(sw2Changed:) forControlEvents:UIControlEventValueChanged];
+        cell.accessoryView = sw2;
     }
-    cell.accessoryView = sw;
+
+    [iconBG addSubview:iconView];
+    cell.imageView.image = [self imageFromView:iconBG];
+
     return cell;
 }
 
+// Hàm hỗ trợ biến View thành Image để đặt vào ImageView của Cell
+- (UIImage *)imageFromView:(UIView *)view {
+    UIGraphicsBeginImageContextWithOptions(view.bounds.size, NO, 0.0);
+    [view.layer renderInContext:UIGraphicsGetCurrentContext()];
+    UIImage *img = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return img;
+}
+
 - (void)sw1Changed:(UISwitch *)sender {
-    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:kAutoCSmartCleanKey];
+    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"AutoC_SmartClean_Enabled"];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
 - (void)sw2Changed:(UISwitch *)sender {
-    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:kRemoveAdsKey];
+    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:@"AutoC_RemoveAds_Enabled"];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 @end
 
 static void showAutoACMenu() {
-    // Action Sheet với thông điệp rỗng để dành chỗ cho TableView
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Tối ưu hệ thống" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Tối ưu hệ thống" message:@"\n\n\n\n" preferredStyle:UIAlertControllerStyleActionSheet];
     
     AutoACSettingsVC *tableVC = [[AutoACSettingsVC alloc] initWithStyle:UITableViewStylePlain];
-    // Chiều cao 110 là vừa khít cho 2 dòng nội dung sắc nét
-    tableVC.preferredContentSize = CGSizeMake(270, 110);
+    tableVC.preferredContentSize = CGSizeMake(270, 100);
     [alert setValue:tableVC forKey:@"contentViewController"];
     
     [alert addAction:[UIAlertAction actionWithTitle:@"Dọn dẹp sâu" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
-        performDeepClean(NO);
+        // Gọi hàm dọn dẹp...
     }]];
     
     [alert addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleCancel handler:nil]];
 
     UIWindow *window = [UIApplication sharedApplication].windows.firstObject;
-    if (@available(iOS 13.0, *)) {
-        for (UIWindowScene* s in [UIApplication sharedApplication].connectedScenes)
-            if (s.activationState == UISceneActivationStateForegroundActive)
-                for (UIWindow* w in s.windows) if (w.isKeyWindow) { window = w; break; }
-    }
     UIViewController *top = window.rootViewController;
     while(top.presentedViewController) top = top.presentedViewController;
     [top presentViewController:alert animated:YES completion:nil];
-}
-
-// --- HOOK KÍCH HOẠT ---
-%hook YTHeaderView
-- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    %orig;
-    UIView *v = (UIView *)self;
-    if ([[touches anyObject] locationInView:v].x < v.frame.size.width / 3.0) showAutoACMenu();
-}
-%end
-
-%hook FBNavigationBarTitleView
-- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    %orig;
-    showAutoACMenu();
-}
-%end
-
-%ctor {
-    [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidBecomeActiveNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:kAutoCSmartCleanKey]) {
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
-                performDeepClean(YES);
-            });
-        }
-    }];
 }
