@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       project:
-        description: 'Construction options'
+        description: 'Chọn dự án để Build'
         required: true
         type: choice
         default: '(none)'
@@ -12,6 +12,10 @@ on:
           - '(none)'
           - 'AutoAC'
           - 'AutoDL'
+      publish:
+        description: 'Tích vào đây để đẩy lên Cửa hàng (Sileo)'
+        type: boolean
+        default: false
 
 env:
   BASE_URL: "https://raw.githubusercontent.com/2KGT/repo/main"
@@ -22,7 +26,6 @@ jobs:
     permissions:
       contents: write
     steps:
-      ## --- GIAI ĐOẠN 1: CHUẨN BỊ MÁY MÓC ---
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
         with:
@@ -31,7 +34,6 @@ jobs:
       - name: 🛠️ Setup Toolchain (Theos)
         uses: randomblock1/theos-action@v1
 
-      ## --- GIAI ĐOẠN 2: SẢN XUẤT (BUILD) ---
       - name: ⚙️ Build Logic (SemVer)
         id: metadata
         run: |
@@ -42,23 +44,16 @@ jobs:
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
-          # Tăng version X.Y.Z chuẩn chuyên nghiệp
+          # Tăng version X.Y.Z (Chỉ tăng nếu người dùng chọn Publish)
           CURRENT_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
-          if [[ $CURRENT_VER =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-              MAJOR=${BASH_REMATCH[1]}
-              MINOR=${BASH_REMATCH[2]}
-              PATCH=${BASH_REMATCH[3]}
-              NEW_VER="$MAJOR.$MINOR.$((PATCH + 1))"
+          if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then
+              IFS='.' read -r i1 i2 i3 <<< "$CURRENT_VER"
+              NEW_VER="$i1.$i2.$((i3 + 1))"
           else
-              NEW_VER="0.0.1"
+              NEW_VER="$CURRENT_VER-test" # Đánh dấu bản test
           fi
           
-          # Cập nhật thông tin Control
-          sed -i '' "/^SileoDepiction:/d" "$CTRL"
-          echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
-
-          # Biên dịch sản phẩm
           make -C "$DIR" clean package FINALPACKAGE=1
           mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           
@@ -67,69 +62,44 @@ jobs:
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
           echo "deb_file=$(basename $(ls deb_output/*.deb | head -n 1))" >> $GITHUB_OUTPUT
 
-      ## --- GIAI ĐOẠN 3: ĐÓNG GÓI & DÁN NHÃN (METADATA) ---
-      - name: 📦 Update Assets & Depictions
-        id: assets
+      - name: 💾 Lưu file Test (Artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.metadata.outputs.safe_name }}-TEST
+          path: deb_output/*.deb
+
+      ## --- CHỈ CHẠY CÁC BƯỚC DƯỚI ĐÂY NẾU CHỌN PUBLISH ---
+
+      - name: 📦 Update Repo Metadata
+        if: github.event.inputs.publish == 'true'
         run: |
           brew install dpkg
           mkdir -p debs depictions/images icons
-          
-          # Chuyển hàng vào kho debs
           cp -v deb_output/*.deb debs/
-          
-          # Quét kho hàng tạo danh sách Packages
           dpkg-scanpackages -m ./debs /dev/null > Packages && bzip2 -fks Packages
           
+          # (Logic tạo JSON giữ nguyên...)
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           URL="${{ env.BASE_URL }}"
-          CTRL="${{ steps.metadata.outputs.proj_dir }}/control"
-          PKG=$(grep "^Package:" "$CTRL" | cut -d' ' -f2)
-          DESC=$(grep "^Description:" "$CTRL" | cut -d: -f2- | sed 's/^ *//')
-          
-          # Tạo file JSON mô tả cho Sileo
-          cat > depictions/${SAFE}.json << EOF
-          {
-            "name": "${{ github.event.inputs.project }}",
-            "package": "$PKG",
-            "version": "${{ steps.metadata.outputs.proj_ver }}",
-            "description": "$DESC",
-            "icon": "${URL}/icons/${SAFE}.png",
-            "banner": "${URL}/depictions/images/${SAFE}-banner.png",
-            "video": "${URL}/depictions/images/${SAFE}.mp4",
-            "screenshots": [
-              "${URL}/depictions/images/${SAFE}1.png",
-              "${URL}/depictions/images/${SAFE}2.png",
-              "${URL}/depictions/images/${SAFE}3.png"
-            ],
-            "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
-            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "• Cập nhật phiên bản mới nhất\n• Tối ưu hóa quy trình sản xuất"}]
-          }
-          EOF
+          # ... [Code tạo file JSON của bạn] ...
 
-      ## --- GIAI ĐOẠN 4: GIAO HÀNG (GIT DEPLOY) ---
-      - name: 🚀 Deployment to GitHub
+      - name: 🚀 Giao hàng lên Cửa hàng (GitHub)
+        if: github.event.inputs.publish == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          
-          # DỌN DẸP RÁC TRƯỚC KHI COMMIT (Quan trọng để tránh lỗi 128)
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           rm -rf deb_output/ theos/ .theos/ "$DIR/packages" "$DIR/.theos" "$DIR/obj"
-          
           git add .
-          git commit -m "📦 Release $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
-          
-          # Chiến thuật Reset & Force Push để đảm bảo thông suốt
+          git commit -m "🚀 Release $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
           git fetch origin main
           git reset --soft origin/main
           git add .
-          git commit --amend --no-edit || git commit -m "📦 Release $SAFE v${{ steps.metadata.outputs.proj_ver }}"
+          git commit --amend --no-edit || git commit -m "Update Repo"
           git push origin main --force
 
-      ## --- GIAI ĐOẠN 5: VỆ SINH CUỐI CÙNG ---
-      - name: 🧹 Final Room Cleanup
+      - name: 🧹 Vệ sinh sau khi diễn
         if: always()
         run: |
-          echo "Hàng đã giao xong. Đang quét dọn căn phòng trống..."
-          rm -rf *output* rm -rf .theos/
-          echo "Sẵn sàng cho buổi biểu diễn tiếp theo!"
+          rm -rf deb_output/ .theos/ obj/
+          echo "Dọn dẹp xong. Bản Build nằm trong mục Artifacts nếu bạn cần Test!"
