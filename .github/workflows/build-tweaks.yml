@@ -7,7 +7,7 @@ on:
         description: 'Construction options'
         required: true
         type: choice
-        default: '(none)' # Chốt an toàn: Mặc định không chọn gì
+        default: '(none)'
         options:
           - '(none)'
           - 'AutoAC'
@@ -34,34 +34,24 @@ jobs:
         id: metadata
         run: |
           DP_NAME="${{ github.event.inputs.project }}"
-          if [ "$DP_NAME" = "(none)" ]; then
-            echo "Vui lòng chọn một dự án hợp lệ!"
-            exit 1
-          fi
+          if [ "$DP_NAME" = "(none)" ]; then exit 1; fi
           
-          # Tìm thư mục dự án
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
-          # SAFE là tên viết liền để gán file ảnh (Ví dụ: AutoAC)
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
-          # 1. Gán SileoDepiction vào file control
+          # Gán SileoDepiction & Tăng Version
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
           
-          # 2. Tăng Version tự động
           VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           [[ "$VER" != *.*.*.* ]] && VER="0.0.0.0"
           IFS='.' read -r v1 v2 v3 v4 <<< "$VER"
           NVER="$v1.$v2.$v3.$((v4 + 1))"
           sed -i '' "s/^Version: .*/Version: $NVER/" "$CTRL"
 
-          # 3. Biên dịch
           make -C "$DIR" clean package FINALPACKAGE=1
-          
-          # 4. Gom hàng
-          mkdir -p deb_output
-          find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
+          mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
@@ -73,70 +63,53 @@ jobs:
           brew install dpkg
           mkdir -p debs depictions/images icons
           
-          # Copy sản phẩm mới vào kho lưu trữ vĩnh viễn
+          # 1. Đưa hàng vào kho
           cp -v deb_output/*.deb debs/
           
-          # Cập nhật danh sách Packages cho Repo
+          # 2. Quét kho (Tạo file Packages)
           dpkg-scanpackages -m ./debs /dev/null > Packages
           bzip2 -fks Packages
           
+          # 3. Tạo JSON đại diện cho bản mới nhất
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           URL="${{ env.BASE_URL }}"
           CTRL="${{ steps.metadata.outputs.proj_dir }}/control"
-          
           PKG=$(grep "^Package:" "$CTRL" | cut -d' ' -f2)
-          AUTH=$(grep "^Author:" "$CTRL" | cut -d: -f2- | sed 's/^ *//')
           DESC=$(grep "^Description:" "$CTRL" | cut -d: -f2- | sed 's/^ *//')
           
-          # --- HỆ THỐNG MEDIA TỰ ĐỘNG ---
-          # 1. Icons: Lấy từ thư mục icons/
-          ICON_URL="${URL}/icons/${SAFE}.png"
-          
-          # 2. Banner: Lấy từ depictions/images/
           BANNER=""; [ -f "depictions/images/${SAFE}-banner.png" ] && BANNER="${URL}/depictions/images/${SAFE}-banner.png"
-          
-          # 3. Video: Lấy từ depictions/images/ (Hỗ trợ mp4)
           VIDEO=""; [ -f "depictions/images/${SAFE}.mp4" ] && VIDEO="${URL}/depictions/images/${SAFE}.mp4"
-          
-          # 4. Screenshots: Tự động quét từ 1 đến 5 ảnh
           SS_JSON=""
           for i in {1..5}; do
             [ -f "depictions/images/${SAFE}${i}.png" ] && SS_JSON="${SS_JSON}${SS_JSON:+,}\"${URL}/depictions/images/${SAFE}${i}.png\""
           done
 
-          # Tạo file JSON "Siêu cấp"
           cat > depictions/${SAFE}.json << EOF
           {
             "name": "${{ github.event.inputs.project }}",
             "package": "$PKG",
             "version": "${{ steps.metadata.outputs.proj_ver }}",
-            "author": "$AUTH",
-            "maintainer": "$AUTH",
             "description": "$DESC",
-            "icon": "$ICON_URL",
+            "icon": "${URL}/icons/${SAFE}.png",
             "banner": "$BANNER",
             "video": "$VIDEO",
             "screenshots": [$SS_JSON],
             "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
-            "changelog": [
-              {
-                "version": "${{ steps.metadata.outputs.proj_ver }}",
-                "changes": "- Phát hành phiên bản mới nhất\n- Cập nhật tài nguyên Media tự động"
-              }
-            ],
-            "links": {
-              "website": "https://github.com/2KGT/repo",
-              "support": "https://github.com/2KGT/repo/issues"
-            }
+            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "- Cập nhật tài nguyên Media"}]
           }
           EOF
 
-          # Đẩy sản phẩm lên GitHub
+          # 4. GIẢI QUYẾT LỖI 128: Add và Commit ngay lập tức
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          rm -rf theos/ .theos/ obj/
+          
+          # Loại bỏ các file rác của Theos để tránh làm nặng Repo
+          rm -rf theos/ .theos/ obj/ deb_output/
+          
           git add .
           git commit -m "📦 Build $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
           
+          # 5. Đẩy lên với chiến thuật Reset nếu có xung đột
+          git fetch origin main
           git pull --rebase origin main
           git push origin main
