@@ -11,7 +11,7 @@ static BOOL isYouTube = NO;
 static BOOL isFacebook = NO;
 
 // =========================================================
-// 🚀 HỆ THỐNG DỌN DẸP CHIẾN LƯỢC
+// 🚀 LOGIC XOÁ RÁC
 // =========================================================
 
 static void performDeepClean(BOOL isAuto) {
@@ -19,107 +19,93 @@ static void performDeepClean(BOOL isAuto) {
     NSFileManager *fm = [NSFileManager defaultManager];
     NSString *homePath = NSHomeDirectory();
     
-    // Các đường dẫn rác mục tiêu
-    NSArray *trashPaths = @[
-        @"/Library/Caches",
-        @"/Library/Application Support/YouTube",
-        @"/Library/Application Support/Google/YouTube",
-        @"/tmp",
-        @"/Library/Caches/com.facebook.Facebook",
-        @"/Library/Application Support/FBInternal"
-    ];
+    NSArray *trashPaths = @[@"/Library/Caches", @"/Library/Application Support/YouTube", @"/Library/Application Support/Google/YouTube", @"/tmp", @"/Library/Caches/com.facebook.Facebook"];
     
     for (NSString *relPath in trashPaths) {
         NSString *fullPath = [homePath stringByAppendingPathComponent:relPath];
         if ([fm fileExistsAtPath:fullPath]) {
             NSArray *contents = [fm contentsOfDirectoryAtPath:fullPath error:nil];
-            for (NSString *file in contents) {
-                [fm removeItemAtPath:[fullPath stringByAppendingPathComponent:file] error:nil];
-            }
+            for (NSString *file in contents) [fm removeItemAtPath:[fullPath stringByAppendingPathComponent:file] error:nil];
         }
     }
 
     if (!isAuto) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            UIAlertController *done = [UIAlertController alertControllerWithTitle:@"Hoàn tất" 
-                                            message:@"Hệ thống đã được làm sạch hoàn toàn" 
-                                            preferredStyle:UIAlertControllerStyleAlert];
+            UIAlertController *done = [UIAlertController alertControllerWithTitle:@"Hoàn tất" message:@"Hệ thống đã được làm sạch" preferredStyle:UIAlertControllerStyleAlert];
             [done addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleDefault handler:nil]];
             
-            UIWindow *window = [UIApplication sharedApplication].windows.firstObject;
-            UIViewController *top = window.rootViewController;
+            UIViewController *top = [UIApplication sharedApplication].windows.firstObject.rootViewController;
             while(top.presentedViewController) top = top.presentedViewController;
             [top presentViewController:done animated:YES completion:nil];
         });
     }
 }
 
-#pragma mark - 📱 TỰ ĐỘNG TỐI ƯU (FIXED)
+#pragma mark - 💎 GIAO DIỆN CÔNG TẮC GẠT (LIQUID SWITCH)
 
-@interface AutoACManager : NSObject
-@end
-@implementation AutoACManager
-+ (void)load {
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(runAuto) name:UIApplicationDidBecomeActiveNotification object:nil];
-}
-+ (void)runAuto {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:kAutoCSmartCleanKey]) {
-        // Tự động chạy lệnh Dọn Sâu sau 3 giây để đảm bảo MB thực sự giảm
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
-            performDeepClean(YES);
-        });
-    }
-}
+@interface AutoACSwitchVC : UIViewController
+@property (nonatomic, strong) UISwitch *toggle;
 @end
 
-#pragma mark - 💎 GIAO DIỆN KÍNH LỎNG (LIQUID GLASS)
+@implementation AutoACSwitchVC
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Tạo nhãn văn bản
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(20, 10, 150, 30)];
+    label.text = @"Tự động tối ưu";
+    label.font = [UIFont systemFontOfSize:16];
+    [self.view addSubview:label];
+
+    // Tạo nút công tắc gạt chuẩn iOS
+    self.toggle = [[UISwitch alloc] initWithFrame:CGRectMake(self.view.frame.size.width - 150, 10, 0, 0)];
+    self.toggle.on = [[NSUserDefaults standardUserDefaults] boolForKey:kAutoCSmartCleanKey];
+    [self.toggle addTarget:self action:@selector(switchChanged:) forControlEvents:UIControlEventValueChanged];
+    [self.view addSubview:self.toggle];
+    
+    // Tự động căn chỉnh nút gạt sang phải (Auto Layout đơn giản)
+    self.toggle.translatesAutoresizingMaskIntoConstraints = NO;
+    [NSLayoutConstraint activateConstraints:@[
+        [self.toggle.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-25],
+        [self.toggle.centerYAnchor constraintEqualToAnchor:self.view.centerYAnchor]
+    ]];
+}
+
+- (void)switchChanged:(UISwitch *)sender {
+    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:kAutoCSmartCleanKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+@end
 
 static void showAutoACMenu() {
-    // Thiết kế tối giản, sạch sẽ, chuẩn ngôn ngữ thiết kế iOS mới
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"TỐI ƯU HỆ THỐNG" 
-                                            message:@"Thiết lập quản lý tài nguyên" 
-                                            preferredStyle:UIAlertControllerStyleActionSheet];
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Tối ưu hệ thống" message:@"\n\n" preferredStyle:UIAlertControllerStyleActionSheet];
     
-    // Nút Dọn dẹp sâu
+    // Chèn ViewController chứa nút gạt vào Action Sheet
+    AutoACSwitchVC *switchVC = [[AutoACSwitchVC alloc] init];
+    switchVC.preferredContentSize = CGSizeMake(270, 50);
+    [alert setValue:switchVC forKey:@"contentViewController"];
+    
     [alert addAction:[UIAlertAction actionWithTitle:@"Dọn dẹp sâu" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
         performDeepClean(NO);
     }]];
     
-    // Nút trạng thái mô phỏng công tắc gạt
-    BOOL currentStatus = [[NSUserDefaults standardUserDefaults] boolForKey:kAutoCSmartCleanKey];
-    NSString *statusText = currentStatus ? @"Tự động: Đang Bật" : @"Tự động: Đang Tắt";
-    
-    [alert addAction:[UIAlertAction actionWithTitle:statusText style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
-        [[NSUserDefaults standardUserDefaults] setBool:!currentStatus forKey:kAutoCSmartCleanKey];
-        [[NSUserDefaults standardUserDefaults] synchronize];
-        // Hiện lại menu ngay lập tức để tạo hiệu ứng chuyển đổi kính lỏng
-        showAutoACMenu();
-    }]];
-    
     [alert addAction:[UIAlertAction actionWithTitle:@"Hủy bỏ" style:UIAlertActionStyleCancel handler:nil]];
 
-    UIWindow *window = nil;
+    UIViewController *top = [UIApplication sharedApplication].windows.firstObject.rootViewController;
     if (@available(iOS 13.0, *)) {
         for (UIWindowScene* s in [UIApplication sharedApplication].connectedScenes)
             if (s.activationState == UISceneActivationStateForegroundActive)
-                for (UIWindow* w in s.windows) if (w.isKeyWindow) { window = w; break; }
+                for (UIWindow* w in s.windows) if (w.isKeyWindow) { top = w.rootViewController; break; }
     }
-    if(!window) window = [UIApplication sharedApplication].windows.firstObject;
-    
-    UIViewController *top = window.rootViewController;
     while(top.presentedViewController) top = top.presentedViewController;
-    
     [top presentViewController:alert animated:YES completion:nil];
 }
 
-// --- HOOK KÍCH HOẠT ---
+// --- HOOKS ---
 %hook YTHeaderView
 - (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
     %orig;
-    UIView *v = (UIView *)self;
-    CGPoint loc = [[touches anyObject] locationInView:v];
-    // Kích hoạt khi chạm vào khu vực logo (1/3 bên trái)
-    if (loc.x < v.frame.size.width / 3.0) showAutoACMenu();
+    CGPoint loc = [[touches anyObject] locationInView:(UIView *)self];
+    if (loc.x < ((UIView *)self).frame.size.width / 3.0) showAutoACMenu();
 }
 %end
 
@@ -131,13 +117,15 @@ static void showAutoACMenu() {
 %end
 
 %ctor {
-    @autoreleasepool {
-        NSString *bid = [[NSBundle mainBundle] bundleIdentifier];
-        isYouTube = [bid isEqualToString:@"com.google.ios.youtube"];
-        isFacebook = [bid isEqualToString:@"com.facebook.Facebook"];
-        if (isYouTube || isFacebook) {
-            if ([[NSUserDefaults standardUserDefaults] objectForKey:kAutoCSmartCleanKey] == nil)
-                [[NSUserDefaults standardUserDefaults] setBool:YES forKey:kAutoCSmartCleanKey];
+    [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidBecomeActiveNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:kAutoCSmartCleanKey]) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
+                performDeepClean(YES);
+            });
         }
-    }
+    }];
+    
+    NSString *bid = [[NSBundle mainBundle] bundleIdentifier];
+    isYouTube = [bid isEqualToString:@"com.google.ios.youtube"];
+    isFacebook = [bid isEqualToString:@"com.facebook.Facebook"];
 }
