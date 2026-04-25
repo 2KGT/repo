@@ -13,7 +13,7 @@ on:
           - 'AutoAC'
           - 'AutoDL'
       publish:
-        description: 'Phát hành lên Cửa hàng (Sileo)'
+        description: 'Phát hành lên Sileo'
         type: boolean
         default: false
 
