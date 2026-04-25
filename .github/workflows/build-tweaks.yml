@@ -19,6 +19,8 @@ on:
 
 env:
   BASE_URL: "https://raw.githubusercontent.com/2KGT/repo/main"
+  # Thiết lập biến môi trường múi giờ cho toàn hệ thống máy ảo
+  TZ: "Asia/Ho_Chi_Minh"
 
 jobs:
   process:
@@ -30,6 +32,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: 🕒 Cài đặt múi giờ Hà Nội (ICT)
+        run: |
+          # Ép hệ thống macOS Runner nhận múi giờ Việt Nam
+          sudo setup-timezone -z Asia/Ho_Chi_Minh || true
+          export TZ="Asia/Ho_Chi_Minh"
+          echo "Thời gian hiện tại trong máy ảo: $(date)"
 
       - name: 🛠️ Setup Toolchain (Theos)
         uses: randomblock1/theos-action@v1
@@ -44,16 +53,18 @@ jobs:
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
-          # Tăng version X.Y.Z (Chỉ tăng nếu người dùng chọn Publish)
+          # Tăng version X.Y.Z
           CURRENT_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then
               IFS='.' read -r i1 i2 i3 <<< "$CURRENT_VER"
               NEW_VER="$i1.$i2.$((i3 + 1))"
           else
-              NEW_VER="$CURRENT_VER-test" # Đánh dấu bản test
+              NEW_VER="$CURRENT_VER-test"
           fi
           
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
+          
+          # Build với thời gian đã đồng bộ
           make -C "$DIR" clean package FINALPACKAGE=1
           mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           
@@ -65,11 +76,11 @@ jobs:
       - name: 💾 Lưu file Test (Artifacts)
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.metadata.outputs.safe_name }}-TEST
+          name: ${{ steps.metadata.outputs.safe_name }}-v${{ steps.metadata.outputs.proj_ver }}
           path: deb_output/*.deb
+          retention-days: 5
 
-      ## --- CHỈ CHẠY CÁC BƯỚC DƯỚI ĐÂY NẾU CHỌN PUBLISH ---
-
+      ## --- CHỈ CHẠY NẾU CHỌN PUBLISH ---
       - name: 📦 Update Repo Metadata
         if: github.event.inputs.publish == 'true'
         run: |
@@ -78,28 +89,52 @@ jobs:
           cp -v deb_output/*.deb debs/
           dpkg-scanpackages -m ./debs /dev/null > Packages && bzip2 -fks Packages
           
-          # (Logic tạo JSON giữ nguyên...)
+          # Tạo JSON mô tả
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           URL="${{ env.BASE_URL }}"
-          # ... [Code tạo file JSON của bạn] ...
+          PKG=$(grep "^Package:" "${{ steps.metadata.outputs.proj_dir }}/control" | cut -d' ' -f2)
+          DESC=$(grep "^Description:" "${{ steps.metadata.outputs.proj_dir }}/control" | cut -d: -f2- | sed 's/^ *//')
+          
+          cat > depictions/${SAFE}.json << EOF
+          {
+            "name": "${{ github.event.inputs.project }}",
+            "package": "$PKG",
+            "version": "${{ steps.metadata.outputs.proj_ver }}",
+            "description": "$DESC",
+            "icon": "${URL}/icons/${SAFE}.png",
+            "banner": "${URL}/depictions/images/${SAFE}-banner.png",
+            "video": "${URL}/depictions/images/${SAFE}.mp4",
+            "screenshots": [
+              "${URL}/depictions/images/${SAFE}1.png",
+              "${URL}/depictions/images/${SAFE}2.png",
+              "${URL}/depictions/images/${SAFE}3.png"
+            ],
+            "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
+            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "• Phát hành bản build mới nhất (Giờ VN)"}]
+          }
+          EOF
 
       - name: 🚀 Giao hàng lên Cửa hàng (GitHub)
         if: github.event.inputs.publish == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
+          
+          # Dọn dẹp rác trước khi commit
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           rm -rf deb_output/ theos/ .theos/ "$DIR/packages" "$DIR/.theos" "$DIR/obj"
+          
           git add .
-          git commit -m "🚀 Release $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
+          git commit -m "🚀 Release $SAFE v${{ steps.metadata.outputs.proj_ver }} (ICT)" || exit 0
+          
           git fetch origin main
           git reset --soft origin/main
           git add .
-          git commit --amend --no-edit || git commit -m "Update Repo"
+          git commit --amend --no-edit || git commit -m "Update Repo ICT"
           git push origin main --force
 
       - name: 🧹 Vệ sinh sau khi diễn
         if: always()
         run: |
           rm -rf deb_output/ .theos/ obj/
-          echo "Dọn dẹp xong. Bản Build nằm trong mục Artifacts nếu bạn cần Test!"
+          echo "Hoàn tất quy trình lúc: $(date)"
