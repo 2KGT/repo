@@ -23,12 +23,12 @@ jobs:
       contents: write
     steps:
       - name: 📥 Checkout Repository
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: 🛠️ Setup Theos
-        uses: randomblock1/theos-action@433604f653457222370ca981274d817ed6b0800d
+        uses: randomblock1/theos-action@v1
 
       - name: ⚙️ Build Logic (Semantic Versioning)
         id: metadata
@@ -40,29 +40,28 @@ jobs:
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
-          # ĐỌC VERSION HIỆN TẠI
+          # Đọc Version hiện tại từ file control
           CURRENT_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           
-          # LOGIC TĂNG VERSION: Tách chuỗi X.Y.Z
-          # Nếu version chỉ có 1 số (vd: 1.0), nó sẽ tự đưa về chuẩn 1.0.0
+          # Logic tăng Version chuẩn X.Y.Z
           if [[ $CURRENT_VER =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
               MAJOR=${BASH_REMATCH[1]}
               MINOR=${BASH_REMATCH[2]}
               PATCH=${BASH_REMATCH[3]}
               NEW_VER="$MAJOR.$MINOR.$((PATCH + 1))"
           else
-              # Trường hợp version lạ, reset về 0.0.1
+              # Nếu version không đúng chuẩn (ví dụ 1.0), reset về 0.0.1 hoặc giữ nguyên tăng 1
               NEW_VER="0.0.1"
           fi
           
-          echo "Nâng cấp từ $CURRENT_VER lên $NEW_VER"
+          echo "Nâng cấp version: $CURRENT_VER -> $NEW_VER"
 
-          # Cập nhật file Control
+          # Cập nhật thông tin vào file Control
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
 
-          # Biên dịch
+          # Biên dịch Tweak
           make -C "$DIR" clean package FINALPACKAGE=1
           mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           
@@ -76,7 +75,10 @@ jobs:
           brew install dpkg
           mkdir -p debs depictions/images icons
           
+          # Di chuyển deb vào kho lưu trữ
           cp -v deb_output/*.deb debs/
+          
+          # Quét lại toàn bộ kho hàng (Tránh lỗi Sileo không thấy bản mới)
           dpkg-scanpackages -m ./debs /dev/null > Packages && bzip2 -fks Packages
           
           SAFE="${{ steps.metadata.outputs.safe_name }}"
@@ -85,6 +87,7 @@ jobs:
           PKG=$(grep "^Package:" "$CTRL" | cut -d' ' -f2)
           DESC=$(grep "^Description:" "$CTRL" | cut -d: -f2- | sed 's/^ *//')
           
+          # Tạo file mô tả JSON đầy đủ nhãn dán
           cat > depictions/${SAFE}.json << EOF
           {
             "name": "${{ github.event.inputs.project }}",
@@ -101,17 +104,22 @@ jobs:
             ],
             "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
             "changelog": [
-                {"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "• Cập nhật phiên bản $SAFE\n• Tối ưu hóa hệ thống build\n• Sửa lỗi và cải thiện hiệu suất"}
+                {"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "• Cập nhật phiên bản mới nhất\n• Tối ưu hóa hiệu năng build\n• Cập nhật tài nguyên hình ảnh"}
             ]
           }
           EOF
 
+          # Đẩy dữ liệu lên GitHub
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           
-          git add .
-          git commit -m "📦 Build $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
+          # Dọn dẹp sơ bộ để Git không bị lag
+          rm -rf deb_output/
           
+          git add .
+          git commit -m "📦 Release $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
+          
+          # Đồng bộ an toàn
           git fetch origin main
           git rebase origin/main || (git stash && git rebase origin/main && git stash pop)
           git push origin main
@@ -119,8 +127,9 @@ jobs:
       - name: 🧹 Final Room Cleanup
         if: always()
         run: |
+          # Dọn dẹp sân khấu sau buổi diễn
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           if [ -d "$DIR" ]; then
             rm -rf "$DIR/packages" "$DIR/.theos" "$DIR/obj"
           fi
-          rm -rf deb_output/
+          rm -rf theos/
