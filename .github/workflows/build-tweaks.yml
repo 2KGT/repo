@@ -3,25 +3,17 @@ name: Build Multi Tweak
 on:
   workflow_dispatch:
     inputs:
-      action:
-        description: 'Function options'
-        type: choice
-        default: 'Build Project'
-        options: [Build Project, Scan Options]
       project:
         description: 'Construction options'
         required: true
         type: choice
-        default: '(none)'
+        default: 'AutoAC'
         options:
-          # OPTIONS-START
-          - '(none)'
           - 'AutoAC'
           - 'AutoDL'
-          # OPTIONS-END
 
 env:
-  # Giữ nguyên link Raw mặc định của bạn
+  # Link Raw chuẩn của bạn
   BASE_URL: "https://raw.githubusercontent.com/2KGT/repo/main"
 
 jobs:
@@ -30,94 +22,110 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: 📥 Checkout
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # --- PHẦN 1: SCAN OPTIONS (Vẫn giữ để bạn dùng cho các dự án sau này) ---
-      - name: 🔍 Scan & Update Options
-        if: github.event.inputs.action == 'Scan Options'
-        run: |
-          FILE=".github/workflows/build-tweaks.yml"
-          PROJS=$(grep -h "^Name:" src/build-tweaks/*/control | cut -d: -f2- | sed "s/^ *//;s/ *$//" | sort | uniq | sed "s/^/          - '/;s/$/'/")
-          LIST="          - '(none)'"
-          [ ! -z "$PROJS" ] && LIST="$LIST"$'\n'"$PROJS"
-          perl -i -0777 -pe "s/(# OPTIONS-START).*?(# OPTIONS-END)/\$1\n$LIST\n          \$2/s" "$FILE"
-          
-          git config user.name "github-actions[bot]"
-          git config user.email "actions@github.com"
-          git add "$FILE"
-          git commit -m "chore: update tweak list" || exit 0
-          git push origin main --force
-
-      # --- PHẦN 2: BUILD PROJECT ---
       - name: 🛠️ Setup Theos
-        if: github.event.inputs.action == 'Build Project'
         uses: Randomblock1/theos-action@v1
 
       - name: ⚙️ Build Logic
-        if: github.event.inputs.action == 'Build Project'
         id: metadata
         run: |
           DP_NAME="${{ github.event.inputs.project }}"
-          [ "$DP_NAME" = "(none)" ] && exit 1
           
+          # Tìm đúng thư mục dựa vào Name trong file control
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
+          # Tạo tên sạch không dấu/cách để gán link ảnh (VD: Auto AC -> AutoAC)
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
-          # Gán SileoDepiction vào file control của tweak
+          # 1. Gán SileoDepiction vào control
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
           
-          # Tăng version tự động
+          # 2. Tăng Version tự động (x.x.x.N + 1)
           VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           [[ "$VER" != *.*.*.* ]] && VER="0.0.0.0"
           IFS='.' read -r v1 v2 v3 v4 <<< "$VER"
           NVER="$v1.$v2.$v3.$((v4 + 1))"
           sed -i '' "s/^Version: .*/Version: $NVER/" "$CTRL"
 
-          # Đóng gói
+          # 3. Biên dịch dự án
           make -C "$DIR" clean package FINALPACKAGE=1
-          mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           
+          # 4. Gom hàng về trạm tập kết tạm
+          mkdir -p deb_output
+          find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
+          
+          # 5. Export dữ liệu cho step sau
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
+          echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
           echo "proj_ver=$NVER" >> $GITHUB_OUTPUT
           echo "deb_file=$(basename $(ls deb_output/*.deb | head -n 1))" >> $GITHUB_OUTPUT
 
-      - name: 📦 Update Assets & Sync Repo
-        if: github.event.inputs.action == 'Build Project'
+      - name: 📦 Update Assets & Full JSON
         run: |
           brew install dpkg
           mkdir -p debs depictions/images icons
-          cp -v deb_output/*.deb debs/ 2>/dev/null || true
-          dpkg-scanpackages -m ./debs /dev/null > Packages && bzip2 -fks Packages
           
+          # Copy file mới build vào kho (Giữ lại bản cũ)
+          cp -v deb_output/*.deb debs/
+          
+          # Cập nhật danh sách tất cả phiên bản cho Repo
+          dpkg-scanpackages -m ./debs /dev/null > Packages
+          bzip2 -fks Packages
+          
+          # Đọc thông tin từ file Control để làm JSON
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           URL="${{ env.BASE_URL }}"
+          CTRL="${{ steps.metadata.outputs.proj_dir }}/control"
           
-          # Tạo JSON cho Sileo
+          PKG=$(grep "^Package:" "$CTRL" | cut -d' ' -f2)
+          AUTH=$(grep "^Author:" "$CTRL" | cut -d: -f2- | sed 's/^ *//')
+          DESC=$(grep "^Description:" "$CTRL" | cut -d: -f2- | sed 's/^ *//')
+          
+          # Tự động quét Media (Banner & Screenshots)
+          BANNER=""; [ -f "depictions/images/${SAFE}-banner.png" ] && BANNER="${URL}/depictions/images/${SAFE}-banner.png"
+          SS_JSON=""
+          for i in {1..5}; do
+            [ -f "depictions/images/${SAFE}${i}.png" ] && SS_JSON="${SS_JSON}${SS_JSON:+,}\"${URL}/depictions/images/${SAFE}${i}.png\""
+          done
+
+          # Tạo file JSON "Full Topping"
           cat > depictions/${SAFE}.json << EOF
           {
             "name": "${{ github.event.inputs.project }}",
+            "package": "$PKG",
             "version": "${{ steps.metadata.outputs.proj_ver }}",
+            "author": "$AUTH",
+            "maintainer": "$AUTH",
+            "description": "$DESC",
             "icon": "${URL}/icons/${SAFE}.png",
-            "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}"
+            "banner": "$BANNER",
+            "screenshots": [$SS_JSON],
+            "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
+            "changelog": [
+              {
+                "version": "${{ steps.metadata.outputs.proj_ver }}",
+                "changes": "- Cập nhật phiên bản mới nhất\n- Sửa lỗi và cải thiện hiệu suất"
+              }
+            ],
+            "links": {
+              "website": "https://github.com/2KGT/repo",
+              "support": "https://github.com/2KGT/repo/issues"
+            }
           }
           EOF
 
-          # XỬ LÝ LỖI 128: Đồng bộ sạch sẽ trước khi Push
+          # Gửi sản phẩm lên GitHub
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          
           rm -rf theos/ .theos/ obj/
           git add .
-          git commit -m "build: $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
+          git commit -m "📦 Phát hành $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
           
-          # Dùng fetch và reset để đảm bảo không bị xung đột unstaged changes
-          git fetch origin main
-          git reset --soft origin/main
-          git add .
-          git commit --amend --no-edit || git commit -m "build: $SAFE v${{ steps.metadata.outputs.proj_ver }}"
-          git push origin main --force
+          # Đồng bộ tuyệt đối để tránh lỗi Git 128
+          git pull --rebase origin main
+          git push origin main
