@@ -1,12 +1,19 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
+// --- KHAI BÁO CLASS (Sửa lỗi forward declaration) ---
+@interface YTHeaderView : UIView
+@end
+
+@interface FBNavigationBarTitleView : UIView
+@end
+
 static NSString *const kAutoCSmartCleanKey = @"AutoC_SmartClean_Enabled";
 static BOOL isYouTube = NO;
 static BOOL isFacebook = NO;
 
 // =========================================================
-// 🛠 CÔNG CỤ DỌN DẸP SÂU & THÔNG MINH
+// 🛠 CÔNG CỤ DỌN DẸP
 // =========================================================
 
 static void performDeepClean() {
@@ -28,7 +35,7 @@ static void performDeepClean() {
     }
 }
 
-#pragma mark - 📱 GIAO DIỆN ĐIỀU KHIỂN (FIXED)
+#pragma mark - 📱 GIAO DIỆN ĐIỀU KHIỂN
 
 static void showAutoACMenu() {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"🚀 AutoAC Optimizer" 
@@ -49,7 +56,6 @@ static void showAutoACMenu() {
     
     [alert addAction:[UIAlertAction actionWithTitle:@"Hủy" style:UIAlertActionStyleCancel handler:nil]];
 
-    // --- XỬ LÝ HIỂN THỊ CHỐNG LỖI DEPRECATED ---
     UIWindow *foundWindow = nil;
     if (@available(iOS 13.0, *)) {
         for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
@@ -71,24 +77,24 @@ static void showAutoACMenu() {
 }
 
 // =========================================================
-// 🏗 HOOK GIAO DIỆN THEO CHUẨN MỚI
+// 🏗 HOOK GIAO DIỆN (Sửa lỗi Casting)
 // =========================================================
 
-// YouTube: Hook vào YTHeaderView (Lớp cha chứa Logo)
 %hook YTHeaderView
 - (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
     %orig;
-    UITouch *touch = [touches anyObject];
-    CGPoint location = [touch locationInView:self];
     
-    // Nhấn vào 1/3 bên trái (Khu vực Logo) để hiện Menu
-    if (location.x < self.frame.size.width / 3.0) {
+    // Ép kiểu self về UIView để dùng frame và locationInView
+    UIView *selfView = (UIView *)self;
+    UITouch *touch = [touches anyObject];
+    CGPoint location = [touch locationInView:selfView];
+    
+    if (location.x < selfView.frame.size.width / 3.0) {
         showAutoACMenu();
     }
 }
 %end
 
-// Facebook: Hook vào FBNavigationBarTitleView (Thanh tiêu đề chính)
 %hook FBNavigationBarTitleView
 - (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
     %orig;
