@@ -1,23 +1,27 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
+// --- BIẾN TOÀN CỤC ---
 static NSString *const kAutoCSmartCleanKey = @"AutoC_SmartClean_Enabled";
 static BOOL isYouTube = NO;
 static BOOL isFacebook = NO;
 
 // =========================================================
-// 🛠 CÔNG CỤ DỌN DẸP THÔNG MINH & SÂU
+// 🛠 CÔNG CỤ DỌN DẸP "TOP PIG" (THÔNG MINH & SÂU)
 // =========================================================
 
+// 1. Dọn dẹp thông minh (Chạy tự động sau 3s)
 static void performSmartClean() {
     [[NSURLCache sharedURLCache] removeAllCachedResponses];
 }
 
+// 2. Dọn dẹp sâu (Chạy thủ công khi nhấn nút)
 static void performDeepClean() {
     [[NSURLCache sharedURLCache] removeAllCachedResponses];
     NSFileManager *fm = [NSFileManager defaultManager];
     NSString *cachePath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
     
+    // Quét sạch các ổ rác lỳ lợm nhất của cả 2 app
     NSArray *allTrash = @[
         @"com.google.ios.youtube", @"YouTube", @"YTData", @"v3", @"Storage",
         @"com.facebook.Facebook", @"FBCache", @"FBMediaCache", @"FBVideoCache", @"FBInternal", @"MsysQueries"
@@ -32,7 +36,7 @@ static void performDeepClean() {
     }
 }
 
-#pragma mark - 🚀 TỰ ĐỘNG DỌN DẸP (3 GIÂY)
+#pragma mark - 🚀 QUẢN LÝ TỰ ĐỘNG (DELAY 3S)
 @interface AutoACManager : NSObject
 @end
 
@@ -57,17 +61,19 @@ static void performDeepClean() {
 }
 @end
 
-#pragma mark - 📱 GIAO DIỆN ĐIỀU KHIỂN (FIX DEPRECATED)
+#pragma mark - 📱 GIAO DIỆN ĐIỀU KHIỂN (FIXED FOR iOS 18+)
 
 static void showAutoACMenu() {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"🚀 AutoAC Optimizer" 
-                                                                   message:@"Quản lý tài nguyên ứng dụng" 
+                                                                   message:@"Hệ thống quản lý tài nguyên" 
                                                             preferredStyle:UIAlertControllerStyleActionSheet];
     
+    // Nút dọn sâu (Deep Clean)
     [alert addAction:[UIAlertAction actionWithTitle:@"🔥 DỌN DẸP SÂU (Thủ công)" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
         performDeepClean();
     }]];
     
+    // Công tắc tự động (Smart Clean)
     BOOL currentStatus = [[NSUserDefaults standardUserDefaults] boolForKey:kAutoCSmartCleanKey];
     NSString *toggleTitle = currentStatus ? @"✅ Tự động thông minh: BẬT" : @"❌ Tự động thông minh: TẮT";
     
@@ -76,24 +82,31 @@ static void showAutoACMenu() {
         [[NSUserDefaults standardUserDefaults] synchronize];
     }]];
     
-    [alert addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"Hủy" style:UIAlertActionStyleCancel handler:nil]];
 
-    // --- ĐOẠN MÃ SỬA LỖI .keyWindow (CÁCH 1) ---
+    // --- XỬ LÝ HIỂN THỊ CHỐNG LỖI DEPRECATED ---
     UIViewController *topController = nil;
+    UIWindow *foundWindow = nil;
+
     if (@available(iOS 13.0, *)) {
-        for (UIWindowScene* windowScene in [UIApplication sharedApplication].connectedScenes) {
-            if (windowScene.activationState == UISceneActivationStateForegroundActive) {
-                for (UIWindow *window in windowScene.windows) {
+        for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+            if (scene.activationState == UISceneActivationStateForegroundActive) {
+                for (UIWindow *window in scene.windows) {
                     if (window.isKeyWindow) {
-                        topController = window.rootViewController;
+                        foundWindow = window;
                         break;
                     }
                 }
             }
+            if (foundWindow) break;
         }
-    } else {
-        topController = [UIApplication sharedApplication].keyWindow.rootViewController;
     }
+    
+    if (!foundWindow) {
+        foundWindow = [UIApplication sharedApplication].windows.firstObject;
+    }
+
+    topController = foundWindow.rootViewController;
 
     if (topController) {
         while (topController.presentedViewController) {
@@ -103,7 +116,9 @@ static void showAutoACMenu() {
     }
 }
 
-// --- Hook YouTube & Facebook ---
+// --- HOOK GIAO DIỆN ---
+
+// YouTube: Nhấn vào Logo
 %hook YTHeaderLogoView
 - (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
     %orig;
@@ -111,6 +126,7 @@ static void showAutoACMenu() {
 }
 %end
 
+// Facebook: Nhấn vào Thanh điều hướng (Title View)
 %hook FBNavigationBarTitleView
 - (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
     %orig;
@@ -118,7 +134,7 @@ static void showAutoACMenu() {
 }
 %end
 
-#pragma mark - KHỞI TẠO
+#pragma mark - KHỞI TẠO HỆ THỐNG
 %ctor {
     @autoreleasepool {
         NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
@@ -129,8 +145,10 @@ static void showAutoACMenu() {
         }
 
         if (isYouTube || isFacebook) {
+            // Mặc định bật tự động thông minh khi mới cài đặt
             if ([[NSUserDefaults standardUserDefaults] objectForKey:kAutoCSmartCleanKey] == nil) {
                 [[NSUserDefaults standardUserDefaults] setBool:YES forKey:kAutoCSmartCleanKey];
+                [[NSUserDefaults standardUserDefaults] synchronize];
             }
         }
     }
