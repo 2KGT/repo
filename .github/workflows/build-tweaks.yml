@@ -55,25 +55,52 @@ jobs:
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
+          URL="https://raw.githubusercontent.com/${{ github.repository }}/main"
+          sed -i '' "/^SileoDepiction:/d" "$CTRL"
+          echo "SileoDepiction: ${URL}/depictions/${SAFE}.json" >> "$CTRL"
           VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           [[ "$VER" != *.*.*.* ]] && VER="0.0.0.0"
           IFS='.' read -r v1 v2 v3 v4 <<< "$VER"
           NVER="$v1.$v2.$v3.$((v4 + 1))"
           sed -i '' "s/^Version: .*/Version: $NVER/" "$CTRL"
+          SRC=$(find "$DIR" -maxdepth 1 \( -name "*.x" -o -name "*.xm" \) | head -n 1)
+          NEWS=$(grep "// NEW:" "$SRC" | sed 's/\/\/ NEW://g' | sed 's/^/- /' || echo "- Update")
+          FIXS=$(grep "// FIX:" "$SRC" | sed 's/\/\/ FIX://g' | sed 's/^/- /' || echo "- Fixes")
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
+          echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
           echo "proj_ver=$NVER" >> $GITHUB_OUTPUT
+          echo "tweak_name=$DP_NAME" >> $GITHUB_OUTPUT
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo -e "### NEW\n$NEWS\n\n### FIX\n$FIXS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           make -C "$DIR" clean package FINALPACKAGE=1 || make -C "$DIR" package FINALPACKAGE=1
           mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
-      - name: 📦 Update Repo
+          echo "deb_file=$(basename $(ls deb_output/*.deb | head -n 1))" >> $GITHUB_OUTPUT
+      - name: 📦 Update Repo & Depiction
         if: github.event.inputs.action == 'Build Project'
         run: |
           brew install dpkg
-          mkdir -p debs && cp -v deb_output/*.deb debs/ 2>/dev/null || true
+          mkdir -p debs depictions
+          cp -v deb_output/*.deb debs/ 2>/dev/null || true
           dpkg-scanpackages -m ./debs /dev/null > Packages && bzip2 -fks Packages
+          SAFE="${{ steps.metadata.outputs.safe_name }}"
+          URL="https://raw.githubusercontent.com/${{ github.repository }}/main"
+          DESC=$(grep "^Description:" "${{ steps.metadata.outputs.proj_dir }}/control" | cut -d: -f2- | sed 's/^ *//')
+          cat > depictions/${SAFE}.json << EOF
+          {
+            "name": "${{ steps.metadata.outputs.tweak_name }}",
+            "version": "${{ steps.metadata.outputs.proj_ver }}",
+            "description": "$DESC",
+            "icon": "${URL}/icons/${SAFE}.png",
+            "screenshots": ["${URL}/depictions/images/${SAFE}1.png"],
+            "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
+            "changelog": "${{ steps.metadata.outputs.changelog }}"
+          }
+          EOF
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           rm -rf theos/ .theos/ obj/
           git add .
-          git commit -m "build: v${{ steps.metadata.outputs.proj_ver }}" || exit 0
+          git commit -m "build: ${{ steps.metadata.outputs.safe_name }} v${{ steps.metadata.outputs.proj_ver }}" || exit 0
           git pull --rebase origin main
           git push origin main
