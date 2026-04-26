@@ -7,7 +7,8 @@ TWEAK_NAME = AutoAC
 AutoAC_FILES = Tweak.x
 AutoAC_FRAMEWORKS = UIKit Foundation Photos CoreGraphics QuartzCore
 AutoAC_LIBRARIES = substrate
-AutoAC_CFLAGS = -fobjc-arc
+AutoAC_AutoAC_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-unused-variable -Wno-unused-function -Wno-error=deprecated-declarations
+
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
