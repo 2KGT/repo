@@ -1,16 +1,16 @@
-name: Build Multi Tweak (2KGT Full Automation)
+name: Build Multi Tweak
 
 on:
   workflow_dispatch:
     inputs:
       project:
-        description: 'Chọn dự án cần luyện đan'
+        description: 'Chọn dự án để build'
         required: true
         type: choice
         default: '(none)'
         options: [ (none), AutoAC, AutoDL ]
       publish:
-        description: 'Phát hành & Trưng bày Sileo'
+        description: 'Release Official'
         type: boolean
         default: false
 
