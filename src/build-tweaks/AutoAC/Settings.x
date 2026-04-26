@@ -1,44 +1,67 @@
 #import <UIKit/UIKit.h>
+// Gọi trực tiếp từ kho Header mà workflow đã tải về root
+#import <YTSettingsViewController.h>
+#import <YTSettingsSectionItem.h>
+#import <YTSettingsSectionItemManager.h>
+#import <YTAppSettingsPresentationData.h>
+#import <YTSettingsGroupData.h>
 
-// Định nghĩa ID riêng cho AutoAC
+// ID định danh duy nhất (AACP = AutoAC Prefs)
 static const NSInteger AutoACSection = 'aacp';
 
-// Interface tối thiểu để biên dịch không lỗi
-@interface YTSettingsSectionItem : NSObject
-+ (instancetype)switchItemWithTitle:(id)arg1 titleDescription:(id)arg2 accessibilityIdentifier:(id)arg3 switchOn:(BOOL)arg4 switchBlock:(id)arg5 settingItemId:(int)arg6;
-@end
-
-// 1. Đăng ký vị trí hiển thị trong Menu Cài đặt
+// 1️⃣ Đăng ký Category vào danh sách của YouTube
 %hook YTAppSettingsPresentationData
 + (NSArray *)settingsCategoryOrder {
     NSMutableArray *order = %orig.mutableCopy;
     if (![order containsObject:@(AutoACSection)]) {
-        [order insertObject:@(AutoACSection) atIndex:0]; // Cho lên đầu luôn cho oai
+        NSUInteger index = [order indexOfObject:@(1)]; // Mục General (Chung)
+        if (index != NSNotFound) [order insertObject:@(AutoACSection) atIndex:index + 1];
+        else [order insertObject:@(AutoACSection) atIndex:0];
     }
     return order.copy;
 }
 %end
 
-// 2. Vẽ nội dung cho Menu AutoAC
+%hook YTSettingsGroupData
+- (NSArray *)orderedCategories {
+    NSMutableArray *categories = %orig.mutableCopy;
+    if (![categories containsObject:@(AutoACSection)]) {
+        [categories insertObject:@(AutoACSection) atIndex:0];
+    }
+    return categories.copy;
+}
+%end
+
+// 2️⃣ Vẽ nội dung Menu khi người dùng nhấn vào AutoAC
 %hook YTSettingsSectionItemManager
+
 - (void)updateSectionForCategory:(NSUInteger)category withEntry:(id)entry {
     if (category == AutoACSection) {
-        NSMutableArray *items = [NSMutableArray array];
-        Class ItemClass = %c(YTSettingsSectionItem);
+        NSMutableArray *sectionItems = [NSMutableArray array];
         
-        // Dòng 1: Bật/Tắt Chặn Ads
-        [items addObject:[ItemClass switchItemWithTitle:@"Chặn quảng cáo" 
-            titleDescription:@"Tự động dọn dẹp Ads YouTube" 
-            accessibilityIdentifier:nil 
-            switchOn:YES // Ở đây bạn nên link với biến kRemoveAds
+        // Dòng 1: Switch chặn Ads (Dùng trực tiếp class từ Header)
+        YTSettingsSectionItem *adsItem = [%c(YTSettingsSectionItem) 
+            switchItemWithTitle:@"Chặn quảng cáo"
+            titleDescription:@"Tự động dọn dẹp AdSlot và Promotion"
+            accessibilityIdentifier:nil
+            switchOn:YES // Link với biến của cậu ở Tweak.x
             switchBlock:^BOOL (id cell, BOOL enabled) {
-                // Lưu logic vào NSUserDefaults ở đây
+                [[NSUserDefaults standardUserDefaults] setBool:enabled forKey:@"kRemoveAds"];
                 return YES;
-            } settingItemId:0]];
+            }
+            settingItemId:0];
+        [sectionItems addObject:adsItem];
 
-        // Gửi danh sách này cho ViewController hiển thị
-        id controller = [self valueForKey:@"_settingsViewControllerDelegate"];
-        [controller setSectionItems:items forCategory:AutoACSection title:@"AutoAC Settings" titleDescription:nil];
+        // Lấy ViewController từ Delegate để hiển thị
+        YTSettingsViewController *settingsVC = [self valueForKey:@"_settingsViewControllerDelegate"];
+        
+        if ([settingsVC respondsToSelector:@selector(setSectionItems:forCategory:title:titleDescription:headerHidden:)]) {
+            [settingsVC setSectionItems:sectionItems 
+                           forCategory:AutoACSection 
+                                 title:@"AutoAC Settings" 
+                      titleDescription:nil 
+                          headerHidden:NO];
+        }
         return;
     }
     %orig;
