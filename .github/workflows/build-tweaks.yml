@@ -37,7 +37,7 @@ jobs:
           mkdir -p $THEOS/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: 🚚 Đồng bộ Header chính chủ (2KGT Fork)
+      - name: 🚚 Đồng bộ Header
         run: |
           mkdir -p headers/YouTubeHeader headers/Shared
           git clone --depth 1 https://github.com/2KGT/YouTubeHeader headers/YouTubeHeader
@@ -47,7 +47,7 @@ jobs:
           find headers -type d -name "QuartzCore" -exec rm -rf {} +
           find headers -type d -name "UIKit" -exec rm -rf {} +
 
-      - name: ⚙️ Băm Nhào & Gán 4 Loại Ảnh (Automation)
+      - name: ⚙️ Băm Trộn & Gán (Automation)
         id: metadata
         run: |
           DP_NAME="${{ github.event.inputs.project }}"
@@ -59,7 +59,7 @@ jobs:
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           DESC=$(grep "^Description:" "$CTRL" | cut -d: -f2- | sed 's/^ *//')
           
-          # 2. Xử lý Version (Tăng bậc tự động)
+          # 2. Xử lý Version (Tăng tự động)
           RAW_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then
               IFS='.' read -r i1 i2 i3 <<< "$RAW_VER"
@@ -76,7 +76,7 @@ jobs:
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
           echo "Icon: ${{ env.BASE_URL }}/icons/${SAFE}.png" >> "$CTRL"
           
-          # 4. Tự động xây gian hàng Sileo (Depiction JSON)
+          # 4. Tự động dựng gian hàng Sileo (Depiction JSON)
           mkdir -p depictions/images
           cat <<EOF > "depictions/${SAFE}.json"
           {
@@ -108,7 +108,7 @@ jobs:
           }
           EOF
           
-          # 5. Build (Sử dụng Header chính chủ)
+          # 5. Build (Sử dụng Header)
           cp -R headers "$DIR/"
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
