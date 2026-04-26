@@ -37,7 +37,7 @@ jobs:
           mkdir -p $THEOS/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-            - name: 🚚 Đồng bộ Header
+      - name: 🚚 Đồng bộ Header
         run: |
           mkdir -p headers
           # Clone thẳng vào folder headers, Theos sẽ nhìn thấy thư mục YouTubeHeader bên trong đó
