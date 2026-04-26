@@ -43,7 +43,8 @@ static NSString *kLastStatus = @"Hệ thống sẵn sàng";
 - (void)layoutSubviews { 
     %orig; 
     if (kRemoveAds) {
-        for (UIView *sub in self.subviews) {
+        // Ép kiểu self về UIView để truy cập .subviews một cách an toàn
+        for (UIView *sub in [((UIView *)self) subviews]) {
             if ([NSStringFromClass([sub class]) containsString:@"Promotion"]) {
                 [sub setHidden:YES];
             }
@@ -59,7 +60,11 @@ static NSString *kLastStatus = @"Hệ thống sẵn sàng";
 %hook YTVideoOverlayView
 - (void)layoutSubviews {
     %orig;
-    UIButton *dlBtn = [self viewWithTag:999];
+    
+    // Ép kiểu self về UIView để lấy kích thước khung (frame)
+    UIView *overlayView = (UIView *)self;
+    
+    UIButton *dlBtn = [overlayView viewWithTag:999];
     if (!dlBtn) {
         dlBtn = [UIButton buttonWithType:UIButtonTypeCustom];
         dlBtn.tag = 999;
@@ -67,9 +72,12 @@ static NSString *kLastStatus = @"Hệ thống sẵn sàng";
         dlBtn.tintColor = [UIColor whiteColor];
         dlBtn.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.3];
         dlBtn.layer.cornerRadius = 18;
-        dlBtn.frame = CGRectMake(self.frame.size.width - 55, 65, 36, 36);
+        
+        // Sửa lỗi: Sử dụng overlayView.frame thay vì self.frame để tránh lỗi property not found
+        dlBtn.frame = CGRectMake(overlayView.frame.size.width - 55, 65, 36, 36);
+        
         [dlBtn addTarget:self action:@selector(handleAutoACDownload) forControlEvents:UIControlEventTouchUpInside];
-        [self addSubview:dlBtn];
+        [overlayView addSubview:dlBtn];
     }
 }
 
@@ -77,10 +85,9 @@ static NSString *kLastStatus = @"Hệ thống sẵn sàng";
 - (void)handleAutoACDownload {
     if (kFastDownload) {
         kLastStatus = @"Đang tải nhanh 1080p...";
-        // Thực thi tải ngay
     } else {
         UIAlertController *picker = [UIAlertController alertControllerWithTitle:@"Tùy chọn AutoAC" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
-        [picker addAction:[UIAlertAction actionWithTitle:@"Tải Video 1080p" style:UIAlertActionStyleDefault handler:^(id a){ kLastStatus = @"Đang tải Video..."; }]];
+        [picker addAction:[UIAlertAction actionWithTitle:@"Tải Video 1080p" style:UIAlertActionStyleDefault handler:^(id a){ kLastStatus = @"Đ tải Video..."; }]];
         [picker addAction:[UIAlertAction actionWithTitle:@"Tải Âm thanh (MP3)" style:UIAlertActionStyleDefault handler:^(id a){ kLastStatus = @"Đang tải MP3..."; }]];
         [picker addAction:[UIAlertAction actionWithTitle:@"Hủy" style:UIAlertActionStyleCancel handler:nil]];
         
@@ -113,22 +120,26 @@ static NSString *kLastStatus = @"Hệ thống sẵn sàng";
 %hook YTHeaderLogoView
 - (void)layoutSubviews {
     %orig;
-    self.userInteractionEnabled = YES;
+    
+    // Sửa lỗi: Ép kiểu self về UIView để bật userInteractionEnabled
+    UIView *logoView = (UIView *)self;
+    logoView.userInteractionEnabled = YES;
+    
     static BOOL gestureAdded = NO;
     if (!gestureAdded) {
         UILongPressGestureRecognizer *lp = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleAutoACReview)];
         lp.minimumPressDuration = 0.7;
-        [self addGestureRecognizer:lp];
+        [logoView addGestureRecognizer:lp];
         gestureAdded = YES;
     }
 }
 
 %new
 - (void)handleAutoACReview {
-    // Rung nhẹ và hiện thông báo trạng thái tải cuối cùng
     UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium];
     [haptic impactOccurred];
-    // Hiển thị HUD thông báo kLastStatus tại đây
+    // Ghi log để kiểm tra trong Console (hoặc hiện HUD tại đây)
+    NSLog(@"[AutoAC] Trạng thái cuối: %@", kLastStatus);
 }
 %end
 
