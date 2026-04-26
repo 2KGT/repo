@@ -1,202 +1,61 @@
 #import <UIKit/UIKit.h>
-// Thêm tên thư mục cha YouTube/ vào trước tên file
-#import <YouTube/YTAppSettingsPresentationData.h>
-#import <YouTube/YTSettingsViewController.h>
-#import <YouTube/YTSettingsSectionItem.h>
-#import <YouTube/YTSettingsSectionItemManager.h>
-#import <YouTube/YTSettingsGroupData.h>
+#import <YouTube/MLHAMPlayerItem.h>
+#import <YouTube/MLAVPlayer.h>
+#import <YouTube/MLFormat.h>
 
+// Định nghĩa Scenario (Kịch bản mạng)
+typedef enum {
+    Wifi = 0, Cellular = 1, LowPowerMode = 2, ExternalWifi = 3, ExternalCellular = 4
+} Scenario;
 
-// =========================================================
-// 💎 KHAI BÁO INTERFACE
-// =========================================================
-@interface YTAdSlotContainerView : UIView
-@end
-
-@interface YTSlimVideoMetadataSectionView : UIView
-@end
-
-@interface YTHeaderLogoView : UIView
-@end
-
-@interface YTVideoOverlayView : UIView
-@end
-
-@interface YTSettingsSectionItem : NSObject
-+ (instancetype)itemWithTitle:(NSString *)title titleDescription:(NSString *)desc accessibilityIdentifier:(id)arg3 detailTextBlock:(id)arg4 selectBlock:(BOOL (^)(id))block;
-@end
-
-@interface YTSettingsViewController : UIViewController
-- (void)setSectionItems:(NSMutableArray *)items forCategory:(NSInteger)category title:(NSString *)title titleDescription:(NSString *)desc;
-@end
-
-// --- BIẾN TOÀN CỤC & HÀM ĐỌC PREFS ---
 static BOOL kRemoveAds = YES;
-static BOOL kFastDownload = NO;
-static NSString *kLastStatus = @"Hệ thống sẵn sàng";
+static int kTargetQuality = 108030; // Mặc định 1080p
 
+// Đọc cấu hình từ Settings
 static void loadPrefs() {
-    NSString *path = @"/var/mobile/Library/Preferences/com.2kgt.autoac.plist";
-    NSDictionary *prefs = [[NSDictionary alloc] initWithContentsOfFile:path];
-    if (prefs) {
-        kRemoveAds = prefs[@"kRemoveAds"] ? [prefs[@"kRemoveAds"] boolValue] : YES;
-        kFastDownload = prefs[@"kFastDownload"] ? [prefs[@"kFastDownload"] boolValue] : NO;
-    } else {
-        kRemoveAds = YES;
-        kFastDownload = NO;
-    }
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    kRemoveAds = [defaults objectForKey:@"kRemoveAds"] ? [defaults boolForKey:@"kRemoveAds"] : YES;
+    kTargetQuality = [defaults objectForKey:@"kTargetQuality"] ? [[defaults objectForKey:@"kTargetQuality"] intValue] : 108030;
 }
 
-// =========================================================
-// 🚫 DIỆT QUẢNG CÁO
-// =========================================================
+// Logic chọn chất lượng gần nhất (PoomSmart style)
+static NSString *getClosestQuality(NSArray *formats) {
+    int targetRes = kTargetQuality / 100;
+    int targetFPS = kTargetQuality % 100;
+    int minDiff = INT_MAX;
+    NSString *bestLabel = nil;
+
+    for (id format in formats) {
+        int res = [format singleDimensionResolution];
+        int fps = [format FPS];
+        int diff = abs(res - targetRes) + abs(fps - targetFPS);
+        if (diff < minDiff) {
+            minDiff = diff;
+            bestLabel = [format qualityLabel];
+        }
+    }
+    return bestLabel;
+}
+
+// --- HOOKS ---
+
+%hook MLHAMPlayerItem
+- (void)onSelectableVideoFormats:(NSArray *)formats {
+    %orig;
+    loadPrefs();
+    NSString *label = getClosestQuality(formats);
+    if (label) {
+        id constraint = [[%c(MLQuickMenuVideoQualitySettingFormatConstraint) alloc] initWithVideoQualitySetting:3 formatSelectionReason:2 qualityLabel:label];
+        self.videoFormatConstraint = constraint;
+    }
+}
+%end
 
 %hook YTAdSlotContainerView
-- (void)layoutSubviews { if (kRemoveAds) return; %orig; }
 - (void)setHidden:(BOOL)hidden { %orig(kRemoveAds ? YES : hidden); }
 %end
 
-%hook YTSlimVideoMetadataSectionView
-- (void)layoutSubviews { 
-    %orig; 
-    if (kRemoveAds) {
-        for (UIView *sub in [((UIView *)self) subviews]) {
-            if ([NSStringFromClass([sub class]) containsString:@"Promotion"]) {
-                [sub setHidden:YES];
-            }
-        }
-    }
-}
-%end
-
-// =========================================================
-// 📥 NÚT TẢI THÔNG MINH
-// =========================================================
-
-%hook YTVideoOverlayView
-- (void)layoutSubviews {
-    %orig;
-    UIView *overlayView = (UIView *)self;
-    UIButton *dlBtn = [overlayView viewWithTag:999];
-    if (!dlBtn) {
-        dlBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-        dlBtn.tag = 999;
-        [dlBtn setImage:[UIImage systemImageNamed:@"arrow.down.to.line.circle.fill"] forState:UIControlStateNormal];
-        dlBtn.tintColor = [UIColor whiteColor];
-        dlBtn.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.3];
-        dlBtn.layer.cornerRadius = 18;
-        dlBtn.frame = CGRectMake(overlayView.frame.size.width - 55, 65, 36, 36);
-        [dlBtn addTarget:self action:@selector(handleAutoACDownload) forControlEvents:UIControlEventTouchUpInside];
-        [overlayView addSubview:dlBtn];
-    }
-}
-
-%new
-- (void)handleAutoACDownload {
-    if (kFastDownload) {
-        kLastStatus = @"Đang tải nhanh 1080p...";
-    } else {
-        UIAlertController *picker = [UIAlertController alertControllerWithTitle:@"AutoAC" message:@"Tùy chọn tải xuống" preferredStyle:UIAlertControllerStyleActionSheet];
-        [picker addAction:[UIAlertAction actionWithTitle:@"Tải Video 1080p" style:UIAlertActionStyleDefault handler:^(id a){ kLastStatus = @"Đang tải Video..."; }]];
-        [picker addAction:[UIAlertAction actionWithTitle:@"Tải MP3" style:UIAlertActionStyleDefault handler:^(id a){ kLastStatus = @"Đang tải MP3..."; }]];
-        [picker addAction:[UIAlertAction actionWithTitle:@"Hủy" style:UIAlertActionStyleCancel handler:nil]];
-        
-        UIWindow *window = nil;
-        if (@available(iOS 13.0, *)) {
-            for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
-                if (scene.activationState == UISceneActivationStateForegroundActive) {
-                    for (UIWindow *w in scene.windows) { if (w.isKeyWindow) { window = w; break; } }
-                }
-                if (window) break;
-            }
-        }
-        if (!window) window = [UIApplication sharedApplication].keyWindow;
-        UIViewController *top = window.rootViewController;
-
-        while (top.presentedViewController) top = top.presentedViewController;
-        [top presentViewController:picker animated:YES completion:nil];
-    }
-}
-%end
-
-// =========================================================
-// ⚙️ CÀI ĐẶT TRONG APP
-// =========================================================
-
-%hook YTSettingsViewController
-- (void)setSectionItems:(NSMutableArray *)items forCategory:(NSInteger)category title:(NSString *)title titleDescription:(NSString *)desc {
-    if ([title isEqualToString:@"General"] || [title isEqualToString:@"Chung"] || category == 1) {
-        Class itemClass = NSClassFromString(@"YTSettingsSectionItem");
-        if (itemClass) {
-            YTSettingsSectionItem *autoAC = [itemClass itemWithTitle:@"AutoAC Settings" titleDescription:@"Tùy chỉnh tải & Ads" accessibilityIdentifier:nil detailTextBlock:nil selectBlock:^BOOL(id arg1) {
-                UIAlertController *menu = [UIAlertController alertControllerWithTitle:@"AutoAC" message:@"Cấu hình nhanh" preferredStyle:UIAlertControllerStyleAlert];
-                [menu addAction:[UIAlertAction actionWithTitle:(kRemoveAds ? @"Tắt Chặn Ads" : @"Bật Chặn Ads") style:UIAlertActionStyleDefault handler:^(id a){ kRemoveAds = !kRemoveAds; }]];
-                [menu addAction:[UIAlertAction actionWithTitle:(kFastDownload ? @"Tắt Tải nhanh" : @"Bật Tải nhanh") style:UIAlertActionStyleDefault handler:^(id a){ kFastDownload = !kFastDownload; }]];
-                [menu addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleCancel handler:nil]];
-                
-                [self presentViewController:menu animated:YES completion:nil];
-                return YES;
-            }];
-            [items addObject:autoAC];
-        }
-    }
-    %orig(items, category, title, desc);
-}
-%end
-
-%hook YTHeaderLogoView
-- (void)layoutSubviews {
-    %orig;
-    UIView *logoView = (UIView *)self;
-    logoView.userInteractionEnabled = YES;
-    static BOOL gestureAdded = NO;
-    if (!gestureAdded) {
-        UILongPressGestureRecognizer *lp = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleAutoACReview)];
-        lp.minimumPressDuration = 0.7;
-        [logoView addGestureRecognizer:lp];
-        gestureAdded = YES;
-    }
-}
-
-%new
-- (void)handleAutoACReview {
-    UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium];
-    [haptic impactOccurred];
-    
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"AutoAC" message:[NSString stringWithFormat:@"Trạng thái: %@", kLastStatus] preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
-    
-    UIWindow *window = nil;
-    if (@available(iOS 13.0, *)) {
-        for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
-            if (scene.activationState == UISceneActivationStateForegroundActive) {
-                for (UIWindow *w in scene.windows) { if (w.isKeyWindow) { window = w; break; } }
-            }
-            if (window) break;
-        }
-    }
-    if (!window) window = [UIApplication sharedApplication].keyWindow;
-    UIViewController *top = window.rootViewController;
-    while (top.presentedViewController) top = top.presentedViewController;
-    [top presentViewController:alert animated:YES completion:nil];
-}
-%end
-
-// =========================================================
-// 🚀 KHỞI CHẠY (Gộp chung để tránh lỗi trùng lặp)
-// =========================================================
-
 %ctor {
-    @autoreleasepool {
-        loadPrefs();
-        
-        // Chỉ gọi %init một lần duy nhất với các định danh cụ thể
-        %init(
-            YTSettingsViewController = NSClassFromString(@"YTSettingsViewController"),
-            YTHeaderLogoView = NSClassFromString(@"YTHeaderLogoView") ?: NSClassFromString(@"YTRightAlignedHeaderLogoView"),
-            YTVideoOverlayView = NSClassFromString(@"YTVideoOverlayView"),
-            YTAdSlotContainerView = NSClassFromString(@"YTAdSlotContainerView"),
-            YTSlimVideoMetadataSectionView = NSClassFromString(@"YTSlimVideoMetadataSectionView")
-        );
-    }
+    loadPrefs();
+    %init;
 }
