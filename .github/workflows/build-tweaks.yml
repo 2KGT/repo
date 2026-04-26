@@ -37,21 +37,40 @@ jobs:
           mkdir -p $THEOS/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: 🚚 Đồng bộ Header
+      - name: 🚚 Cảm biến & Nạp Header tự động
         run: |
-          mkdir -p headers
-          # Clone thẳng vào folder headers, Theos sẽ nhìn thấy thư mục YouTubeHeader bên trong đó
-          git clone --depth 1 https://github.com/2KGT/YouTubeHeader headers/YouTubeHeader
+          THEOS_INC="$THEOS/include"
+          DP_NAME="${{ github.event.inputs.project }}"
           
-          # Hút thêm bộ Shared
-          mkdir -p headers/Shared
-          curl -L https://github.com/PoomSmart/PSHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/Shared
+          # 1. Tìm đường dẫn dự án
+          CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
+          DIR=$(dirname "$CTRL")
           
-          # Dọn rác
-          find headers -type d -name "CoreImage" -exec rm -rf {} +
-          find headers -type d -name "QuartzCore" -exec rm -rf {} +
-          find headers -type d -name "UIKit" -exec rm -rf {} +
-
+          # 2. KIỂM TRA FILE ĐỊNH DANH (headers.txt)
+          if [ -f "$DIR/headers.txt" ]; then
+              echo "🔍 Tìm thấy danh sách Header cần nạp cho $DP_NAME..."
+              
+              # Đọc từng dòng trong file headers.txt
+              while IFS= read -r repo_name || [ -n "$repo_name" ]; do
+                  # Xóa khoảng trắng thừa
+                  repo_name=$(echo $repo_name | tr -d '\r' | xargs)
+                  
+                  if [ ! -z "$repo_name" ]; then
+                      echo "🚀 Đang tự động kéo kho: $repo_name"
+                      git clone --depth 1 https://github.com/2KGT/$repo_name $THEOS_INC/$repo_name
+                  fi
+              done < "$DIR/headers.txt"
+              
+              # Tự động kéo thêm bộ Shared (Dùng chung cho mọi nhà)
+              mkdir -p $THEOS_INC/Shared
+              curl -L https://github.com/PoomSmart/PSHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS_INC/Shared
+              
+              # Quét rác hệ thống (Tránh đụng hàng Apple)
+              find $THEOS_INC -type d -name "CoreImage" -exec rm -rf {} +
+              find $THEOS_INC -type d -name "UIKit" -exec rm -rf {} +
+          else
+              echo "⚠️ Dự án này không yêu cầu Header đặc biệt."
+          fi
 
       - name: ⚙️ Băm Trộn & Gán (Automation)
         id: metadata
