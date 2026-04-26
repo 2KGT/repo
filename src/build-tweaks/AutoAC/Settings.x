@@ -1,9 +1,9 @@
 #import <UIKit/UIKit.h>
-#import <YouTube/YTAppSettingsPresentationData.h>
-#import <YouTube/YTSettingsViewController.h>
-#import <YouTube/YTSettingsSectionItem.h>
-#import <YouTube/YTSettingsSectionItemManager.h>
-#import <YouTube/YTSettingsGroupData.h>
+#import <YouTubeHeader/YTAppSettingsPresentationData.h>
+#import <YouTubeHeader/YTSettingsViewController.h>
+#import <YouTubeHeader/YTSettingsSectionItem.h>
+#import <YouTubeHeader/YTSettingsSectionItemManager.h>
+#import <YouTubeHeader/YTSettingsGroupData.h>
 
 static const NSInteger AutoACSection = 'aacp';
 
