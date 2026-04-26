@@ -40,7 +40,14 @@ jobs:
       - name: 🛠️ Setup Toolchain (Theos)
         uses: randomblock1/theos-action@v1
 
-      - name: ⚙️ Build Logic (Smart Versioning & Anti-Error)
+      - name: 📦 Tích hợp Patched SDK (iOS 14.5)
+        run: |
+          # Tải SDK có sẵn Private Frameworks để build Menu Settings
+          curl -LO https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz
+          tar -xf iPhoneOS14.5.sdk.tar.xz -C $THEOS/sdks/
+          rm iPhoneOS14.5.sdk.tar.xz
+
+      - name: ⚙️ Build Logic (Smart Versioning & SDK Override)
         id: metadata
         run: |
           DP_NAME="${{ github.event.inputs.project }}"
@@ -63,12 +70,12 @@ jobs:
           
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
           
-          # Cập nhật thời gian file để tránh lỗi build hệ thống
           find "$DIR" -maxdepth 10 -not -path '*/.*' -exec touch -t $(date +%Y%m%d%H%M.%S) {} + || true
           
-          # --- LỆNH BUILD THẦN THÁNH: Bỏ qua mọi lỗi Cảnh báo/Lỗi thời ---
+          # BUILD VỚI SDK 14.5 VỪA TẢI
           make -C "$DIR" clean package FINALPACKAGE=1 \
-            ADDITIONAL_CFLAGS="-Wno-deprecated-declarations -Wno-error=deprecated-declarations -Wno-unused-variable -Wno-error"
+            TARGET=iphone:clang:14.5:14.5 \
+            ADDITIONAL_CFLAGS="-Wno-deprecated-declarations -Wno-error=deprecated-declarations -Wno-error"
           
           mkdir -p deb_output
           find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
