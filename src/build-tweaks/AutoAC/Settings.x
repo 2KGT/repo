@@ -30,7 +30,6 @@ static const NSInteger AutoACSection = 'aacp';
 - (void)updateSectionForCategory:(NSUInteger)category withEntry:(id)entry {
     if (category == AutoACSection) {
         NSMutableArray *items = [NSMutableArray array];
-        
         [items addObject:[%c(YTSettingsSectionItem) switchItemWithTitle:@"Chặn quảng cáo" 
             titleDescription:@"Xoá sạch mọi quảng cáo YouTube" 
             accessibilityIdentifier:nil 
@@ -39,7 +38,6 @@ static const NSInteger AutoACSection = 'aacp';
                 [[NSUserDefaults standardUserDefaults] setBool:enabled forKey:@"kRemoveAds"];
                 return YES;
             } settingItemId:0]];
-
         YTSettingsViewController *settingsVC = [self valueForKey:@"_settingsViewControllerDelegate"];
         [settingsVC setSectionItems:items forCategory:AutoACSection title:@"AutoAC Settings" titleDescription:nil];
         return;
