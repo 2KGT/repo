@@ -34,20 +34,19 @@ jobs:
           mkdir -p $THEOS/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: 🚚 Hút Header tổng lực
+      - name: 🚚 Xây kho Header chuẩn YouTubeHeader
         run: |
-          # Tạo một thư mục phẳng duy nhất
-          mkdir -p combined_headers/YouTube
-          mkdir -p combined_headers/Shared
+          # Tạo kho theo đúng tên tác giả yêu cầu trong hình
+          mkdir -p headers/YouTubeHeader
+          mkdir -p headers/Shared
           
-          # Hút hàng và san phẳng cấu trúc
-          curl -L https://github.com/PoomSmart/YouTubeHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C combined_headers/YouTube
-          curl -L https://github.com/PoomSmart/PSHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C combined_headers/Shared
+          curl -L https://github.com/PoomSmart/YouTubeHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/YouTubeHeader
+          curl -L https://github.com/PoomSmart/PSHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/Shared
           
-          # Thanh trừng triệt để các file gây xung đột module hệ thống
-          find combined_headers -type d -name "CoreImage" -exec rm -rf {} +
-          find combined_headers -type d -name "QuartzCore" -exec rm -rf {} +
-          find combined_headers -type d -name "UIKit" -exec rm -rf {} +
+          # Dọn rác module hệ thống
+          find headers -type d -name "CoreImage" -exec rm -rf {} +
+          find headers -type d -name "QuartzCore" -exec rm -rf {} +
+          find headers -type d -name "UIKit" -exec rm -rf {} +
 
       - name: ⚙️ Build Logic
         id: metadata
@@ -61,13 +60,13 @@ jobs:
           NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$RAW_VER" || echo "$RAW_VER-test$(date +%H%M)")
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
           
-          # ÉP XÁC: Copy kho header vào sát nách dự án
-          cp -R combined_headers "$DIR/"
+          # Copy kho vào sát nách dự án để Theos tìm thấy dễ nhất
+          cp -R headers "$DIR/"
           
-          # Build với đường dẫn trực tiếp
+          # BUILD: Trỏ vào cửa kho tổng
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
-            ADDITIONAL_CFLAGS="-isystem combined_headers -Wno-error -DTHEOS_LEAN_AND_MEAN"
+            ADDITIONAL_CFLAGS="-isystem headers -Wno-error -DTHEOS_LEAN_AND_MEAN"
           
           mkdir -p deb_output
           cp "$DIR/packages/"*.deb deb_output/
