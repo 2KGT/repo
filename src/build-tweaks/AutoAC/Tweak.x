@@ -1,6 +1,11 @@
-#import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-#import <Photos/Photos.h>
+// Thêm tên thư mục cha YouTube/ vào trước tên file
+#import <YouTube/YTAppSettingsPresentationData.h>
+#import <YouTube/YTSettingsViewController.h>
+#import <YouTube/YTSettingsSectionItem.h>
+#import <YouTube/YTSettingsSectionItemManager.h>
+#import <YouTube/YTSettingsGroupData.h>
+
 
 // =========================================================
 // 💎 KHAI BÁO INTERFACE
