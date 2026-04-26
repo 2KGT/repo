@@ -59,22 +59,17 @@ jobs:
           DP_NAME="${{ github.event.inputs.project }}"
           [ "$DP_NAME" = "(none)" ] && exit 1
           
-          # 1. Tìm File Control & Lấy thông tin
+          # 1. Tìm File Control
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           DESC=$(grep "^Description:" "$CTRL" | cut -d: -f2- | sed 's/^ *//')
           
-          # 2. Xử lý Version (Tăng tự động)
+          # 2. Xử lý Version
           RAW_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
-          if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then
-              IFS='.' read -r i1 i2 i3 <<< "$RAW_VER"
-              NEW_VER="$i1.$i2.$((i3 + 1))"
-          else
-              NEW_VER="$RAW_VER-test$(date +%H%M)"
-          fi
+          NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$RAW_VER" || echo "$RAW_VER-test$(date +%H%M)")
           
-          # 3. Ghi ngược Control & Gán Link Ảnh
+          # 3. GHI NGƯỢC VÀO CONTROL (Gán link 4 loại ảnh qua Depiction)
           IMG_PATH="${{ env.BASE_URL }}/depictions/images/${SAFE}"
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
@@ -82,7 +77,7 @@ jobs:
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
           echo "Icon: ${{ env.BASE_URL }}/icons/${SAFE}.png" >> "$CTRL"
           
-          # 4. Tự động dựng gian hàng Sileo (Depiction JSON)
+          # 4. TẠO JSON SILEO (Trưng bày bộ tứ link ảnh)
           mkdir -p depictions/images
           cat <<EOF > "depictions/${SAFE}.json"
           {
@@ -91,11 +86,10 @@ jobs:
             "tintColor": "#ff2d55",
             "tabs": [
               {
-                "tabname": "Chi tiết",
+                "tabname": "Details",
                 "class": "DepictionStackView",
                 "views": [
                   { "class": "DepictionHeaderView", "title": "$DP_NAME" },
-                  { "class": "DepictionSubheaderView", "title": "Phiên bản $NEW_VER" },
                   { 
                     "class": "DepictionScreenshotsView", 
                     "screenshots": [
@@ -104,27 +98,24 @@ jobs:
                     ],
                     "itemCornerRadius": 10
                   },
-                  { "class": "DepictionMarkdownView", "markdown": "### Giới thiệu\n$DESC\n\n--- \n### Nhật ký\n- Tự động hóa bởi 2KGT Factory.\n- Cập nhật bộ tứ link ảnh." },
-                  { "class": "DepictionBannerView", "bannerImage": "${IMG_PATH}_banner.png" },
-                  { "class": "DepictionSpacerView" },
-                  { "class": "DepictionButtonView", "text": "Hỗ trợ Telegram", "action": "https://t.me/your_telegram" }
+                  { "class": "DepictionMarkdownView", "markdown": "### Giới thiệu\n$DESC" },
+                  { "class": "DepictionBannerView", "bannerImage": "${IMG_PATH}_banner.png" }
                 ]
               }
             ]
           }
           EOF
           
-          # 5. Build (Sử dụng Header)
-          cp -R headers "$DIR/"
+          # 5. LÊN THỚT BUILD (Theos tự lấy Header từ hệ thống đã tiêm)
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
-            ADDITIONAL_CFLAGS="-isystem $DIR/headers -Wno-error -DTHEOS_LEAN_AND_MEAN"
-
+            ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -DTHEOS_LEAN_AND_MEAN"
           
           mkdir -p deb_output
           cp "$DIR/packages/"*.deb deb_output/
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
+
 
       - name: 🚀 Lên Kệ & Đồng bộ Repo
         if: github.event.inputs.publish == 'true'
