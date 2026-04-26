@@ -1,10 +1,11 @@
 #import <UIKit/UIKit.h>
-// Gọi trực tiếp từ kho Header mà workflow đã tải về root
-#import <YTSettingsViewController.h>
-#import <YTSettingsSectionItem.h>
-#import <YTSettingsSectionItemManager.h>
-#import <YTAppSettingsPresentationData.h>
-#import <YTSettingsGroupData.h>
+// Thêm tên thư mục cha YouTube/ vào trước tên file
+#import <YouTube/YTAppSettingsPresentationData.h>
+#import <YouTube/YTSettingsViewController.h>
+#import <YouTube/YTSettingsSectionItem.h>
+#import <YouTube/YTSettingsSectionItemManager.h>
+#import <YouTube/YTSettingsGroupData.h>
+
 
 // ID định danh duy nhất (AACP = AutoAC Prefs)
 static const NSInteger AutoACSection = 'aacp';
