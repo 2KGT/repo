@@ -1,14 +1,14 @@
-name: Build Multi Apps
+name: Build Multi Apps (Modular Injector)
 
 on:
   workflow_dispatch:
     inputs:
       decrypted_ipa_url:
-        description: "Link IPA gốc (YouTube, TikTok, Facebook...)"
+        description: "Link IPA gốc (Bắt buộc)"
         required: true
         type: string
-      app_type:
-        description: "Loại App (Để tự động lấy Tweak tương ứng)"
+      tweak_app_type:
+        description: "Loại Tweak App (Chọn thư mục DEB tương ứng)"
         required: true
         type: choice
         default: 'YouTube'
@@ -16,19 +16,19 @@ on:
           - 'YouTube'
           - 'Facebook'
           - 'TikTok'
-          - 'General' # Dùng cho các app khác
+          - 'General'
       app_name:
-        description: "Tên App hiển thị"
-        default: "App Custom"
-        required: true
+        description: "Tên hiển thị (Để trống nếu muốn giữ mặc định)"
+        default: ""
+        required: false
         type: string
       bundle_id:
-        description: "Bundle ID"
-        default: "com.2kgt.custom"
-        required: true
+        description: "Bundle ID (Để trống nếu muốn giữ mặc định)"
+        default: ""
+        required: false
         type: string
-      extra_tweak_url:
-        description: "Link Tweak bổ sung bên ngoài (Tùy chọn)"
+      extra_tweak_links:
+        description: "Link Tweak bổ sung (Dán nhiều link cách nhau bởi dấu cách hoặc xuống dòng)"
         default: ""
         required: false
         type: string
@@ -42,52 +42,65 @@ jobs:
         with:
           path: main
 
-      - name: 🏗️ Cài đặt công cụ tiêm (Cyan)
+      - name: 🏗️ Cài đặt Cyan (Pyzule)
         run: |
           brew install ldid dpkg make
           pipx install --force https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip
 
-      - name: 📦 Gom Tweaks theo Option
+      - name: 📦 Gom Tweaks (Nội bộ + Nhiều link ngoài)
         run: |
           mkdir -p tweaks_to_inject
           
-          # 1. Lấy Tweak chung (luôn luôn tiêm, ví dụ: Tweak chặn update hoặc HUD của bạn)
-          if [ -d "main/debs/General" ]; then
-            cp main/debs/General/*.deb tweaks_to_inject/ || true
+          # 1. Lấy Tweak nội bộ theo folder đã chọn
+          TWEAK_FOLDER="${{ github.event.inputs.tweak_app_type }}"
+          if [ -d "main/debs/$TWEAK_FOLDER" ]; then
+            cp main/debs/$TWEAK_FOLDER/*.deb tweaks_to_inject/ || true
           fi
           
-          # 2. Lấy Tweak theo loại App đã chọn
-          APP_FOLDER="${{ github.event.inputs.app_type }}"
-          if [ -d "main/debs/$APP_FOLDER" ]; then
-            echo "📥 Đang lấy Tweaks cho $APP_FOLDER..."
-            cp main/debs/$APP_FOLDER/*.deb tweaks_to_inject/ || true
-          fi
-          
-          # 3. Lấy Tweak từ link bên ngoài (nếu có)
-          if [[ "${{ github.event.inputs.extra_tweak_url }}" != "" ]]; then
-            wget "${{ github.event.inputs.extra_tweak_url }}" -P tweaks_to_inject/
-          fi
+          # 2. Xử lý nhiều link Tweak bên ngoài
+          EXT_LINKS="${{ github.event.inputs.extra_tweak_links }}"
+          for link in $EXT_LINKS; do
+            echo "🌐 Đang tải Tweak: $link"
+            wget "$link" -P tweaks_to_inject/ || echo "❌ Lỗi tải link: $link"
+          done
 
-      - name: 📥 Tải & Xử lý IPA
+      - name: 📥 Xử lý IPA (Tự động nhận diện Tên/ID)
+        id: ipa_info
         run: |
           wget "${{ github.event.inputs.decrypted_ipa_url }}" -O original.ipa
           unzip -q original.ipa -d tmp
-          # Dọn dẹp để cài đặt dễ dàng hơn
+          
+          # Lấy thông tin gốc từ Info.plist
+          INFO_PLIST=$(find tmp/Payload -name "Info.plist" | head -n 1)
+          ORIG_NAME=$(/usr/libexec/PlistBuddy -c "Print :CFBundleDisplayName" "$INFO_PLIST" 2>/dev/null || /usr/libexec/PlistBuddy -c "Print :CFBundleName" "$INFO_PLIST")
+          ORIG_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$INFO_PLIST")
+          
+          # Quyết định dùng tên/id nhập vào hay dùng mặc định
+          FINAL_NAME="${{ github.event.inputs.app_name }}"
+          [ -z "$FINAL_NAME" ] && FINAL_NAME="$ORIG_NAME"
+          
+          FINAL_ID="${{ github.event.inputs.bundle_id }}"
+          [ -z "$FINAL_ID" ] && FINAL_ID="$ORIG_ID"
+          
+          echo "final_name=$FINAL_NAME" >> $GITHUB_OUTPUT
+          echo "final_id=$FINAL_ID" >> $GITHUB_OUTPUT
+          
+          # Dọn dẹp App
           rm -rf tmp/Payload/*.app/PlugIns/* || true
-          rm -rf tmp/Payload/*.app/Watch || true
           cd tmp && zip -vr ../clean.ipa Payload && cd ..
 
       - name: 💉 Tiêm & Đóng gói
         run: |
           mkdir -p output
+          # Dùng các thông tin đã trích xuất ở bước trước
           cyan -i clean.ipa \
-               -o "output/${{ github.event.inputs.app_name }}.ipa" \
-               -n "${{ github.event.inputs.app_name }}" \
-               -b "${{ github.event.inputs.bundle_id }}" \
+               -o "output/${{ steps.ipa_info.outputs.final_name }}.ipa" \
+               -n "${{ steps.ipa_info.outputs.final_name }}" \
+               -b "${{ steps.ipa_info.outputs.final_id }}" \
                -u -f tweaks_to_inject/
 
       - name: 💾 Lưu thành phẩm
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.inputs.app_name }}-Patched
+          name: ${{ steps.ipa_info.outputs.final_name }}-Build
           path: output/*.ipa
