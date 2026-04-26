@@ -25,16 +25,16 @@ jobs:
       contents: write
       steps:
       - name: 📥 Checkout & Setup
-        uses: actions/checkout@v4
+        uses: actions/checkout@4
 
-      # 1. Cài đặt phụ tùng (Chỉ cần dpkg và ldid, make gnu cho nhanh)
+           # 1. Cài đặt phụ tùng (Chỉ cần dpkg và ldid, make gnu cho nhanh)
       - name: 🛠️ Install Dependencies
         run: |
           brew install make ldid dpkg
           # Ép hệ thống dùng GNU Make làm mặc định cho nhanh
           echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
 
-      # 2. CACHE THEOS: Bí kíp tăng tốc
+          # 2. CACHE THEOS: Bí kíp tăng tốc
       - name: 🧠 Cache Theos & SDKs
         id: cache-theos
         uses: actions/cache@v4 # Dùng bản v4 mới nhất cho ổn định
@@ -44,7 +44,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-theos-
 
-      # 3. SETUP THEOS (Chỉ chạy nếu Cache không có - "cache-hit != 'true'")
+          # 3. SETUP THEOS (Chỉ chạy nếu Cache không có - "cache-hit != 'true'")
       - name: 🏗️ Setup Theos Environment
         if: steps.cache-theos.outputs.cache-hit != 'true'
         run: |
