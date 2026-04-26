@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       project:
-        description: 'Chọn dự án Build'
+        description: 'Chọn dự án cần Build'
         required: true
         type: choice
         default: '(none)'
@@ -13,7 +13,7 @@ on:
           - 'AutoAC'
           - 'AutoDL'
       publish:
-        description: 'Phát hành lên Sileo'
+        description: 'Phát hành lên Sileo (Tăng vơ chính thức)'
         type: boolean
         default: false
 
@@ -41,7 +41,7 @@ jobs:
       - name: 🛠️ Setup Toolchain (Theos)
         uses: randomblock1/theos-action@v1
 
-      - name: ⚙️ Build Logic (Smart Versioning)
+      - name: ⚙️ Build Logic (Smart Versioning & Fix Size)
         id: metadata
         run: |
           DP_NAME="${{ github.event.inputs.project }}"
@@ -51,7 +51,7 @@ jobs:
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
-          # Đọc Version từ GitHub (Luôn là bản sạch X.Y.Z)
+          # Đọc Version sạch từ GitHub
           RAW_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           
           if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then
@@ -59,14 +59,16 @@ jobs:
               IFS='.' read -r i1 i2 i3 <<< "$RAW_VER"
               NEW_VER="$i1.$i2.$((i3 + 1))"
           else
-              # TẠO VƠ TEST TẠM THỜI (Dựa trên thời gian để không bao giờ trùng)
-              # Ví dụ: 1.0.0-test2045 (20:45)
+              # TẠO VƠ TEST TẠM THỜI (Dấu mốc thời gian HHMM)
               TIME_STAMP=$(date +%H%M)
               NEW_VER="$RAW_VER-test$TIME_STAMP"
           fi
           
           # Cập nhật tạm thời vào file để Build
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
+          
+          # Ép thời gian file nội bộ về giờ VN trước khi đóng gói
+          find . -exec touch -t $(date +%Y%m%d%H%M.%S) {} +
           
           make -C "$DIR" clean package FINALPACKAGE=1
           mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
@@ -90,9 +92,11 @@ jobs:
           brew install dpkg
           mkdir -p debs depictions/images icons
           cp -v deb_output/*.deb debs/
-          dpkg-scanpackages -m ./debs /dev/null > Packages && bzip2 -fks Packages
           
-          # Tạo JSON Metadata
+          # FIX LỖI SIZE 0.0 MB: Sử dụng đường dẫn tương đối để tính toán Size chính xác
+          dpkg-scanpackages -m debs /dev/null > Packages
+          bzip2 -fks Packages
+          
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           URL="${{ env.BASE_URL }}"
           PKG=$(grep "^Package:" "${{ steps.metadata.outputs.proj_dir }}/control" | cut -d' ' -f2)
@@ -113,11 +117,11 @@ jobs:
               "${URL}/depictions/images/${SAFE}3.png"
             ],
             "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
-            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "• Phát hành chính thức (ICT)"}]
+            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "• Phát hành chính thức bản build mới nhất"}]
           }
           EOF
 
-          # Đẩy lên GitHub
+          # Đẩy lên GitHub sạch sẽ
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           DIR="${{ steps.metadata.outputs.proj_dir }}"
