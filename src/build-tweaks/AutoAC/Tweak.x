@@ -3,7 +3,7 @@
 #import <Photos/Photos.h>
 
 // =========================================================
-// 💎 KHAI BÁO INTERFACE (Sửa lỗi biên dịch & Ép kiểu)
+// 💎 KHAI BÁO INTERFACE
 // =========================================================
 @interface YTAdSlotContainerView : UIView
 @end
@@ -25,16 +25,14 @@
 - (void)setSectionItems:(NSMutableArray *)items forCategory:(NSInteger)category title:(NSString *)title titleDescription:(NSString *)desc;
 @end
 
-// --- BIẾN TOÀN CỤC & HÀM ĐỌC PREFS THÔNG MINH ---
+// --- BIẾN TOÀN CỤC & HÀM ĐỌC PREFS ---
 static BOOL kRemoveAds = YES;
 static BOOL kFastDownload = NO;
 static NSString *kLastStatus = @"Hệ thống sẵn sàng";
 
 static void loadPrefs() {
-    // Đường dẫn chuẩn cho máy Jailbreak & Non-JB (Sandbox)
     NSString *path = @"/var/mobile/Library/Preferences/com.2kgt.autoac.plist";
     NSDictionary *prefs = [[NSDictionary alloc] initWithContentsOfFile:path];
-    
     if (prefs) {
         kRemoveAds = prefs[@"kRemoveAds"] ? [prefs[@"kRemoveAds"] boolValue] : YES;
         kFastDownload = prefs[@"kFastDownload"] ? [prefs[@"kFastDownload"] boolValue] : NO;
@@ -102,9 +100,7 @@ static void loadPrefs() {
         if (@available(iOS 13.0, *)) {
             for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
                 if (scene.activationState == UISceneActivationStateForegroundActive) {
-                    for (UIWindow *w in scene.windows) {
-                        if (w.isKeyWindow) { window = w; break; }
-                    }
+                    for (UIWindow *w in scene.windows) { if (w.isKeyWindow) { window = w; break; } }
                 }
                 if (window) break;
             }
@@ -119,12 +115,11 @@ static void loadPrefs() {
 %end
 
 // =========================================================
-// ⚙️ CÀI ĐẶT TRONG APP (Cho cả JB & Non-JB)
+// ⚙️ CÀI ĐẶT TRONG APP
 // =========================================================
 
 %hook YTSettingsViewController
 - (void)setSectionItems:(NSMutableArray *)items forCategory:(NSInteger)category title:(NSString *)title titleDescription:(NSString *)desc {
-    // YouTube bản mới thường dùng tiêu đề 'Chung' hoặc 'General'
     if ([title isEqualToString:@"General"] || [title isEqualToString:@"Chung"] || category == 1) {
         Class itemClass = NSClassFromString(@"YTSettingsSectionItem");
         if (itemClass) {
@@ -163,7 +158,6 @@ static void loadPrefs() {
     UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium];
     [haptic impactOccurred];
     
-    // Hiện thông báo test để biết tweak CÓ CHẠY hay không
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"AutoAC" message:[NSString stringWithFormat:@"Trạng thái: %@", kLastStatus] preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
     
@@ -177,23 +171,27 @@ static void loadPrefs() {
         }
     }
     if (!window) window = [UIApplication sharedApplication].keyWindow;
-    [window.rootViewController presentViewController:alert animated:YES completion:nil];
+    UIViewController *top = window.rootViewController;
+    while (top.presentedViewController) top = top.presentedViewController;
+    [top presentViewController:alert animated:YES completion:nil];
 }
 %end
 
 // =========================================================
-// 🚀 KHỞI CHẠY (Sửa lại để nhận diện Class linh hoạt)
+// 🚀 KHỞI CHẠY (Gộp chung để tránh lỗi trùng lặp)
 // =========================================================
 
 %ctor {
     @autoreleasepool {
         loadPrefs();
-        // Khởi tạo các hook không định danh (Tự động tìm Class)
-        %init;
         
-        // Hook thêm các alias nếu YouTube đổi tên Class
-        if (NSClassFromString(@"YTRightAlignedHeaderLogoView")) {
-            %init(YTHeaderLogoView = NSClassFromString(@"YTRightAlignedHeaderLogoView"));
-        }
+        // Chỉ gọi %init một lần duy nhất với các định danh cụ thể
+        %init(
+            YTSettingsViewController = NSClassFromString(@"YTSettingsViewController"),
+            YTHeaderLogoView = NSClassFromString(@"YTHeaderLogoView") ?: NSClassFromString(@"YTRightAlignedHeaderLogoView"),
+            YTVideoOverlayView = NSClassFromString(@"YTVideoOverlayView"),
+            YTAdSlotContainerView = NSClassFromString(@"YTAdSlotContainerView"),
+            YTSlimVideoMetadataSectionView = NSClassFromString(@"YTSlimVideoMetadataSectionView")
+        );
     }
 }
