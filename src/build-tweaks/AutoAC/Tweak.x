@@ -31,7 +31,7 @@ static BOOL kFastDownload = NO;
 static NSString *kLastStatus = @"Hệ thống sẵn sàng";
 
 static void loadPrefs() {
-    // Đường dẫn chuẩn cho máy Jailbreak
+    // Đường dẫn chuẩn cho máy Jailbreak & Non-JB (Sandbox)
     NSString *path = @"/var/mobile/Library/Preferences/com.2kgt.autoac.plist";
     NSDictionary *prefs = [[NSDictionary alloc] initWithContentsOfFile:path];
     
@@ -39,7 +39,6 @@ static void loadPrefs() {
         kRemoveAds = prefs[@"kRemoveAds"] ? [prefs[@"kRemoveAds"] boolValue] : YES;
         kFastDownload = prefs[@"kFastDownload"] ? [prefs[@"kFastDownload"] boolValue] : NO;
     } else {
-        // Môi trường Non-Jailbreak hoặc lần đầu cài đặt
         kRemoveAds = YES;
         kFastDownload = NO;
     }
@@ -100,22 +99,18 @@ static void loadPrefs() {
         [picker addAction:[UIAlertAction actionWithTitle:@"Hủy" style:UIAlertActionStyleCancel handler:nil]];
         
         UIWindow *window = nil;
-if (@available(iOS 13.0, *)) {
-    for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
-        if (scene.activationState == UISceneActivationStateForegroundActive) {
-            for (UIWindow *w in scene.windows) {
-                if (w.isKeyWindow) {
-                    window = w;
-                    break;
+        if (@available(iOS 13.0, *)) {
+            for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+                if (scene.activationState == UISceneActivationStateForegroundActive) {
+                    for (UIWindow *w in scene.windows) {
+                        if (w.isKeyWindow) { window = w; break; }
+                    }
                 }
+                if (window) break;
             }
         }
-        if (window) break;
-    }
-}
-if (!window) window = [UIApplication sharedApplication].keyWindow;
-UIViewController *top = window.rootViewController;
-
+        if (!window) window = [UIApplication sharedApplication].keyWindow;
+        UIViewController *top = window.rootViewController;
 
         while (top.presentedViewController) top = top.presentedViewController;
         [top presentViewController:picker animated:YES completion:nil];
@@ -129,11 +124,11 @@ UIViewController *top = window.rootViewController;
 
 %hook YTSettingsViewController
 - (void)setSectionItems:(NSMutableArray *)items forCategory:(NSInteger)category title:(NSString *)title titleDescription:(NSString *)desc {
-    if (category == 1 || [title isEqualToString:@"General"] || [title isEqualToString:@"Chung"]) {
+    // YouTube bản mới thường dùng tiêu đề 'Chung' hoặc 'General'
+    if ([title isEqualToString:@"General"] || [title isEqualToString:@"Chung"] || category == 1) {
         Class itemClass = NSClassFromString(@"YTSettingsSectionItem");
         if (itemClass) {
             YTSettingsSectionItem *autoAC = [itemClass itemWithTitle:@"AutoAC Settings" titleDescription:@"Tùy chỉnh tải & Ads" accessibilityIdentifier:nil detailTextBlock:nil selectBlock:^BOOL(id arg1) {
-                // Hiển thị Menu chỉnh nhanh ngay trong YouTube
                 UIAlertController *menu = [UIAlertController alertControllerWithTitle:@"AutoAC" message:@"Cấu hình nhanh" preferredStyle:UIAlertControllerStyleAlert];
                 [menu addAction:[UIAlertAction actionWithTitle:(kRemoveAds ? @"Tắt Chặn Ads" : @"Bật Chặn Ads") style:UIAlertActionStyleDefault handler:^(id a){ kRemoveAds = !kRemoveAds; }]];
                 [menu addAction:[UIAlertAction actionWithTitle:(kFastDownload ? @"Tắt Tải nhanh" : @"Bật Tải nhanh") style:UIAlertActionStyleDefault handler:^(id a){ kFastDownload = !kFastDownload; }]];
@@ -167,17 +162,38 @@ UIViewController *top = window.rootViewController;
 - (void)handleAutoACReview {
     UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium];
     [haptic impactOccurred];
-    NSLog(@"[AutoAC] Status: %@", kLastStatus);
+    
+    // Hiện thông báo test để biết tweak CÓ CHẠY hay không
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"AutoAC" message:[NSString stringWithFormat:@"Trạng thái: %@", kLastStatus] preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+    
+    UIWindow *window = nil;
+    if (@available(iOS 13.0, *)) {
+        for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+            if (scene.activationState == UISceneActivationStateForegroundActive) {
+                for (UIWindow *w in scene.windows) { if (w.isKeyWindow) { window = w; break; } }
+            }
+            if (window) break;
+        }
+    }
+    if (!window) window = [UIApplication sharedApplication].keyWindow;
+    [window.rootViewController presentViewController:alert animated:YES completion:nil];
 }
 %end
 
 // =========================================================
-// 🚀 KHỞI CHẠY
+// 🚀 KHỞI CHẠY (Sửa lại để nhận diện Class linh hoạt)
 // =========================================================
 
 %ctor {
-    loadPrefs(); // Nạp cấu hình trước khi chạy
-    %init(YTSettingsViewController = NSClassFromString(@"YTSettingsViewController"),
-          YTHeaderLogoView = NSClassFromString(@"YTHeaderLogoView") ?: NSClassFromString(@"YTRightAlignedHeaderLogoView"),
-          YTVideoOverlayView = NSClassFromString(@"YTVideoOverlayView"));
+    @autoreleasepool {
+        loadPrefs();
+        // Khởi tạo các hook không định danh (Tự động tìm Class)
+        %init;
+        
+        // Hook thêm các alias nếu YouTube đổi tên Class
+        if (NSClassFromString(@"YTRightAlignedHeaderLogoView")) {
+            %init(YTHeaderLogoView = NSClassFromString(@"YTRightAlignedHeaderLogoView"));
+        }
+    }
 }
