@@ -47,21 +47,21 @@ jobs:
 
       - name: 🚚 Tự động xây kho & Dọn nhiễu Header
         run: |
-          # 1. Tạo cấu trúc kho ngay tại Root của máy ảo
+          # 1. Tạo cấu trúc gian hàng riêng biệt
           mkdir -p headers/YouTube
           mkdir -p headers/Shared
           mkdir -p headers/YTIcons
           
-          # 2. "Hút" các bộ nồi PoomSmart về kho
+          # 2. Hút hàng về đúng gian hàng (strip-components=1 để lấy ruột bỏ vỏ)
           curl -L https://github.com/PoomSmart/YouTubeHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/YouTube
           curl -L https://github.com/PoomSmart/PSHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/Shared
           curl -L https://github.com/PoomSmart/YTIcons/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/YTIcons
           
-          # 3. QUÉT RÁC: Xóa sạch các folder gây xung đột với Framework hệ thống của Apple
+          # 3. QUÉT RÁC: Xóa sạch các thư mục gây xung đột module hệ thống
           find headers -type d -name "CoreImage" -exec rm -rf {} +
           find headers -type d -name "QuartzCore" -exec rm -rf {} +
           find headers -type d -name "UIKit" -exec rm -rf {} +
-          echo "✅ Đã dọn dẹp xong xung đột Header!"
+          echo "✅ Đã quy hoạch xong siêu thị Header!"
 
       - name: ⚙️ Build Logic (Smart Versioning)
         id: metadata
@@ -84,10 +84,11 @@ jobs:
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
           find "$DIR" -maxdepth 10 -not -path '*/.*' -exec touch -t $(date +%Y%m%d%H%M.%S) {} + || true
           
-           # TRỎ LÙI LẠI 1 CẤP (vào /headers) để code gọi được <YouTube/File.h>
+          # 🚀 CÚ CHỐT: Chỉ trỏ vào cửa kho tổng /headers
+          # Code của cậu gọi <YouTube/File.h> sẽ tự động tìm thấy /headers/YouTube/File.h
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
-            ADDITIONAL_CFLAGS="-Wno-deprecated-declarations -Wno-error -isystem $(pwd)/headers -isystem $(pwd)/headers/Shared -isystem $(pwd)/headers/YTIcons -DTHEOS_LEAN_AND_MEAN"
+            ADDITIONAL_CFLAGS="-Wno-deprecated-declarations -Wno-error -isystem $(pwd)/headers -DTHEOS_LEAN_AND_MEAN"
           
           mkdir -p deb_output
           find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
@@ -118,7 +119,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           
-          # Dọn dẹp trước khi commit
+          # Dọn dẹp môi trường trước khi commit
           rm -rf deb_output/ theos/ .theos/ headers/
           
           git add .
