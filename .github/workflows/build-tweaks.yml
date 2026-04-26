@@ -84,7 +84,7 @@ jobs:
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
           find "$DIR" -maxdepth 10 -not -path '*/.*' -exec touch -t $(date +%Y%m%d%H%M.%S) {} + || true
           
-          # 🚀 ĐÃ SỬA: Trỏ vào /headers để nhận diện được <YouTube/File.h> và <Shared/File.h>
+           # TRỎ LÙI LẠI 1 CẤP (vào /headers) để code gọi được <YouTube/File.h>
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
             ADDITIONAL_CFLAGS="-Wno-deprecated-declarations -Wno-error -isystem $(pwd)/headers -isystem $(pwd)/headers/Shared -isystem $(pwd)/headers/YTIcons -DTHEOS_LEAN_AND_MEAN"
