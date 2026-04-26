@@ -49,7 +49,7 @@ jobs:
           mkdir -p $THEOS/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: 🚚 Cảm biến & Nạp Header (Ưu tiên nội bộ)
+      - name: 🚚 Cảm biến & Nạp Header
         run: |
           THEOS_INC="$THEOS/include"
           DP_NAME="${{ github.event.inputs.project }}"
@@ -64,7 +64,7 @@ jobs:
                   repo_name=$(echo $repo_name | tr -d '\r' | xargs)
                   [ -z "$repo_name" ] && continue
 
-                  # KIỂM TRA HÀNG NỘI BỘ (Đã up 500 file)
+                  # KIỂM TRA HÀNG NỘI BỘ
                   if [ -d "headers/$repo_name" ]; then
                       echo "📂 Dùng hàng nội bộ: headers/$repo_name"
                       ln -sf "$(pwd)/headers/$repo_name" "$THEOS_INC/$repo_name"
@@ -94,7 +94,7 @@ jobs:
           DESC=$(grep "^Description:" "$CTRL" | cut -d: -f2- | sed 's/^ *//')
           
           RAW_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
-          # Fix lỗi cú pháp dấu cách trong bash
+
           NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$RAW_VER" || echo "$RAW_VER-test$(date +%H%M)")
           
           IMG_PATH="${{ env.BASE_URL }}/depictions/images/${SAFE}"
@@ -151,7 +151,6 @@ jobs:
           bzip2 -fks Packages
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          # ĐÃ XÓA rm -rf headers/ ĐỂ BẢO VỆ 500 FILE CỦA ÔNG
           git add .
           git commit -m "🌟 [Auto] Lên kệ ${{ steps.metadata.outputs.safe_name }} v${{ steps.metadata.outputs.proj_ver }}"
           git push origin main
