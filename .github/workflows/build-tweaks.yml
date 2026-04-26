@@ -15,7 +15,6 @@ on:
         default: false
 
 env:
-  BASE_URL: "https://raw.githubusercontent.com/2KGT/repo/main"
   TZ: "Asia/Ho_Chi_Minh"
 
 jobs:
@@ -35,18 +34,20 @@ jobs:
           mkdir -p $THEOS/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: 🚚 Xây kho Header phân khu
+      - name: 🚚 Hút Header tổng lực
         run: |
-          # Tạo kho ngay tại thư mục hiện tại (root của runner)
-          mkdir -p headers/YouTube headers/Shared headers/YTIcons
-          curl -L https://github.com/PoomSmart/YouTubeHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/YouTube
-          curl -L https://github.com/PoomSmart/PSHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/Shared
-          curl -L https://github.com/PoomSmart/YTIcons/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/YTIcons
+          # Tạo một thư mục phẳng duy nhất
+          mkdir -p combined_headers/YouTube
+          mkdir -p combined_headers/Shared
           
-          # Dọn rác
-          find headers -type d -name "CoreImage" -exec rm -rf {} +
-          find headers -type d -name "QuartzCore" -exec rm -rf {} +
-          find headers -type d -name "UIKit" -exec rm -rf {} +
+          # Hút hàng và san phẳng cấu trúc
+          curl -L https://github.com/PoomSmart/YouTubeHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C combined_headers/YouTube
+          curl -L https://github.com/PoomSmart/PSHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C combined_headers/Shared
+          
+          # Thanh trừng triệt để các file gây xung đột module hệ thống
+          find combined_headers -type d -name "CoreImage" -exec rm -rf {} +
+          find combined_headers -type d -name "QuartzCore" -exec rm -rf {} +
+          find combined_headers -type d -name "UIKit" -exec rm -rf {} +
 
       - name: ⚙️ Build Logic
         id: metadata
@@ -60,13 +61,13 @@ jobs:
           NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$RAW_VER" || echo "$RAW_VER-test$(date +%H%M)")
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
           
-          # 🚀 ĐÂY LÀ DÒNG SỬA LỖI: Dùng đường dẫn đầy đủ $GITHUB_WORKSPACE
-          # Nó ép nhà máy phải nhìn thấy thư mục headers bất kể dự án nằm sâu thế nào
-          HEADER_PATH="$GITHUB_WORKSPACE/headers"
+          # ÉP XÁC: Copy kho header vào sát nách dự án
+          cp -R combined_headers "$DIR/"
           
+          # Build với đường dẫn trực tiếp
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
-            ADDITIONAL_CFLAGS="-isystem $HEADER_PATH -Wno-error -DTHEOS_LEAN_AND_MEAN"
+            ADDITIONAL_CFLAGS="-isystem combined_headers -Wno-error -DTHEOS_LEAN_AND_MEAN"
           
           mkdir -p deb_output
           cp "$DIR/packages/"*.deb deb_output/
@@ -79,18 +80,3 @@ jobs:
         with:
           name: ${{ steps.metadata.outputs.safe_name }}-v${{ steps.metadata.outputs.proj_ver }}
           path: deb_output/*.deb
-
-      - name: 🚀 Giao hàng Sileo
-        if: github.event.inputs.publish == 'true'
-        run: |
-          brew install dpkg
-          mkdir -p debs
-          cp deb_output/*.deb debs/
-          dpkg-scanpackages -m debs /dev/null > Packages
-          bzip2 -fks Packages
-          git config user.name "github-actions[bot]"
-          git config user.email "actions@github.com"
-          rm -rf deb_output/ headers/
-          git add .
-          git commit -m "🚀 Release ${{ steps.metadata.outputs.safe_name }}" || exit 0
-          git push origin main
