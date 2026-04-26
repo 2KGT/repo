@@ -37,15 +37,21 @@ jobs:
           mkdir -p $THEOS/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: 🚚 Đồng bộ Header
+            - name: 🚚 Đồng bộ Header
         run: |
-          mkdir -p headers/YouTubeHeader headers/Shared
+          mkdir -p headers
+          # Clone thẳng vào folder headers, Theos sẽ nhìn thấy thư mục YouTubeHeader bên trong đó
           git clone --depth 1 https://github.com/2KGT/YouTubeHeader headers/YouTubeHeader
+          
+          # Hút thêm bộ Shared
+          mkdir -p headers/Shared
           curl -L https://github.com/PoomSmart/PSHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/Shared
-          # Quét rác để tránh xung đột hệ thống
+          
+          # Dọn rác
           find headers -type d -name "CoreImage" -exec rm -rf {} +
           find headers -type d -name "QuartzCore" -exec rm -rf {} +
           find headers -type d -name "UIKit" -exec rm -rf {} +
+
 
       - name: ⚙️ Băm Trộn & Gán (Automation)
         id: metadata
@@ -112,7 +118,8 @@ jobs:
           cp -R headers "$DIR/"
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
-            ADDITIONAL_CFLAGS="-isystem headers -Wno-error -DTHEOS_LEAN_AND_MEAN"
+            ADDITIONAL_CFLAGS="-isystem $DIR/headers -Wno-error -DTHEOS_LEAN_AND_MEAN"
+
           
           mkdir -p deb_output
           cp "$DIR/packages/"*.deb deb_output/
