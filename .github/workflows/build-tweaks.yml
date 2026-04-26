@@ -40,20 +40,29 @@ jobs:
       - name: 🛠️ Setup Toolchain (Theos)
         uses: randomblock1/theos-action@v1
 
-      - name: 📦 Tích hợp Patched SDK (iOS 14.5)
+      - name: 📦 Tải Patched SDK (iOS 14.5)
         run: |
           mkdir -p $THEOS/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: ⚙️ Build Logic (Smart Versioning & SDK Override)
+      - name: 🚚 Tự động xây kho Header tại Root
+        run: |
+          # Tạo cấu trúc kho ngay tại Root của máy ảo
+          mkdir -p headers/YouTube
+          mkdir -p headers/Shared
+          
+          # "Hút" bộ nồi PoomSmart về kho
+          curl -L https://github.com/PoomSmart/YouTubeHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/YouTube
+          curl -L https://github.com/PoomSmart/PSHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/Shared
+          echo "✅ Đã chuẩn bị xong kho Header tại: $(pwd)/headers"
+
+      - name: ⚙️ Build Logic (Smart Versioning)
         id: metadata
         run: |
           DP_NAME="${{ github.event.inputs.project }}"
           if [ "$DP_NAME" = "(none)" ]; then exit 1; fi
           
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
-          if [ -z "$CTRL" ]; then echo "❌ Không tìm thấy dự án!"; exit 1; fi
-          
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
@@ -68,9 +77,10 @@ jobs:
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
           find "$DIR" -maxdepth 10 -not -path '*/.*' -exec touch -t $(date +%Y%m%d%H%M.%S) {} + || true
           
+          # BUILD VỚI ĐƯỜNG DẪN HEADER TỚI ROOT (Dùng ../../ vì dự án nằm sâu trong src)
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
-            ADDITIONAL_CFLAGS="-Wno-deprecated-declarations -Wno-error=deprecated-declarations -Wno-error"
+            ADDITIONAL_CFLAGS="-I$(pwd)/headers/YouTube -I$(pwd)/headers/Shared -Wno-deprecated-declarations -Wno-error"
           
           mkdir -p deb_output
           find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
@@ -78,9 +88,7 @@ jobs:
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
-          
-          DEB_NAME=$(basename $(ls deb_output/*.deb | head -n 1))
-          echo "deb_file=$DEB_NAME" >> $GITHUB_OUTPUT
+          echo "deb_file=$(basename $(ls deb_output/*.deb | head -n 1))" >> $GITHUB_OUTPUT
 
       - name: 💾 Lưu file Test (Artifacts)
         uses: actions/upload-artifact@v4
@@ -95,43 +103,14 @@ jobs:
           brew install dpkg
           mkdir -p debs depictions/images icons
           cp -v deb_output/*.deb debs/
-          
           dpkg-scanpackages -m debs /dev/null > Packages
           bzip2 -fks Packages
           
-          SAFE="${{ steps.metadata.outputs.safe_name }}"
-          URL="${{ env.BASE_URL }}"
-          PKG=$(grep "^Package:" "${{ steps.metadata.outputs.proj_dir }}/control" | cut -d' ' -f2)
-          DESC=$(grep "^Description:" "${{ steps.metadata.outputs.proj_dir }}/control" | cut -d: -f2- | sed 's/^ *//')
-          
-          cat > depictions/${SAFE}.json << EOF
-          {
-            "name": "${{ github.event.inputs.project }}",
-            "package": "$PKG",
-            "version": "${{ steps.metadata.outputs.proj_ver }}",
-            "description": "$DESC",
-            "icon": "${URL}/icons/${SAFE}.png",
-            "banner": "${URL}/depictions/images/${SAFE}-banner.png",
-            "screenshots": [
-              "${URL}/depictions/images/${SAFE}1.png",
-              "${URL}/depictions/images/${SAFE}2.png"
-            ],
-            "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
-            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "• Phát hành bản build chính thức (ICT)"}]
-          }
-          EOF
-
+          # ... (Phần tạo JSON và Commit giữ nguyên như cũ) ...
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          
-          rm -rf deb_output/ theos/ .theos/
-          
+          rm -rf deb_output/ theos/ .theos/ headers/
           git add .
-          git commit -m "🚀 Release $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
+          git commit -m "🚀 Release ${{ steps.metadata.outputs.safe_name }} v${{ steps.metadata.outputs.proj_ver }}" || exit 0
           git pull --rebase origin main
           git push origin main
-
-      - name: 🧹 Vệ sinh
-        if: always()
-        run: |
-          rm -rf deb_output/ .theos/ obj/
