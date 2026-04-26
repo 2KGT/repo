@@ -1,6 +1,6 @@
 #import <UIKit/UIKit.h>
-#import <YouTube/MLHAMPlayerItem.h>
-#import <YouTube/MLAVPlayer.h>
+#import <YouTubeHeader/MLHAMPlayerItem.h>
+#import <YouTubeHeader/MLAVPlayer.h>
 
 static BOOL kRemoveAds = YES;
 
