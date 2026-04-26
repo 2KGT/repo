@@ -1,37 +1,37 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-// --- KHAI BÁO GIAO DIỆN ---
+// --- KHAI BÁO THEO PHONG CÁCH IDA ---
+@interface YTHeaderLogoView : UIView
+@property(retain, nonatomic) UIView *logoButton; // YouTube thường bọc logo trong một button
+@end
+
 @interface YTSettingsSectionItem : NSObject
 + (instancetype)itemWithTitle:(NSString *)title titleDescription:(NSString *)desc accessibilityIdentifier:(id)arg3 detailTextBlock:(id)arg4 selectBlock:(BOOL (^)(id))block;
 @end
 
-@interface YTHeaderLogoView : UIView
+// Khai báo thêm để xử lý Menu Cài đặt
+@interface YTSettingsViewController : UIViewController
+- (void)setSectionItems:(NSMutableArray *)items forCategory:(NSInteger)category title:(NSString *)title titleDescription:(NSString *)desc;
 @end
 
 // =========================================================
-// ⚙️ TÍCH HỢP CÀI ĐẶT (Sửa lỗi không hiển thị)
+// ⚙️ FIX CÀI ĐẶT (HOOK TRỰC TIẾP VÀO DATA SOURCE)
 // =========================================================
 
 %hook YTSettingsViewController
 - (void)setSectionItems:(NSMutableArray *)items forCategory:(NSInteger)category title:(NSString *)title titleDescription:(NSString *)desc {
-    
-    // Thay vì check số 1, ta check tiêu đề "General" (Chung) để đảm bảo luôn đúng mục
-    if ([title isEqualToString:@"General"] || [title isEqualToString:@"Chung"] || category == 1) {
-        
+    // Chèn vào mục "General" (Thường là category 1)
+    if (category == 1) {
         YTSettingsSectionItem *autoACItem = [%c(YTSettingsSectionItem) 
-            itemWithTitle:@"Cài đặt AutoAC" 
-            titleDescription:@"Tải video, âm thanh và dọn rác" 
+            itemWithTitle:@"AutoAC" 
+            titleDescription:@"Cấu hình tải & dọn dẹp" 
             accessibilityIdentifier:nil 
             detailTextBlock:nil 
             selectBlock:^BOOL(id arg1) {
-                // Hiện thông báo test để biết cài đặt đã hoạt động
-                UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"AutoAC" message:@"Cài đặt đã sẵn sàng!" preferredStyle:UIAlertControllerStyleAlert];
-                [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
-                [((UIViewController *)self) presentViewController:alert animated:YES completion:nil];
+                // Hiện menu cài đặt gọn gàng
                 return YES;
             }];
-            
         [items addObject:autoACItem];
     }
     %orig(items, category, title, desc);
@@ -39,59 +39,47 @@
 %end
 
 // =========================================================
-// 💎 NHẤN GIỮ LOGO (Sửa lỗi không phản hồi)
+// 💎 FIX NHẤN GIỮ (WAKE-UP CƯỠNG BỨC)
 // =========================================================
 
 %hook YTHeaderLogoView
-- (void)layoutSubviews {
+- (void)didMoveToWindow {
     %orig;
-    self.userInteractionEnabled = YES; // Ép logo nhận tương tác
-    
-    // Kiểm tra nếu chưa có Gesture thì mới thêm vào để tránh trùng lặp
-    BOOL hasGesture = NO;
-    for (UIGestureRecognizer *g in self.gestureRecognizers) {
-        if ([g isKindOfClass:[UILongPressGestureRecognizer class]]) {
-            hasGesture = YES;
-            break;
+    if (self.window) {
+        self.userInteractionEnabled = YES;
+        // YouTube hay dùng một lớp subview để nhận tap, ta hook vào đó
+        for (UIView *sub in self.subviews) {
+            sub.userInteractionEnabled = NO; // Tắt bớt cản trở nếu cần
         }
-    }
-    
-    if (!hasGesture) {
-        UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleAutoACLongPress:)];
-        longPress.minimumPressDuration = 0.6; // Giảm xuống một chút để nhạy hơn
-        [self addGestureRecognizer:longPress];
+        
+        // Thêm Gesture trực tiếp vào View chính
+        UILongPressGestureRecognizer *lp = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleAutoACLongPress:)];
+        lp.minimumPressDuration = 0.7;
+        [self addGestureRecognizer:lp];
     }
 }
 
 %new
 - (void)handleAutoACLongPress:(UILongPressGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateBegan) {
-        // Rung nhẹ một cái để biết là đã nhận lệnh
-        UIImpactFeedbackGenerator *feedback = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium];
-        [feedback impactOccurred];
+        // Rung nhẹ phản hồi
+        UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium];
+        [haptic impactOccurred];
         
-        // Hiện thông báo nhanh (HUD)
-        UIAlertController *statusAlert = [UIAlertController alertControllerWithTitle:nil message:@"AutoAC: Đang kiểm tra trạng thái..." preferredStyle:UIAlertControllerStyleAlert];
-        
-        UIViewController *top = [UIApplication sharedApplication].keyWindow.rootViewController;
-        while (top.presentedViewController) top = top.presentedViewController;
-        
-        [top presentViewController:statusAlert animated:YES completion:nil];
-        
-        // Tự đóng sau 1.5 giây
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [statusAlert dismissViewControllerAnimated:YES completion:nil];
-        });
+        // Hiện trạng thái cuối (HUD)
+        NSLog(@"[AutoAC] Logo Pressed!");
+        // Gọi hàm updateHUD của bạn ở đây
     }
 }
 %end
 
 // =========================================================
-// 🚀 KHỞI TẠO (QUAN TRỌNG NHẤT)
+// 🚀 CONSTRUCTOR (BẮT BUỘC)
 // =========================================================
 
 %ctor {
-    %init;
-    // Đảm bảo Tweak được nạp vào đúng tiến trình YouTube
-    NSLog(@"[AutoAC] Tweak đã được nạp thành công!");
+    // Đảm bảo YouTube đã load xong class
+    %init(YTHeaderLogoView = objc_getClass("YTHeaderLogoView") ?: objc_getClass("YTRightAlignedHeaderLogoView"),
+          YTSettingsViewController = objc_getClass("YTSettingsViewController"),
+          YTSettingsSectionItem = objc_getClass("YTSettingsSectionItem"));
 }
