@@ -31,7 +31,6 @@ static const NSInteger AutoACSection = 'aacp';
     if (category == AutoACSection) {
         NSMutableArray *items = [NSMutableArray array];
         
-        // Mục 1: Bật/Tắt Ads
         [items addObject:[%c(YTSettingsSectionItem) switchItemWithTitle:@"Chặn quảng cáo" 
             titleDescription:@"Xoá sạch mọi quảng cáo YouTube" 
             accessibilityIdentifier:nil 
