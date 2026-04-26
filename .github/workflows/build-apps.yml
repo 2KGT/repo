@@ -1,4 +1,4 @@
-name: Build Multi Apps (Modular Injector)
+name: Build Multi Apps
 
 on:
   workflow_dispatch:
