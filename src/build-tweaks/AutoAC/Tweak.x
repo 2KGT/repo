@@ -1,85 +1,143 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import <Photos/Photos.h>
 
-// --- KHAI BÁO THEO PHONG CÁCH IDA ---
+// =========================================================
+// 💎 KHAI BÁO INTERFACE (Sửa lỗi biên dịch)
+// =========================================================
+@interface YTAdSlotContainerView : UIView
+@end
+
+@interface YTSlimVideoMetadataSectionView : UIView
+@end
+
 @interface YTHeaderLogoView : UIView
-@property(retain, nonatomic) UIView *logoButton; // YouTube thường bọc logo trong một button
+@end
+
+@interface YTVideoOverlayView : UIView
 @end
 
 @interface YTSettingsSectionItem : NSObject
 + (instancetype)itemWithTitle:(NSString *)title titleDescription:(NSString *)desc accessibilityIdentifier:(id)arg3 detailTextBlock:(id)arg4 selectBlock:(BOOL (^)(id))block;
 @end
 
-// Khai báo thêm để xử lý Menu Cài đặt
 @interface YTSettingsViewController : UIViewController
 - (void)setSectionItems:(NSMutableArray *)items forCategory:(NSInteger)category title:(NSString *)title titleDescription:(NSString *)desc;
 @end
 
+// --- BIẾN TOÀN CỤC ---
+static BOOL kRemoveAds = YES;
+static BOOL kFastDownload = NO;
+static NSString *kLastStatus = @"Hệ thống sẵn sàng";
+
 // =========================================================
-// ⚙️ FIX CÀI ĐẶT (HOOK TRỰC TIẾP VÀO DATA SOURCE)
+// 🚫 DIỆT QUẢNG CÁO & BANNER BÁN HÀNG
+// =========================================================
+
+%hook YTAdSlotContainerView
+- (void)layoutSubviews { if (kRemoveAds) return; %orig; }
+- (void)setHidden:(BOOL)hidden { %orig(kRemoveAds ? YES : hidden); }
+%end
+
+%hook YTSlimVideoMetadataSectionView
+- (void)layoutSubviews { 
+    %orig; 
+    if (kRemoveAds) {
+        for (UIView *sub in self.subviews) {
+            if ([NSStringFromClass([sub class]) containsString:@"Promotion"]) {
+                [sub setHidden:YES];
+            }
+        }
+    }
+}
+%end
+
+// =========================================================
+// 📥 NÚT TẢI THÔNG MINH (BÊN PHẢI TRÊN)
+// =========================================================
+
+%hook YTVideoOverlayView
+- (void)layoutSubviews {
+    %orig;
+    UIButton *dlBtn = [self viewWithTag:999];
+    if (!dlBtn) {
+        dlBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+        dlBtn.tag = 999;
+        [dlBtn setImage:[UIImage systemImageNamed:@"arrow.down.to.line.circle.fill"] forState:UIControlStateNormal];
+        dlBtn.tintColor = [UIColor whiteColor];
+        dlBtn.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.3];
+        dlBtn.layer.cornerRadius = 18;
+        dlBtn.frame = CGRectMake(self.frame.size.width - 55, 65, 36, 36);
+        [dlBtn addTarget:self action:@selector(handleAutoACDownload) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:dlBtn];
+    }
+}
+
+%new
+- (void)handleAutoACDownload {
+    if (kFastDownload) {
+        kLastStatus = @"Đang tải nhanh 1080p...";
+        // Thực thi tải ngay
+    } else {
+        UIAlertController *picker = [UIAlertController alertControllerWithTitle:@"Tùy chọn AutoAC" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+        [picker addAction:[UIAlertAction actionWithTitle:@"Tải Video 1080p" style:UIAlertActionStyleDefault handler:^(id a){ kLastStatus = @"Đang tải Video..."; }]];
+        [picker addAction:[UIAlertAction actionWithTitle:@"Tải Âm thanh (MP3)" style:UIAlertActionStyleDefault handler:^(id a){ kLastStatus = @"Đang tải MP3..."; }]];
+        [picker addAction:[UIAlertAction actionWithTitle:@"Hủy" style:UIAlertActionStyleCancel handler:nil]];
+        
+        UIViewController *top = [UIApplication sharedApplication].keyWindow.rootViewController;
+        while (top.presentedViewController) top = top.presentedViewController;
+        [top presentViewController:picker animated:YES completion:nil];
+    }
+}
+%end
+
+// =========================================================
+// ⚙️ CÀI ĐẶT NATIVE & NHẤN GIỮ LOGO
 // =========================================================
 
 %hook YTSettingsViewController
 - (void)setSectionItems:(NSMutableArray *)items forCategory:(NSInteger)category title:(NSString *)title titleDescription:(NSString *)desc {
-    // Chèn vào mục "General" (Thường là category 1)
-    if (category == 1) {
-        YTSettingsSectionItem *autoACItem = [%c(YTSettingsSectionItem) 
-            itemWithTitle:@"AutoAC" 
-            titleDescription:@"Cấu hình tải & dọn dẹp" 
-            accessibilityIdentifier:nil 
-            detailTextBlock:nil 
-            selectBlock:^BOOL(id arg1) {
-                // Hiện menu cài đặt gọn gàng
+    if (category == 1 || [title isEqualToString:@"General"] || [title isEqualToString:@"Chung"]) {
+        Class itemClass = NSClassFromString(@"YTSettingsSectionItem");
+        if (itemClass) {
+            YTSettingsSectionItem *autoAC = [itemClass itemWithTitle:@"Cài đặt AutoAC" titleDescription:@"Cấu hình tải & dọn rác" accessibilityIdentifier:nil detailTextBlock:nil selectBlock:^BOOL(id arg1) {
                 return YES;
             }];
-        [items addObject:autoACItem];
+            [items addObject:autoAC];
+        }
     }
     %orig(items, category, title, desc);
 }
 %end
 
-// =========================================================
-// 💎 FIX NHẤN GIỮ (WAKE-UP CƯỠNG BỨC)
-// =========================================================
-
 %hook YTHeaderLogoView
-- (void)didMoveToWindow {
+- (void)layoutSubviews {
     %orig;
-    if (self.window) {
-        self.userInteractionEnabled = YES;
-        // YouTube hay dùng một lớp subview để nhận tap, ta hook vào đó
-        for (UIView *sub in self.subviews) {
-            sub.userInteractionEnabled = NO; // Tắt bớt cản trở nếu cần
-        }
-        
-        // Thêm Gesture trực tiếp vào View chính
-        UILongPressGestureRecognizer *lp = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleAutoACLongPress:)];
+    self.userInteractionEnabled = YES;
+    static BOOL gestureAdded = NO;
+    if (!gestureAdded) {
+        UILongPressGestureRecognizer *lp = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleAutoACReview)];
         lp.minimumPressDuration = 0.7;
         [self addGestureRecognizer:lp];
+        gestureAdded = YES;
     }
 }
 
 %new
-- (void)handleAutoACLongPress:(UILongPressGestureRecognizer *)sender {
-    if (sender.state == UIGestureRecognizerStateBegan) {
-        // Rung nhẹ phản hồi
-        UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium];
-        [haptic impactOccurred];
-        
-        // Hiện trạng thái cuối (HUD)
-        NSLog(@"[AutoAC] Logo Pressed!");
-        // Gọi hàm updateHUD của bạn ở đây
-    }
+- (void)handleAutoACReview {
+    // Rung nhẹ và hiện thông báo trạng thái tải cuối cùng
+    UIImpactFeedbackGenerator *haptic = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium];
+    [haptic impactOccurred];
+    // Hiển thị HUD thông báo kLastStatus tại đây
 }
 %end
 
 // =========================================================
-// 🚀 CONSTRUCTOR (BẮT BUỘC)
+// 🚀 KHỞI CHẠY TWEAK
 // =========================================================
 
 %ctor {
-    // Đảm bảo YouTube đã load xong class
-    %init(YTHeaderLogoView = objc_getClass("YTHeaderLogoView") ?: objc_getClass("YTRightAlignedHeaderLogoView"),
-          YTSettingsViewController = objc_getClass("YTSettingsViewController"),
-          YTSettingsSectionItem = objc_getClass("YTSettingsSectionItem"));
+    %init(YTSettingsViewController = NSClassFromString(@"YTSettingsViewController"),
+          YTHeaderLogoView = NSClassFromString(@"YTHeaderLogoView") ?: NSClassFromString(@"YTRightAlignedHeaderLogoView"),
+          YTVideoOverlayView = NSClassFromString(@"YTVideoOverlayView"));
 }
