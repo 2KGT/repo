@@ -45,16 +45,23 @@ jobs:
           mkdir -p $THEOS/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: 🚚 Tự động xây kho Header tại Root
+      - name: 🚚 Tự động xây kho & Dọn nhiễu Header
         run: |
-          # Tạo cấu trúc kho ngay tại Root của máy ảo
+          # 1. Tạo cấu trúc kho ngay tại Root của máy ảo
           mkdir -p headers/YouTube
           mkdir -p headers/Shared
+          mkdir -p headers/YTIcons
           
-          # "Hút" bộ nồi PoomSmart về kho
+          # 2. "Hút" các bộ nồi PoomSmart về kho
           curl -L https://github.com/PoomSmart/YouTubeHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/YouTube
           curl -L https://github.com/PoomSmart/PSHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/Shared
-          echo "✅ Đã chuẩn bị xong kho Header tại: $(pwd)/headers"
+          curl -L https://github.com/PoomSmart/YTIcons/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/YTIcons
+          
+          # 3. QUÉT RÁC: Xóa sạch các folder gây xung đột với Framework hệ thống của Apple
+          find headers -type d -name "CoreImage" -exec rm -rf {} +
+          find headers -type d -name "QuartzCore" -exec rm -rf {} +
+          find headers -type d -name "UIKit" -exec rm -rf {} +
+          echo "✅ Đã dọn dẹp xong xung đột Header!"
 
       - name: ⚙️ Build Logic (Smart Versioning)
         id: metadata
@@ -77,10 +84,10 @@ jobs:
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
           find "$DIR" -maxdepth 10 -not -path '*/.*' -exec touch -t $(date +%Y%m%d%H%M.%S) {} + || true
           
-          # BUILD VỚI ĐƯỜNG DẪN HEADER TỚI ROOT (Dùng ../../ vì dự án nằm sâu trong src)
+          # 🚀 BUILD VỚI HỆ THỐNG HEADER ĐÃ CÁCH LY (Dùng -isystem thay vì -I)
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
-            ADDITIONAL_CFLAGS="-I$(pwd)/headers/YouTube -I$(pwd)/headers/Shared -Wno-deprecated-declarations -Wno-error"
+            ADDITIONAL_CFLAGS="-Wno-deprecated-declarations -Wno-error -isystem $(pwd)/headers/YouTube -isystem $(pwd)/headers/Shared -isystem $(pwd)/headers/YTIcons -DTHEOS_LEAN_AND_MEAN"
           
           mkdir -p deb_output
           find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
@@ -88,7 +95,9 @@ jobs:
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
-          echo "deb_file=$(basename $(ls deb_output/*.deb | head -n 1))" >> $GITHUB_OUTPUT
+          
+          DEB_FILE=$(basename $(ls deb_output/*.deb | head -n 1))
+          echo "deb_file=$DEB_FILE" >> $GITHUB_OUTPUT
 
       - name: 💾 Lưu file Test (Artifacts)
         uses: actions/upload-artifact@v4
@@ -106,10 +115,12 @@ jobs:
           dpkg-scanpackages -m debs /dev/null > Packages
           bzip2 -fks Packages
           
-          # ... (Phần tạo JSON và Commit giữ nguyên như cũ) ...
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
+          
+          # Dọn dẹp trước khi commit
           rm -rf deb_output/ theos/ .theos/ headers/
+          
           git add .
           git commit -m "🚀 Release ${{ steps.metadata.outputs.safe_name }} v${{ steps.metadata.outputs.proj_ver }}" || exit 0
           git pull --rebase origin main
