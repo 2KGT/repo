@@ -34,24 +34,25 @@ jobs:
 
       - name: 🕒 Cài đặt múi giờ Hà Nội (ICT)
         run: |
-          sudo setup-timezone -z Asia/Ho_Chi_Minh || true
-          export TZ="Asia/Ho_Chi_Minh"
+          # Thiết lập múi giờ cho môi trường shell
+          sudo ln -sf /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/localtime
           echo "Thời gian hiện tại: $(date)"
 
       - name: 🛠️ Setup Toolchain (Theos)
         uses: randomblock1/theos-action@v1
 
-      - name: ⚙️ Build Logic (Smart Versioning & Fix Size)
+      - name: ⚙️ Build Logic (Smart Versioning & Internal Time Fix)
         id: metadata
         run: |
           DP_NAME="${{ github.event.inputs.project }}"
           if [ "$DP_NAME" = "(none)" ]; then exit 1; fi
           
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
+          if [ -z "$CTRL" ]; then echo "❌ Không tìm thấy dự án!"; exit 1; fi
+          
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
-          # Đọc Version sạch từ GitHub
           RAW_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           
           if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then
@@ -59,19 +60,19 @@ jobs:
               IFS='.' read -r i1 i2 i3 <<< "$RAW_VER"
               NEW_VER="$i1.$i2.$((i3 + 1))"
           else
-              # TẠO VƠ TEST TẠM THỜI (Dấu mốc thời gian HHMM)
-              TIME_STAMP=$(date +%H%M)
-              NEW_VER="$RAW_VER-test$TIME_STAMP"
+              # TẠO VƠ TEST (Dấu thời gian HHMM)
+              NEW_VER="$RAW_VER-test$(date +%H%M)"
           fi
           
-          # Cập nhật tạm thời vào file để Build
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
           
-          # Ép thời gian file nội bộ về giờ VN trước khi đóng gói
-          find . -exec touch -t $(date +%Y%m%d%H%M.%S) {} +
+          # ✅ FIX LỖI EXIT CODE 1: Chỉ chạm vào file trong dự án, bỏ qua lỗi nếu có file symlink hỏng
+          find "$DIR" -maxdepth 10 -not -path '*/.*' -exec touch -t $(date +%Y%m%d%H%M.%S) {} + || true
           
           make -C "$DIR" clean package FINALPACKAGE=1
-          mkdir -p deb_output && find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
+          
+          mkdir -p deb_output
+          find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
           
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
@@ -85,7 +86,6 @@ jobs:
           path: deb_output/*.deb
           retention-days: 3
 
-      ## --- CHỈ CHẠY NẾU CHỌN PUBLISH ---
       - name: 🚀 Cập nhật & Giao hàng (Chỉ khi Publish)
         if: github.event.inputs.publish == 'true'
         run: |
@@ -93,7 +93,8 @@ jobs:
           mkdir -p debs depictions/images icons
           cp -v deb_output/*.deb debs/
           
-          # FIX LỖI SIZE 0.0 MB: Sử dụng đường dẫn tương đối để tính toán Size chính xác
+          # QUÉT FILE CHUẨN ĐỂ HIỆN DUNG LƯỢNG (Fix lỗi 0.0 MB)
+          # Lưu ý dùng 'debs' thay vì './debs' để dpkg-scanpackages ghi đường dẫn đẹp hơn
           dpkg-scanpackages -m debs /dev/null > Packages
           bzip2 -fks Packages
           
@@ -110,33 +111,29 @@ jobs:
             "description": "$DESC",
             "icon": "${URL}/icons/${SAFE}.png",
             "banner": "${URL}/depictions/images/${SAFE}-banner.png",
-            "video": "${URL}/depictions/images/${SAFE}.mp4",
             "screenshots": [
               "${URL}/depictions/images/${SAFE}1.png",
-              "${URL}/depictions/images/${SAFE}2.png",
-              "${URL}/depictions/images/${SAFE}3.png"
+              "${URL}/depictions/images/${SAFE}2.png"
             ],
             "downloads": "${URL}/debs/${{ steps.metadata.outputs.deb_file }}",
-            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "• Phát hành chính thức bản build mới nhất"}]
+            "changelog": [{"version": "${{ steps.metadata.outputs.proj_ver }}", "changes": "• Phát hành bản build chính thức (ICT)"}]
           }
           EOF
 
-          # Đẩy lên GitHub sạch sẽ
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          DIR="${{ steps.metadata.outputs.proj_dir }}"
-          rm -rf deb_output/ theos/ .theos/ "$DIR/packages" "$DIR/.theos" "$DIR/obj"
+          
+          # Xóa các thư mục build để git sạch
+          rm -rf deb_output/ theos/ .theos/
           
           git add .
           git commit -m "🚀 Release $SAFE v${{ steps.metadata.outputs.proj_ver }}" || exit 0
-          git fetch origin main
-          git reset --soft origin/main
-          git add .
-          git commit --amend --no-edit || git commit -m "Update Repo"
-          git push origin main --force
+          
+          # Push an toàn: Fetch trước khi push để tránh xung đột
+          git pull --rebase origin main
+          git push origin main
 
       - name: 🧹 Vệ sinh
         if: always()
         run: |
           rm -rf deb_output/ .theos/ obj/
-          echo "Hoàn tất lúc: $(date)"
