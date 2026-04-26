@@ -8,10 +8,7 @@ on:
         required: true
         type: choice
         default: '(none)'
-        options:
-          - '(none)'
-          - 'AutoAC'
-          - 'AutoDL'
+        options: [ (none), AutoAC, AutoDL ]
       publish:
         description: 'Phát hành releases Sileo'
         type: boolean
@@ -29,13 +26,6 @@ jobs:
     steps:
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: 🕒 Cài đặt múi giờ Hà Nội (ICT)
-        run: |
-          sudo ln -sf /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/localtime
-          echo "Thời gian hiện tại: $(date)"
 
       - name: 🛠️ Setup Toolchain (Theos)
         uses: randomblock1/theos-action@v1
@@ -45,84 +35,62 @@ jobs:
           mkdir -p $THEOS/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: 🚚 Tự động xây kho & Dọn nhiễu Header
+      - name: 🚚 Xây kho Header phân khu
         run: |
-          # 1. Tạo cấu trúc gian hàng riêng biệt
-          mkdir -p headers/YouTube
-          mkdir -p headers/Shared
-          mkdir -p headers/YTIcons
-          
-          # 2. Hút hàng về đúng gian hàng (strip-components=1 để lấy ruột bỏ vỏ)
+          # Tạo kho ngay tại thư mục hiện tại (root của runner)
+          mkdir -p headers/YouTube headers/Shared headers/YTIcons
           curl -L https://github.com/PoomSmart/YouTubeHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/YouTube
           curl -L https://github.com/PoomSmart/PSHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/Shared
           curl -L https://github.com/PoomSmart/YTIcons/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/YTIcons
           
-          # 3. QUÉT RÁC: Xóa sạch các thư mục gây xung đột module hệ thống
+          # Dọn rác
           find headers -type d -name "CoreImage" -exec rm -rf {} +
           find headers -type d -name "QuartzCore" -exec rm -rf {} +
           find headers -type d -name "UIKit" -exec rm -rf {} +
-          echo "✅ Đã quy hoạch xong siêu thị Header!"
 
-      - name: ⚙️ Build Logic (Smart Versioning)
+      - name: ⚙️ Build Logic
         id: metadata
         run: |
           DP_NAME="${{ github.event.inputs.project }}"
-          if [ "$DP_NAME" = "(none)" ]; then exit 1; fi
-          
+          [ "$DP_NAME" = "(none)" ] && exit 1
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
-          
           RAW_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
-          if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then
-              IFS='.' read -r i1 i2 i3 <<< "$RAW_VER"
-              NEW_VER="$i1.$i2.$((i3 + 1))"
-          else
-              NEW_VER="$RAW_VER-test$(date +%H%M)"
-          fi
-          
+          NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$RAW_VER" || echo "$RAW_VER-test$(date +%H%M)")
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
-          find "$DIR" -maxdepth 10 -not -path '*/.*' -exec touch -t $(date +%Y%m%d%H%M.%S) {} + || true
           
-          # 🚀 CÚ CHỐT: Chỉ trỏ vào cửa kho tổng /headers
-          # Code của cậu gọi <YouTube/File.h> sẽ tự động tìm thấy /headers/YouTube/File.h
+          # 🚀 ĐÂY LÀ DÒNG SỬA LỖI: Dùng đường dẫn đầy đủ $GITHUB_WORKSPACE
+          # Nó ép nhà máy phải nhìn thấy thư mục headers bất kể dự án nằm sâu thế nào
+          HEADER_PATH="$GITHUB_WORKSPACE/headers"
+          
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
-            ADDITIONAL_CFLAGS="-Wno-deprecated-declarations -Wno-error -isystem $(pwd)/headers -DTHEOS_LEAN_AND_MEAN"
+            ADDITIONAL_CFLAGS="-isystem $HEADER_PATH -Wno-error -DTHEOS_LEAN_AND_MEAN"
           
           mkdir -p deb_output
-          find "$DIR/packages" -name "*.deb" -exec cp {} deb_output/ \;
-          
+          cp "$DIR/packages/"*.deb deb_output/
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
-          
-          DEB_FILE=$(basename $(ls deb_output/*.deb | head -n 1))
-          echo "deb_file=$DEB_FILE" >> $GITHUB_OUTPUT
 
-      - name: 💾 Lưu file Test (Artifacts)
+      - name: 💾 Lưu file Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.metadata.outputs.safe_name }}-v${{ steps.metadata.outputs.proj_ver }}
           path: deb_output/*.deb
-          retention-days: 3
 
-      - name: 🚀 Cập nhật & Giao hàng (Chỉ khi Publish)
+      - name: 🚀 Giao hàng Sileo
         if: github.event.inputs.publish == 'true'
         run: |
           brew install dpkg
-          mkdir -p debs depictions/images icons
-          cp -v deb_output/*.deb debs/
+          mkdir -p debs
+          cp deb_output/*.deb debs/
           dpkg-scanpackages -m debs /dev/null > Packages
           bzip2 -fks Packages
-          
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          
-          # Dọn dẹp môi trường trước khi commit
-          rm -rf deb_output/ theos/ .theos/ headers/
-          
+          rm -rf deb_output/ headers/
           git add .
-          git commit -m "🚀 Release ${{ steps.metadata.outputs.safe_name }} v${{ steps.metadata.outputs.proj_ver }}" || exit 0
-          git pull --rebase origin main
+          git commit -m "🚀 Release ${{ steps.metadata.outputs.safe_name }}" || exit 0
           git push origin main
