@@ -6,7 +6,6 @@
 #import <YouTube/YTSettingsSectionItemManager.h>
 #import <YouTube/YTSettingsGroupData.h>
 
-
 // ID định danh duy nhất (AACP = AutoAC Prefs)
 static const NSInteger AutoACSection = 'aacp';
 
