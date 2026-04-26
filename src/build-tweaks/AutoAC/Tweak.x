@@ -99,7 +99,24 @@ static void loadPrefs() {
         [picker addAction:[UIAlertAction actionWithTitle:@"Tải MP3" style:UIAlertActionStyleDefault handler:^(id a){ kLastStatus = @"Đang tải MP3..."; }]];
         [picker addAction:[UIAlertAction actionWithTitle:@"Hủy" style:UIAlertActionStyleCancel handler:nil]];
         
-        UIViewController *top = [UIApplication sharedApplication].keyWindow.rootViewController;
+        UIWindow *window = nil;
+if (@available(iOS 13.0, *)) {
+    for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+        if (scene.activationState == UISceneActivationStateForegroundActive) {
+            for (UIWindow *w in scene.windows) {
+                if (w.isKeyWindow) {
+                    window = w;
+                    break;
+                }
+            }
+        }
+        if (window) break;
+    }
+}
+if (!window) window = [UIApplication sharedApplication].keyWindow;
+UIViewController *top = window.rootViewController;
+
+
         while (top.presentedViewController) top = top.presentedViewController;
         [top presentViewController:picker animated:YES completion:nil];
     }
