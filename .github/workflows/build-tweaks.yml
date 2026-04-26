@@ -1,20 +1,21 @@
-name: Build Multi Tweak
+name: Build Multi Tweak (2KGT Full Automation)
 
 on:
   workflow_dispatch:
     inputs:
       project:
-        description: 'Chọn dự án cần Build'
+        description: 'Chọn dự án cần luyện đan'
         required: true
         type: choice
         default: '(none)'
         options: [ (none), AutoAC, AutoDL ]
       publish:
-        description: 'Phát hành releases Sileo'
+        description: 'Phát hành & Trưng bày Sileo'
         type: boolean
         default: false
 
 env:
+  BASE_URL: "https://raw.githubusercontent.com/2KGT/repo/main"
   TZ: "Asia/Ho_Chi_Minh"
 
 jobs:
@@ -23,47 +24,92 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: 📥 Checkout Repository
+      - name: 📥 Checkout & Setup
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: 🛠️ Setup Toolchain (Theos)
+      - name: 🛠️ Setup Toolchain (Theos & SDK)
         uses: randomblock1/theos-action@v1
 
-      - name: 📦 Tải Patched SDK (iOS 14.5)
+      - name: 📦 Setup SDK iOS 14.5
         run: |
           mkdir -p $THEOS/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: 🚚 Xây kho Header chuẩn YouTubeHeader
+      - name: 🚚 Đồng bộ Header chính chủ (2KGT Fork)
         run: |
-          # Tạo kho theo đúng tên tác giả yêu cầu trong hình
-          mkdir -p headers/YouTubeHeader
-          mkdir -p headers/Shared
-          
-          curl -L https://github.com/PoomSmart/YouTubeHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/YouTubeHeader
+          mkdir -p headers/YouTubeHeader headers/Shared
+          git clone --depth 1 https://github.com/2KGT/YouTubeHeader headers/YouTubeHeader
           curl -L https://github.com/PoomSmart/PSHeader/archive/master.tar.gz | tar -xz --strip-components=1 -C headers/Shared
-          
-          # Dọn rác module hệ thống
+          # Quét rác để tránh xung đột hệ thống
           find headers -type d -name "CoreImage" -exec rm -rf {} +
           find headers -type d -name "QuartzCore" -exec rm -rf {} +
           find headers -type d -name "UIKit" -exec rm -rf {} +
 
-      - name: ⚙️ Build Logic
+      - name: ⚙️ Băm Nhào & Gán 4 Loại Ảnh (Automation)
         id: metadata
         run: |
           DP_NAME="${{ github.event.inputs.project }}"
           [ "$DP_NAME" = "(none)" ] && exit 1
+          
+          # 1. Tìm File Control & Lấy thông tin
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
+          DESC=$(grep "^Description:" "$CTRL" | cut -d: -f2- | sed 's/^ *//')
+          
+          # 2. Xử lý Version (Tăng bậc tự động)
           RAW_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
-          NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$RAW_VER" || echo "$RAW_VER-test$(date +%H%M)")
+          if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then
+              IFS='.' read -r i1 i2 i3 <<< "$RAW_VER"
+              NEW_VER="$i1.$i2.$((i3 + 1))"
+          else
+              NEW_VER="$RAW_VER-test$(date +%H%M)"
+          fi
+          
+          # 3. Ghi ngược Control & Gán Link Ảnh
+          IMG_PATH="${{ env.BASE_URL }}/depictions/images/${SAFE}"
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
+          sed -i '' "/^SileoDepiction:/d" "$CTRL"
+          sed -i '' "/^Icon:/d" "$CTRL"
+          echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
+          echo "Icon: ${{ env.BASE_URL }}/icons/${SAFE}.png" >> "$CTRL"
           
-          # Copy kho vào sát nách dự án để Theos tìm thấy dễ nhất
+          # 4. Tự động xây gian hàng Sileo (Depiction JSON)
+          mkdir -p depictions/images
+          cat <<EOF > "depictions/${SAFE}.json"
+          {
+            "min_ios_version": "14.0",
+            "headerImage": "${IMG_PATH}_header.png",
+            "tintColor": "#ff2d55",
+            "tabs": [
+              {
+                "tabname": "Chi tiết",
+                "class": "DepictionStackView",
+                "views": [
+                  { "class": "DepictionHeaderView", "title": "$DP_NAME" },
+                  { "class": "DepictionSubheaderView", "title": "Phiên bản $NEW_VER" },
+                  { 
+                    "class": "DepictionScreenshotsView", 
+                    "screenshots": [
+                      { "url": "${IMG_PATH}_ss1.png", "accessibilityText": "SS1" },
+                      { "url": "${IMG_PATH}_ss2.png", "accessibilityText": "SS2" }
+                    ],
+                    "itemCornerRadius": 10
+                  },
+                  { "class": "DepictionMarkdownView", "markdown": "### Giới thiệu\n$DESC\n\n--- \n### Nhật ký\n- Tự động hóa bởi 2KGT Factory.\n- Cập nhật bộ tứ link ảnh." },
+                  { "class": "DepictionBannerView", "bannerImage": "${IMG_PATH}_banner.png" },
+                  { "class": "DepictionSpacerView" },
+                  { "class": "DepictionButtonView", "text": "Hỗ trợ Telegram", "action": "https://t.me/your_telegram" }
+                ]
+              }
+            ]
+          }
+          EOF
+          
+          # 5. Build (Sử dụng Header chính chủ)
           cp -R headers "$DIR/"
-          
-          # BUILD: Trỏ vào cửa kho tổng
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
             ADDITIONAL_CFLAGS="-isystem headers -Wno-error -DTHEOS_LEAN_AND_MEAN"
@@ -71,11 +117,19 @@ jobs:
           mkdir -p deb_output
           cp "$DIR/packages/"*.deb deb_output/
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
-          echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
 
-      - name: 💾 Lưu file Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.metadata.outputs.safe_name }}-v${{ steps.metadata.outputs.proj_ver }}
-          path: deb_output/*.deb
+      - name: 🚀 Lên Kệ & Đồng bộ Repo
+        if: github.event.inputs.publish == 'true'
+        run: |
+          brew install dpkg
+          mkdir -p debs icons depictions/images
+          cp deb_output/*.deb debs/
+          dpkg-scanpackages -m debs /dev/null > Packages
+          bzip2 -fks Packages
+          git config user.name "github-actions[bot]"
+          git config user.email "actions@github.com"
+          rm -rf headers/
+          git add .
+          git commit -m "🌟 [Auto] Lên kệ ${{ steps.metadata.outputs.safe_name }} v${{ steps.metadata.outputs.proj_ver }}"
+          git push origin main
