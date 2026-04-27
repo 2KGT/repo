@@ -1,5 +1,5 @@
-        @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; 
-        @protocol NSObject, NSCopying, NSCoding;
+    @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; 
+    @protocol NSObject, NSCopying, NSCoding;
 @interface YTSettingsViewController : YTStyledViewController <YTFusedSettingsServiceSessionDelegate, YTNavigationControllerDelegate, YTAppSettingsSectionItemDataDelegate, YTAppSettingsViewControllerDelegate, YTSearchHistoryStatusObserver, YTSeparatorCollectionViewDelegateFlowLayout, YTWatchHistoryStatusObserver, YTWrapperSplitViewControllerContent, UIGestureRecognizerDelegate, YTScreenGraftViewController, YTGraftingViewController> {
     /* instance variables */
     YTCollectionViewController *_collectionViewController;
