@@ -1,4 +1,4 @@
-name: 2KGT Anti-404 Dump Factory
+name: Anti-Permission Dump Factory
 
 on:
   workflow_dispatch:
@@ -22,62 +22,64 @@ jobs:
         uses: actions/checkout@v4
 
       # ==========================================
-      # BƯỚC 1: TỰ BUILD DSDUMP (ĐẢM BẢO 100% CÓ TOOL)
+      # BƯỚC 1: TỰ XÂY DỰNG CÔNG CỤ (KHÔNG DÙNG LINK TẢI)
       # ==========================================
       - name: 🛠️ Build dsdump from Source
         run: |
-          echo "--- ĐANG TỰ BUILD CÔNG CỤ GIẢI PHẪU ---"
-          # Tải mã nguồn gốc từ GitHub (Link git clone này không bao giờ 404)
+          echo "--- ĐANG TỰ RÈN DAO MỔ DSDUMP ---"
+          # Tải mã nguồn công khai (Link này ai cũng có quyền clone)
           git clone --recursive https://github.com/DerekSelander/dsdump.git dsdump_src
           cd dsdump_src
           
-          # Dùng lệnh của Apple để tự đóng gói file thực thi
+          # Dùng máy ảo macOS tự biên dịch ra file chạy
           xcodebuild -project dsdump.xcodeproj -scheme dsdump -configuration Release -derivedDataPath build_folder
           
-          # Lấy file vừa tạo ra đưa vào hệ thống
+          # Đưa file vừa rèn xong vào hệ thống để dùng
           sudo cp build_folder/Build/Products/Release/dsdump /usr/local/bin/
           
           cd ..
           rm -rf dsdump_src
-          echo "✅ Đã rèn xong dsdump!"
+          echo "✅ Đã rèn xong dao mổ dsdump!"
           dsdump --version
 
       # ==========================================
-      # BƯỚC 2: TẢI IPA
+      # BƯỚC 2: TIẾP NHẬN BỆNH NHÂN (IPA)
       # ==========================================
       - name: 📦 Download & Extract IPA
         run: |
-          echo "--- ĐANG TẢI BỆNH NHÂN (IPA) ---"
+          echo "--- ĐANG TẢI IPA ---"
           curl -L -A "Mozilla/5.0" "${{ github.event.inputs.ipa_url }}" -o app.ipa
           unzip -q app.ipa -d app_extracted
 
       - name: 🔍 Locate Binary
         id: locate
         run: |
-          # Tìm file lõi bên trong Payload
+          # Tìm "trái tim" của App bên trong Payload
           BINARY_PATH=$(find app_extracted/Payload -name "*.app" | head -n 1)
           APP_NAME=$(basename "$BINARY_PATH" .app)
           echo "binary=$BINARY_PATH/$APP_NAME" >> $GITHUB_OUTPUT
+          echo "🎯 Đã xác định mục tiêu: $APP_NAME"
 
       # ==========================================
-      # BƯỚC 3: GIẢI PHẪU & DỌN DẸP
+      # BƯỚC 3: GIẢI PHẪU & BOT PHÂN LOẠI
       # ==========================================
-      - name: ⚡ Dumping & Cleaning
+      - name: ⚡ Full Dumping & Cleaning
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           mkdir -p "$TARGET_DIR"
+          rm -rf "$TARGET_DIR"/*
           
-          # Nã Header
+          echo "🚀 Đang mổ xẻ lấy Header..."
           dsdump --objc --swift -f public --gen-header -o "$TARGET_DIR" "${{ steps.locate.outputs.binary }}"
           
-          # Bot dọn dẹp: Quét sạch folder rác, đưa file .h về mặt tiền
+          echo "🤖 Bot đang dọn dẹp hiện trường..."
+          # Lôi toàn bộ file .h về thư mục chính, xóa đống folder rác
           find "$TARGET_DIR" -mindepth 2 -type f -name "*.h" -exec mv {} "$TARGET_DIR/" \;
           find "$TARGET_DIR" -type d -empty -delete
           find "$TARGET_DIR" -type f ! -name "*.h" -delete
-          echo "✅ Đã dọn dẹp xong thành phẩm."
 
       # ==========================================
-      # BƯỚC 4: ĐẨY LÊN REPO
+      # BƯỚC 4: XUẤT XƯỞNG THÀNH PHẨM
       # ==========================================
       - name: 🚀 Commit & Push
         run: |
@@ -86,9 +88,9 @@ jobs:
           git add "headers/${{ github.event.inputs.app_name }}"
           
           if git diff --staged --quiet; then
-            echo "💎 Không có gì mới để cập nhật."
+            echo "💎 Không có thay đổi nào."
           else
             git commit -m "🪄 [2KGT] Dumped: ${{ github.event.inputs.app_name }}"
             git push origin main
-            echo "🎉 Xong! Check Repo đi ông ơi."
+            echo "🎉 CA PHẪU THUẬT THÀNH CÔNG RỰC RỠ!"
           fi
