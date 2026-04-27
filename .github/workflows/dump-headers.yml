@@ -1,4 +1,4 @@
-name: 2KGT Header Factory
+name: Dump Header Factory
 
 on:
   workflow_dispatch:
