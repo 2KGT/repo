@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ipa_url:
-        description: '🔗 Link ipa decrypt'
+        description: '🔗 Link IPA Decrypt'
         required: true
         type: string
       app_name:
@@ -13,17 +13,15 @@ on:
         default: 'YouTubeHeader'
         type: string
       target_classes:
-        description: '🎯 Nhập class 
-  (cách nhau bằng dấu cách)'
+        description: '🎯 Nhập Class (cách nhau bằng dấu cách)'
         required: false
         type: string
       config_path:
-        description: '📄 Đường dẫn file .txt
-  (Dự án cần dump)'
+        description: '📄 Đường dẫn file .txt (Dự án)'
         required: false
         type: string
       smart_filter:
-        description: '✨ Chế độ Sàng lọc Vàng'
+        description: '✨ Chế độ Sàng Lọc Vàng'
         type: boolean
         default: true
 
@@ -32,7 +30,7 @@ jobs:
     runs-on: macos-latest
     permissions:
       contents: write
-   steps:
+    steps:
       - name: 📥 Checkout Repo
         uses: actions/checkout@v4
 
@@ -62,18 +60,16 @@ jobs:
           if [ -z "$CLASSES" ] && [ -n "${{ github.event.inputs.config_path }}" ]; then
               if [ -f "${{ github.event.inputs.config_path }}" ]; then
                   echo "📝 Đang đọc danh sách từ file: ${{ github.event.inputs.config_path }}"
-                  # Đọc file, xóa đuôi .h và gom thành 1 dòng cách nhau bởi dấu cách
                   CLASSES=$(tr '\r\n' ' ' < "${{ github.event.inputs.config_path }}" | sed 's/\.h//g')
               fi
           fi
 
-          # 🔥 THỰC THI DUMP (Sửa lỗi cờ --filter thành --class)
+          # 🔥 THỰC THI DUMP
           if [ -n "$CLASSES" ]; then
               echo "🎯 Chế độ gắp thú mục tiêu cho các class..."
               for CLS in $CLASSES; do
                   [ -z "$CLS" ] && continue
                   echo "  -> Trích xuất class: $CLS"
-                  # SỬA TẠI ĐÂY: --filter đổi thành --class
                   ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers --class "$CLS" -o "$TEMP_DUMP"
               done
           else
@@ -94,10 +90,6 @@ jobs:
 
           rm -rf "$TEMP_DUMP" app_extracted
           echo "📦 Kho hàng thành phẩm: $(ls -1 "$TARGET_DIR" | wc -l) file."
-fi
-
-          rm -rf "$TEMP_DUMP" app_extracted
-          echo "📦 Hoàn tất! Kho hàng có: $(ls -1 "$TARGET_DIR" | wc -l) file."
 
       - name: 🚀 Commit & Push
         run: |
