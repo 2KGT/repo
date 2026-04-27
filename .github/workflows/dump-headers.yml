@@ -24,6 +24,10 @@ on:
         description: '🗑️ Tên file .h muốn xoá'
         required: false
         type: string
+      deep_scan:
+        description: '📂 Dump lấy cả file con'
+        type: boolean
+        default: true
       smart_filter:
         description: '✨ Sàng lọc Swift, Apple'
         type: boolean
@@ -56,7 +60,7 @@ jobs:
           BIN=$(find app_extracted/Payload -name "*.app" | head -n 1)
           echo "binary=$BIN/$(basename "$BIN" .app)" >> $GITHUB_OUTPUT
 
-      - name: ⚡ Smart Dumping & Targeted Management
+      - name: ⚡ Smart Dumping & Deep Collection
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           TEMP_DUMP="temp_headers"
@@ -100,27 +104,37 @@ jobs:
                   ' "$TEMP_DUMP/$CLS.h"
               done
           else
-              echo "🌊 Dump All..."
+              echo "🌊 Dump All (Fallback)..."
               ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers -o "$TEMP_DUMP"
           fi
 
-          # 5. GHI ĐÈ THÔNG MINH & SÀNG LỌC VÀNG
-          find "$TEMP_DUMP" -name "*.h" -exec mv -f {} "$TARGET_DIR/" \;
+          # 5. GOM HÀNG ĐA TẦNG (DEEP SCAN) & SÀNG LỌC
+          if [ "${{ github.event.inputs.deep_scan }}" == "true" ]; then
+              echo "📂 Deep Scan: Đang bốc hàng từ mọi thư mục con..."
+              find "$TEMP_DUMP" -name "*.h" -type f -exec mv -f {} "$TARGET_DIR/" \;
+          else
+              echo "📁 Standard Scan: Chỉ lấy file tầng mặt..."
+              find "$TEMP_DUMP" -maxdepth 1 -name "*.h" -type f -exec mv -f {} "$TARGET_DIR/" \;
+          fi
           
           if [ "${{ github.event.inputs.smart_filter }}" == "true" ]; then
               echo "✨ Đang lọc tinh..."
               cd "$TARGET_DIR"
-              rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h GPBMessage.h _Ttc* 2>/dev/null
-              find . -name "*+*" | awk 'length > 100' | xargs rm -f 2>/dev/null
+              # Giữ lại hàng hiệu, diệt rác hệ thống trắng
+              rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h GPBMessage.h 2>/dev/null
+              # Diệt sạch file Swift tự sinh gây nặng repo
+              find . -name "_Ttc*" -exec rm -f {} \;
+              # Diệt file có tên quá dài (>100 ký tự) thường là lỗi dump
+              find . -name "*.h" | awk 'length > 100' | xargs rm -f 2>/dev/null
               cd - > /dev/null
           fi
 
           rm -rf "$TEMP_DUMP" app_extracted
-          echo "📦 Tổng số hàng trong kho: $(ls -1 "$TARGET_DIR" | wc -l) file."
+          echo "📦 Kho hàng hiện tại: $(ls -1 "$TARGET_DIR" | wc -l) file."
 
       - name: 🚀 Commit & Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           git add -f "headers/${{ github.event.inputs.app_name }}"
-          git diff --staged --quiet || (git commit -m "🪄 [Factory] Managed Dump: ${{ github.event.inputs.app_name }}" && git push origin main)
+          git diff --staged --quiet || (git commit -m "🪄 [Factory] Managed Dump v5: ${{ github.event.inputs.app_name }}" && git push origin main)
