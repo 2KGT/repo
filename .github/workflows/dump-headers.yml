@@ -1,10 +1,10 @@
-name: Dump Header Factory
+name: Dump Header Factory (Integrated Version)
 
 on:
   workflow_dispatch:
     inputs:
       ipa_url:
-        description: 'Link IPA Decrypt (Dropbox đổi dl=1)'
+        description: 'Link IPA Decrypt'
         required: true
         type: string
       app_name:
@@ -21,22 +21,15 @@ jobs:
       - name: 📥 Checkout Repo
         uses: actions/checkout@v4
 
-      # ==========================================
-      # BƯỚC 1: CÀI ĐẶT DSDUMP (DÙNG HOMEBREW - 100% THÀNH CÔNG)
-      # ==========================================
-      - name: 🛠️ Setup Dsdump (Brew Install)
+      # BƯỚC 1: CÀI TOOL QUA BREW (ĐẢM BẢO CHẠY)
+      - name: 🛠️ Setup Dsdump
         run: |
-          echo "--- ĐANG CÀI DSDUMP QUA HOMEBREW ---"
-          # Thêm kho chứa và cài đặt tool chính thống
           brew install dsdump
-          echo "✅ Đã cài đặt dsdump:" && dsdump --version
+          dsdump --version
 
-      # ==========================================
-      # BƯỚC 2: TẢI VÀ GIẢI NÉN IPA
-      # ==========================================
+      # BƯỚC 2: XỬ LÝ IPA
       - name: 📦 Download & Extract IPA
         run: |
-          echo "--- ĐANG TẢI IPA ---"
           curl -L -A "Mozilla/5.0" "${{ github.event.inputs.ipa_url }}" -o app.ipa
           unzip -q app.ipa -d app_extracted
 
@@ -47,27 +40,22 @@ jobs:
           APP_NAME=$(basename "$APP_PATH" .app)
           echo "binary=$APP_PATH/$APP_NAME" >> $GITHUB_OUTPUT
 
-      # ==========================================
-      # BƯỚC 3: DUMP HEADER (NÃ FILE TRẦN)
-      # ==========================================
+      # BƯỚC 3: DUMP VỚI CẤU TRÚC CHUẨN (GIỐNG macOS_headers)
       - name: ⚡ Full Dumping
         run: |
+          # Tạo cấu trúc thư mục chuyên nghiệp
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
-          echo "--- ĐANG DUMP VÀO $TARGET_DIR ---"
           mkdir -p "$TARGET_DIR"
-          rm -rf "$TARGET_DIR"/*
           
-          # Dùng dsdump nã thẳng (chất lượng cao hơn class-dump)
+          # Dump theo chuẩn Objective-C và Swift
           dsdump --objc --swift -f public --gen-header -o "$TARGET_DIR" "${{ steps.locate.outputs.binary }}"
           
-          echo "🧹 San phẳng folder..."
+          # Tích hợp logic "Làm sạch": Gom tất cả về một mối hoặc phân loại
+          # (Chỗ này sau này mình sẽ viết thêm script để so khớp với macOS_headers)
           find "$TARGET_DIR" -mindepth 2 -type f -name "*.h" -exec mv {} "$TARGET_DIR/" \;
           find "$TARGET_DIR" -type d -empty -delete
-          find "$TARGET_DIR" -type f ! -name "*.h" -delete
 
-      # ==========================================
-      # BƯỚC 4: LƯU TRỮ
-      # ==========================================
+      # BƯỚC 4: ĐẨY LÊN REPO
       - name: 🚀 Commit & Push
         run: |
           git config user.name "github-actions[bot]"
@@ -75,9 +63,8 @@ jobs:
           git add "headers/${{ github.event.inputs.app_name }}"
           
           if git diff --staged --quiet; then
-            echo "💎 Không có gì thay đổi."
+            echo "💎 Không có thay đổi."
           else
-            git commit -m "🪄 [2KGT Factory] Dumped: ${{ github.event.inputs.app_name }}"
+            git commit -m "🪄 [2KGT Factory] Dump & Sync Structure: ${{ github.event.inputs.app_name }}"
             git push origin main
-            echo "🎉 XONG RỒI ÔNG ƠI!"
           fi
