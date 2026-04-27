@@ -1,0 +1,47 @@
+name: Header Dumper
+
+on:
+  workflow_dispatch:
+    inputs:
+      ipa_url:
+        description: 'Dán link tải file IPA (đã decrypt)'
+        required: true
+        type: string
+
+jobs:
+  dump:
+    runs-on: macos-latest
+    steps:
+      - name: 📥 Tải tool dsdump
+        run: |
+          curl -L https://github.com/DerekSelander/dsdump/releases/download/v0.0.29/dsdump.zip -o dsdump.zip
+          unzip dsdump.zip
+          chmod +x dsdump
+          sudo mv dsdump /usr/local/bin/
+
+      - name: 📦 Tải và giải nén IPA
+        run: |
+          curl -L "${{ github.event.inputs.ipa_url }}" -o app.ipa
+          unzip app.ipa -d app_extracted
+
+      - name: 🔍 Tìm file thực thi chính (Binary)
+        id: locate
+        run: |
+          # Tìm file thực thi nằm trong thư mục .app
+          APP_PATH=$(find app_extracted/Payload -name "*.app" | head -n 1)
+          APP_NAME=$(basename "$APP_PATH" .app)
+          BINARY_PATH="$APP_PATH/$APP_NAME"
+          echo "path=$BINARY_PATH" >> $GITHUB_OUTPUT
+          echo "name=$APP_NAME" >> $GITHUB_OUTPUT
+
+      - name: ⚡ Tiến hành Dump Header
+        run: |
+          mkdir output_headers
+          # Sử dụng dsdump để xuất toàn bộ header ra thư mục
+          dsdump --objc --swift -f public --gen-header -o output_headers "${{ steps.locate.outputs.path }}"
+
+      - name: 📦 Nén và xuất xưởng
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.locate.outputs.name }}-Headers
+          path: output_headers/
