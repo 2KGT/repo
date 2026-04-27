@@ -51,6 +51,10 @@ jobs:
       - name: 🏗️ Setup Theos Environment
         if: steps.cache-theos.outputs.cache-hit != 'true'
         run: |
+          # San phẳng folder cũ cho sạch đường
+          rm -rf $THEOS
+          
+          # Bắt đầu kéo hàng mới
           git clone --recursive https://github.com/theos/theos.git $THEOS
           mkdir -p $THEOS/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
