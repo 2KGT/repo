@@ -22,47 +22,47 @@ jobs:
         uses: actions/checkout@v4
 
       # ==========================================
-      # BƯỚC 1: CÀI ĐẶT CÔNG CỤ GIẢI PHẪU (DSDUMP)
+      # BƯỚC 1: TỰ RÈN DAO MỔ (BUILD DSDUMP)
       # ==========================================
-      - name: 🛠️ Setup Dsdump (Verified Binary)
+      - name: 🛠️ Build dsdump Tool
         run: |
-          echo "--- ĐANG NHẬP KHẨU DAO MỔ XỊN ---"
-          # Tải từ Mirror CDN của GitHub (Link này trả về Binary xịn)
-          curl -L "https://github.com/PoomSmart/dsdump/raw/master/dsdump" -o dsdump_tool
+          echo "--- ĐANG TỰ RÈN DAO MỔ DSDUMP ---"
+          # Tải source code chính chủ
+          git clone --recursive https://github.com/DerekSelander/dsdump.git dsdump_src
+          cd dsdump_src
           
-          # Kiểm tra dung lượng (File xịn phải ~4.4MB = 4400000 bytes)
-          SIZE=$(stat -f%z dsdump_tool)
-          echo "📦 Dung lượng dao mổ: $SIZE bytes"
+          # Sử dụng xcodebuild để biên dịch ngay tại chỗ
+          # Chúng ta dùng scheme 'dsdump' và cấu hình Release
+          xcodebuild -project dsdump.xcodeproj -scheme dsdump -configuration Release -derivedDataPath build_data
           
-          if [ $SIZE -lt 1000000 ]; then
-             echo "❌ Dao mổ giả (HTML)! Đang thử link dự phòng..."
-             curl -L "https://raw.githubusercontent.com/DerekSelander/dsdump/master/dsdump" -o dsdump_tool
-          fi
-
-          chmod +x dsdump_tool
-          sudo mv dsdump_tool /usr/local/bin/dsdump
-          echo "✅ Dao mổ đã sẵn sàng!"
+          # Lôi file binary vừa rèn xong ra ngoài
+          sudo cp build_data/Build/Products/Release/dsdump /usr/local/bin/
+          
+          cd ..
+          rm -rf dsdump_src
+          echo "✅ Dao mổ dsdump đã sẵn sàng!"
           dsdump --version
 
       # ==========================================
-      # BƯỚC 2: MÁY BĂM MỔ (XỬ LÝ IPA)
+      # BƯỚC 2: TIẾP NHẬN BỆNH NHÂN (IPA)
       # ==========================================
       - name: 📦 Download & Extract IPA
         run: |
-          echo "--- ĐANG ĐƯA IPA VÀO PHÒNG MỔ ---"
+          echo "--- ĐANG TIẾP NHẬN IPA ---"
           curl -L -A "Mozilla/5.0" "${{ github.event.inputs.ipa_url }}" -o app.ipa
           unzip -q app.ipa -d app_extracted
 
-      - name: 🔍 Locate Binary (Tìm tim phổi App)
+      - name: 🔍 Locate Binary
         id: locate
         run: |
-          BINARY=$(find app_extracted/Payload -name "*.app" | head -n 1)
-          APP_NAME=$(basename "$BINARY" .app)
-          echo "binary=$BINARY/$APP_NAME" >> $GITHUB_OUTPUT
+          # Tìm file não bộ của App
+          BINARY_PATH=$(find app_extracted/Payload -name "*.app" | head -n 1)
+          APP_NAME=$(basename "$BINARY_PATH" .app)
+          echo "binary=$BINARY_PATH/$APP_NAME" >> $GITHUB_OUTPUT
           echo "🎯 Đã xác định mục tiêu: $APP_NAME"
 
       # ==========================================
-      # BƯỚC 3: GIẢI PHẪU VÀ PHÂN LOẠI
+      # BƯỚC 3: GIẢI PHẪU & PHÂN LOẠI HEADER
       # ==========================================
       - name: ⚡ Full Dumping & Cleaning
         run: |
@@ -70,17 +70,17 @@ jobs:
           mkdir -p "$TARGET_DIR"
           rm -rf "$TARGET_DIR"/*
           
-          echo "🚀 Đang mổ xẻ lấy Header..."
+          echo "🚀 Đang tiến hành mổ xẻ..."
           dsdump --objc --swift -f public --gen-header -o "$TARGET_DIR" "${{ steps.locate.outputs.binary }}"
           
-          echo "🤖 Bot đang phân loại và dọn dẹp..."
-          # Lôi toàn bộ file .h về mặt tiền, xóa folder rác
+          echo "🤖 Bot đang dọn dẹp và san phẳng..."
+          # Đưa toàn bộ file .h về một cấp thư mục duy nhất
           find "$TARGET_DIR" -mindepth 2 -type f -name "*.h" -exec mv {} "$TARGET_DIR/" \;
           find "$TARGET_DIR" -type d -empty -delete
           find "$TARGET_DIR" -type f ! -name "*.h" -delete
 
       # ==========================================
-      # BƯỚC 4: XUẤT XƯỞNG (PUSH TO REPO)
+      # BƯỚC 4: XUẤT XƯỞNG LÊN REPO
       # ==========================================
       - name: 🚀 Commit & Push
         run: |
@@ -93,5 +93,5 @@ jobs:
           else
             git commit -m "🪄 [2KGT Factory] Dumped: ${{ github.event.inputs.app_name }}"
             git push origin main
-            echo "🎉 CA PHẪU THUẬT THÀNH CÔNG!"
+            echo "🎉 CA PHẪU THUẬT HOÀN TẤT!"
           fi
