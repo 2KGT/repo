@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       app_name:
-        description: 'Thư mục lưu (VD: YouTubeHeader)'
+        description: 'Lưu tên thư mục Header'
         required: true
         default: 'YouTubeHeader'
 
@@ -18,55 +18,88 @@ jobs:
     permissions:
       contents: write
     steps:
+      # ==========================================
+      # BƯỚC 1: KHỞI TẠO VÀ CÀI ĐẶT CÔNG CỤ
+      # ==========================================
       - name: 📥 Checkout Repo
         uses: actions/checkout@v4
 
-      - name: 🛠️ Setup Dsdump
+      - name: 🛠️ Setup Dsdump (Auto-Fetch Latest)
         run: |
-          curl -L https://github.com/DerekSelander/dsdump/releases/download/v0.0.29/dsdump.zip -o dsdump.zip
-          unzip dsdump.zip
+          echo "--- ĐANG TẢI DSDUMP MỚI NHẤT ---"
+          # Tự động lấy tag phiên bản mới nhất từ GitHub API
+          TAG=$(curl -s https://api.github.com/repos/DerekSelander/dsdump/releases/latest | grep -oE '"tag_name": "[^"]+"' | head -n1 | cut -d'"' -f4)
+          echo "⚡ Version tìm thấy: $TAG"
+          
+          curl -L "https://github.com/DerekSelander/dsdump/releases/download/${TAG}/dsdump.zip" -o dsdump.zip
+          
+          # Giải nén và kiểm tra file
+          unzip -q dsdump.zip
           chmod +x dsdump
           sudo mv dsdump /usr/local/bin/
+          echo "✅ Đã cài đặt dsdump:" && dsdump --version
 
+      # ==========================================
+      # BƯỚC 2: XỬ LÝ FILE IPA
+      # ==========================================
       - name: 📦 Download & Extract IPA
         run: |
+          echo "--- ĐANG TẢI IPA TỪ NGUỒN ---"
           curl -L "${{ github.event.inputs.ipa_url }}" -o app.ipa
+          
+          echo "🏗️ Đang giải nén IPA..."
           unzip -q app.ipa -d app_extracted
 
-      - name: 🔍 Locate Binary
+      - name: 🔍 Locate Binary (Tìm file thực thi)
         id: locate
         run: |
           APP_PATH=$(find app_extracted/Payload -name "*.app" | head -n 1)
           APP_NAME=$(basename "$APP_PATH" .app)
-          echo "binary=$APP_PATH/$APP_NAME" >> $GITHUB_OUTPUT
-          echo "Found Binary: $APP_PATH/$APP_NAME"
+          BINARY_PATH="$APP_PATH/$APP_NAME"
+          echo "binary=$BINARY_PATH" >> $GITHUB_OUTPUT
+          echo "🎯 Đã tìm thấy mục tiêu: $BINARY_PATH"
 
+      # ==========================================
+      # BƯỚC 3: DUMP HEADER VÀ SAN PHẲNG THƯ MỤC
+      # ==========================================
       - name: ⚡ Full Dumping (Straight to Headers)
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
+          echo "--- BẮT ĐẦU DUMP HEADER VÀO $TARGET_DIR ---"
+          
           mkdir -p "$TARGET_DIR"
-          # Dọn sạch folder cũ nếu có để tránh chồng chéo phiên bản
+          # Xóa sạch folder cũ để tránh rác từ phiên bản trước
           rm -rf "$TARGET_DIR"/*
           
-          echo "🚀 Đang tiến hành Dump toàn bộ Header..."
+          # Tiến hành dump (ObjC + Swift)
           dsdump --objc --swift -f public --gen-header -o "$TARGET_DIR" "${{ steps.locate.outputs.binary }}"
           
-          echo "🧹 San phẳng và dọn rác..."
-          # Lôi hết file .h ra ngoài mặt tiền
+          echo "🧹 Đang dọn dẹp và san phẳng cấu trúc..."
+          # Lôi toàn bộ file .h từ thư mục con ra ngoài mặt tiền
           find "$TARGET_DIR" -mindepth 2 -type f -name "*.h" -exec mv {} "$TARGET_DIR/" \;
-          # Xoá các thư mục rỗng sau khi đã dọn file
+          
+          # Xóa các thư mục rỗng và các file không phải .h (nếu có)
           find "$TARGET_DIR" -type d -empty -delete
+          find "$TARGET_DIR" -type f ! -name "*.h" -delete
+          
+          echo "✅ Hoàn tất dump file trần."
 
+      # ==========================================
+      # BƯỚC 4: LƯU TRỮ LẠI VÀO REPO
+      # ==========================================
       - name: 🚀 Commit & Push to Repo
         run: |
+          echo "--- ĐANG ĐẨY DỮ LIỆU LÊN GITHUB ---"
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
+          
           git add "headers/${{ github.event.inputs.app_name }}"
           
-          # Chỉ commit nếu có sự thay đổi (tránh lỗi workflow)
+          # Kiểm tra xem có gì mới để commit không
           if git diff --staged --quiet; then
-            echo "Nothin' changed, skip commit."
+            echo "💎 Không có gì thay đổi so với bản cũ."
           else
-            git commit -m "🪄 [2KGT Factory] Dumped: ${{ github.event.inputs.app_name }}"
-            git push
+            git commit -m "🪄 [2KGT Factory] Updated: ${{ github.event.inputs.app_name }}"
+            git push origin main
+            echo "🎉 Đã cập nhật Header mới lên Repo!"
           fi
