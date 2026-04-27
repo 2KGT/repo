@@ -21,7 +21,7 @@
 
 [![Build Multi Tweak](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml/badge.svg)](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml)
 
-Reference: https://github.com/2KGT/repo/actions/runs/24995694385/job/73192007160
+
 ---
 
 ## 🛠️ Chi tiết các Tweak nổi bật
