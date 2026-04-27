@@ -1,11 +1,13 @@
 include $(THEOS)/makefiles/common.mk
 
-BUNDLE_NAME = AutoACPrefs
+BUNDLE_NAME = autoacprefs
 
-AutoACPrefs_FILES = AutoACRootListController.m
-AutoACPrefs_FRAMEWORKS = UIKit
-AutoACPrefs_PRIVATE_FRAMEWORKS = Preferences
-AutoACPrefs_INSTALL_PATH = /Library/PreferenceBundles
-AutoACPrefs_CFLAGS = -fobjc-arc
+# Tên các file cần build cho Prefs
+autoacprefs_FILES = AutoACRootListController.m
+autoacprefs_FRAMEWORKS = UIKit
+autoacprefs_PRIVATE_FRAMEWORKS = Preferences
+# Đường dẫn cài đặt bundle vào hệ thống
+autoacprefs_INSTALL_PATH = /Library/PreferenceBundles
+autoacprefs_CFLAGS = -fobjc-arc
 
 include $(THEOS_MAKE_PATH)/bundle.mk
