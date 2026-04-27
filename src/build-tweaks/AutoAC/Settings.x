@@ -1,5 +1,5 @@
 #import <UIKit/UIKit.h>
-#import <YouTubeHeader/YTAppSettingsPresentationData.h>
+// Đã xóa #import <YouTubeHeader/YTAppSettingsPresentationData.h>
 #import <YouTubeHeader/YTSettingsViewController.h>
 #import <YouTubeHeader/YTSettingsSectionItem.h>
 #import <YouTubeHeader/YTSettingsSectionItemManager.h>
@@ -22,6 +22,10 @@ typedef void (^CDUnknownBlockType)(void);
 @end
 
 @interface YTAppSettingsSectionItemController : NSObject
+@end
+
+// 🪄 CHẾ THÊM CLASS BỊ THIẾU Ở ĐÂY:
+@interface YTAppSettingsPresentationData : NSObject
 @end
 
 @interface YTSettingsViewController (AutoAC_Fix)
