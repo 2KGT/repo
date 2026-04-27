@@ -8,11 +8,19 @@ on:
         required: true
         type: string
       app_name:
-        description: 'Tên thư mục lưu Header'
+        description: 'Tên thư mục lưu Header (vd: YouTubeHeader)'
         required: true
         default: 'YouTubeHeader'
-      purge_swift:
-        description: 'Thanh trừng rác Swift (_Ttc...)'
+      config_path:
+        description: 'Đường dẫn file .txt danh sách (vd: src/build-tweaks/AutoAC/headers.txt)'
+        required: false
+        type: string
+      target_classes:
+        description: 'Hoặc nhập nhanh Class ở đây (cách nhau bằng dấu cách)'
+        required: false
+        type: string
+      smart_filter:
+        description: 'Chế độ Sàng Lọc Vàng (Diệt rác Apple, Swift, Category dài)'
         type: boolean
         default: true
 
@@ -25,17 +33,9 @@ jobs:
       - name: 📥 Checkout Repo
         uses: actions/checkout@v4
 
-      # ==========================================
-      # BƯỚC 1: CHUẨN BỊ VŨ KHÍ (IPSW)
-      # ==========================================
-      - name: 🛠️ Setup IPSW Tool
-        run: |
-          brew install blacktop/tap/ipsw
-          ipsw version
+      - name: 🛠️ Setup Tools
+        run: brew install blacktop/tap/ipsw
 
-      # ==========================================
-      # BƯỚC 2: TIẾP NHẬN & GIẢI PHẪU IPA
-      # ==========================================
       - name: 📦 Download & Extract IPA
         run: |
           curl -L -A "Mozilla/5.0" "${{ github.event.inputs.ipa_url }}" -o app.ipa
@@ -44,70 +44,57 @@ jobs:
       - name: 🔍 Locate Binary
         id: locate
         run: |
-          BINARY_PATH=$(find app_extracted/Payload -name "*.app" | head -n 1)
-          APP_BIN=$(basename "$BINARY_PATH" .app)
-          echo "binary=$BINARY_PATH/$APP_BIN" >> $GITHUB_OUTPUT
-          echo "🎯 Mục tiêu mổ xẻ: $APP_BIN"
+          BIN=$(find app_extracted/Payload -name "*.app" | head -n 1)
+          echo "binary=$BIN/$(basename "$BIN" .app)" >> $GITHUB_OUTPUT
 
-           # ==========================================
-      # BƯỚC 3: DUMP THEO ĐƠN ĐẶT HÀNG (TARGETED DUMP)
-      # ==========================================
-      - name: ⚡ Targeted Dumping
+      - name: ⚡ Smart Dumping & Sàng Lọc Vàng
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           TEMP_DUMP="temp_headers"
-          LIST_FILE="src/build-tweaks/AutoAC/headers.txt" # Đường dẫn tới đơn hàng của ông
+          mkdir -p "$TARGET_DIR" "$TEMP_DUMP"
           
-          mkdir -p "$TARGET_DIR"
-          mkdir -p "$TEMP_DUMP"
-          
-          echo "🚀 IPSW đang mổ xẻ lấy hàng theo danh sách..."
-          
-          if [ -f "$LIST_FILE" ]; then
-              # Vòng lặp đọc từng file cần thiết trong headers.txt
-              while IFS= read -r line || [ -n "$line" ]; do
-                  FILE_NEED=$(echo "$line" | tr -d '\r' | xargs)
-                  [ -z "$FILE_NEED" ] && continue
-                  [[ "$FILE_NEED" != *.h ]] && continue # Chỉ xử lý file .h
-                  
-                  # Lấy tên Class (bỏ đuôi .h)
-                  CLASS_NAME="${FILE_NEED%.h}"
-                  
-                  echo "🎯 Đang trích xuất: $CLASS_NAME"
-                  # Lệnh ipsw hỗ trợ filter theo class
-                  ipsw class-dump "${{ steps.locate.outputs.binary }}" \
-                    --headers \
-                    --filter "$CLASS_NAME" \
-                    -o "$TEMP_DUMP"
-              done < "$LIST_FILE"
-              
-              # Gom hàng đã trích xuất về kho chính (Làm phẳng)
-              find "$TEMP_DUMP" -name "*.h" -exec mv {} "$TARGET_DIR/" \;
-          else
-              echo "⚠️ Không tìm thấy headers.txt, tiến hành Dump toàn bộ (Fallback)..."
-              ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers -o "$TEMP_DUMP"
-              find "$TEMP_DUMP" -name "*.h" -exec mv {} "$TARGET_DIR/" \;
+          # 🔥 CHIẾN THUẬT GOM QUÂN
+          CLASSES="${{ github.event.inputs.target_classes }}"
+          # Nếu không nhập ô trên web, check file config theo đường dẫn tùy chỉnh
+          if [ -z "$CLASSES" ] && [ -f "${{ github.event.inputs.config_path }}" ]; then
+              echo "📝 Đang đọc danh sách từ: ${{ github.event.inputs.config_path }}"
+              CLASSES=$(tr '\r\n' ' ' < "${{ github.event.inputs.config_path }}" | sed 's/\.h//g')
           fi
-          
-          # Dọn dẹp rác ngay lập tức
-          rm -rf "$TEMP_DUMP"
-          echo "📦 Tổng hàng 'tuyển chọn' đã nhập kho: $(ls -1 "$TARGET_DIR" | wc -l) file."
 
-      # ==========================================
-      # BƯỚC 4: NHẬP KHO REPO
-      # ==========================================
-      - name: 🚀 Commit & Push Clean Headers
+          # 🔥 THỰC THI DUMP
+          if [ -n "$CLASSES" ]; then
+              echo "🎯 Chế độ gắp thú mục tiêu..."
+              for CLS in $CLASSES; do
+                  [ -z "$CLS" ] && continue
+                  ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers --filter "$CLS" -o "$TEMP_DUMP"
+              done
+          else
+              echo "🌊 Chế độ càn quét (Dump All)..."
+              ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers -o "$TEMP_DUMP"
+          fi
+
+          # 🔥 BỘ LỌC SÀNG VÀNG (Smart Filter)
+          find "$TEMP_DUMP" -name "*.h" -exec mv {} "$TARGET_DIR/" \;
+          
+          if [ "${{ github.event.inputs.smart_filter }}" == "true" ]; then
+              echo "✨ Đang sàng lọc vàng (Lọc tinh)..."
+              cd "$TARGET_DIR"
+              # Diệt rác Apple & System
+              rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h \
+                    CGRect.h CGPoint.h UIEdgeInsets.h GPBMessage.h NSObject.h \
+                    NSString.h NSArray.h NSDictionary.h NSValue.h NSNumber.h
+              # Diệt rác Swift & Category biến dị
+              rm -f _Ttc*
+              find . -name "*+*" | awk 'length > 100' | xargs rm -f
+              cd - > /dev/null
+          fi
+
+          rm -rf "$TEMP_DUMP" app_extracted
+          echo "📦 Hoàn tất! Kho hàng có: $(ls -1 "$TARGET_DIR" | wc -l) file."
+
+      - name: 🚀 Commit & Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          
-          # Force add để tránh sót file có tên đặc biệt
           git add -f "headers/${{ github.event.inputs.app_name }}"
-          
-          if git diff --staged --quiet; then
-            echo "💎 Không có gì mới để cập nhật."
-          else
-            git commit -m "🪄 [2KGT Factory] Dumped & Filtered: ${{ github.event.inputs.app_name }}"
-            git push origin main
-            echo "🎉 KHO HÀNG ĐÃ ĐƯỢC LÀM MỚI SẠCH SẼ - PHẲNG LÌ!"
-          fi
+          git diff --staged --quiet || (git commit -m "🪄 [Factory] Smart Dump: ${{ github.event.inputs.app_name }}" && git push origin main)
