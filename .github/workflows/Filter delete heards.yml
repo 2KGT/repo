@@ -1,0 +1,69 @@
+name: Filter Delete Headers
+
+on:
+  workflow_dispatch:
+    inputs:
+      header_dir:
+        description: 'Chọn thư mục header để lọc (trong headers/)'
+        required: true
+        default: 'YouTubeHeader'
+
+jobs:
+  cleanup:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      # ==========================================
+      # BƯỚC 1: TIẾP NHẬN HIỆN TRƯỜNG
+      # ==========================================
+      - name: 📥 Checkout Repo
+        uses: actions/checkout@v4
+
+      # ==========================================
+      # BƯỚC 2: CHIẾN DỊCH "THANH TẨY" (APPLE & ZIP)
+      # ==========================================
+      - name: ⚔️ Executing Cleanup
+        run: |
+          TARGET="headers/${{ github.event.inputs.header_dir }}"
+          if [ ! -d "$TARGET" ]; then
+            echo "❌ Thư mục $TARGET không tồn tại!"
+            exit 1
+          fi
+
+          echo "🧹 Đang dọn dẹp thư mục: $TARGET"
+          cd "$TARGET"
+
+          # 1. Xóa sạch các Header hệ thống Apple (Xung đột build)
+          # Bao gồm: Protocols, Structs và các Class cơ bản
+          rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h NSSecureCoding-Protocol.h \
+                CGRect.h CGPoint.h UIEdgeInsets.h UIAppearanceContainer-Protocol.h \
+                UIGestureRecognizerDelegate-Protocol.h OS_dispatch_object-Protocol.h \
+                OS_dispatch_queue-Protocol.h OS_dispatch_source-Protocol.h \
+                NSObject.h NSString.h NSArray.h NSDictionary.h # Thêm một số class rác hay gặp
+
+          # 2. Xóa sạch mọi file nén rác (.zip) trong thư mục này
+          echo "🗑️ Đang xóa các tệp nén .zip thừa..."
+          rm -f *.zip
+
+          # 3. Xóa các file thừa không phải là Header (nếu có)
+          find . -type f ! -name "*.h" -delete
+
+          echo "✅ Thanh tẩy hoàn tất. Chỉ giữ lại tinh hoa của App!"
+
+      # ==========================================
+      # BƯỚC 3: LƯU LẠI KHO SẠCH
+      # ==========================================
+      - name: 📤 Commit Clean Headers
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "actions@github.com"
+          git add .
+          
+          if git diff --staged --quiet; then
+            echo "💎 Kho đã sạch sẵn, không có gì để thay đổi."
+          else
+            git commit -m "🧹 [Cleanup] Purged Apple headers & zips in ${{ github.event.inputs.header_dir }}"
+            git push origin main
+            echo "🚀 Đã cập nhật kho sạch lên Repo!"
+          fi
