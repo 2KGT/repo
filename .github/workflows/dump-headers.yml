@@ -8,22 +8,20 @@ on:
         required: true
         type: string
       app_name:
-        description: '📁 Thư mục lưu Header'
+        description: '📁 Thư mục lưu'
         required: true
         default: 'YouTubeHeader'
-      config_path:
-        description: |
-          📄 Đường dẫn file .txt danh sách class
-          (Mặc định bên dưới, xóa đi nếu muốn dump hết)
-        required: false
-        default: 'src/build-tweaks/AutoAC/headers.txt'
         type: string
       target_classes:
-        description: '🎯 Nhập nhanh Class (cách nhau bằng dấu cách)'
+        description: '🎯 Nhập Class (cách nhau bằng dấu cách)'
+        required: false
+        type: string
+      config_path:
+        description: '📄 Đường dẫn file .txt (Dự án)'
         required: false
         type: string
       smart_filter:
-        description: '✨ Chế độ Sàng Lọc Vàng (Apple, Swift, Category rác)'
+        description: '✨ Chế độ Sàng Lọc Vàng'
         type: boolean
         default: true
 
