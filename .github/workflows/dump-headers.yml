@@ -49,54 +49,49 @@ jobs:
           echo "binary=$BINARY_PATH/$APP_BIN" >> $GITHUB_OUTPUT
           echo "🎯 Mục tiêu mổ xẻ: $APP_BIN"
 
+           # ==========================================
+      # BƯỚC 3: DUMP THEO ĐƠN ĐẶT HÀNG (TARGETED DUMP)
       # ==========================================
-      # BƯỚC 3: CHIẾN DỊCH "THANH TẨY NGUỒN HÀNG"
-      # ==========================================
-      - name: ⚡ Full Dumping & Smart Filter
+      - name: ⚡ Targeted Dumping
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           TEMP_DUMP="temp_headers"
+          LIST_FILE="src/build-tweaks/AutoAC/headers.txt" # Đường dẫn tới đơn hàng của ông
           
-          # 1. Xoá kho cũ, dựng sân bãi mới
-          echo "🗑️ Đang xoá bỏ dữ liệu cũ..."
-          rm -rf "$TARGET_DIR"
           mkdir -p "$TARGET_DIR"
           mkdir -p "$TEMP_DUMP"
           
-          # 2. Thực thi Class-dump
-          echo "🚀 IPSW đang mổ xẻ Binary..."
-          ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers -o "$TEMP_DUMP"
+          echo "🚀 IPSW đang mổ xẻ lấy hàng theo danh sách..."
           
-          # 3. Gom hàng & LÀM PHẲNG (Flat structure)
-          echo "🤖 Bot thợ lặn đang gom file về một mặt phẳng..."
-          find "$TEMP_DUMP" -name "*.h" -exec mv {} "$TARGET_DIR/" \;
+          if [ -f "$LIST_FILE" ]; then
+              # Vòng lặp đọc từng file cần thiết trong headers.txt
+              while IFS= read -r line || [ -n "$line" ]; do
+                  FILE_NEED=$(echo "$line" | tr -d '\r' | xargs)
+                  [ -z "$FILE_NEED" ] && continue
+                  [[ "$FILE_NEED" != *.h ]] && continue # Chỉ xử lý file .h
+                  
+                  # Lấy tên Class (bỏ đuôi .h)
+                  CLASS_NAME="${FILE_NEED%.h}"
+                  
+                  echo "🎯 Đang trích xuất: $CLASS_NAME"
+                  # Lệnh ipsw hỗ trợ filter theo class
+                  ipsw class-dump "${{ steps.locate.outputs.binary }}" \
+                    --headers \
+                    --filter "$CLASS_NAME" \
+                    -o "$TEMP_DUMP"
+              done < "$LIST_FILE"
+              
+              # Gom hàng đã trích xuất về kho chính (Làm phẳng)
+              find "$TEMP_DUMP" -name "*.h" -exec mv {} "$TARGET_DIR/" \;
+          else
+              echo "⚠️ Không tìm thấy headers.txt, tiến hành Dump toàn bộ (Fallback)..."
+              ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers -o "$TEMP_DUMP"
+              find "$TEMP_DUMP" -name "*.h" -exec mv {} "$TARGET_DIR/" \;
+          fi
           
-               # 4. ÉP BỘ LỌC SIÊU CẤP (ANTI-RÁC BIẾN DỊ)
-      - name: 🧹 Deep Cleaning
-        run: |
-          cd "headers/${{ github.event.inputs.app_name }}"
-          
-          echo "🍎 Diệt rác hệ thống..."
-          rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h \
-                CGRect.h CGPoint.h UIEdgeInsets.h GPBMessage.h NSObject.h \
-                NSString.h NSArray.h NSDictionary.h NSValue.h NSNumber.h
-
-          echo "🍎 Diệt rác Swift và Category biến dị..."
-          # 1. Xóa file bắt đầu bằng _Ttc (Swift)
-          rm -f _Ttc*
-          
-          # 2. Xóa các file Category có tên quá dài (thủ phạm trong ảnh của ông)
-          # Lọc các file có chứa dấu '+' và có tên dài hơn 100 ký tự
-          find . -name "*+*" | awk 'length > 100' | xargs rm -f
-          
-          # 3. Xóa các file có chứa từ khóa rác hệ thống Google/YouTube
-          rm -f *+ux_tokens* *+dn_systems* *+sds_versions*
-          
-          # 4. Dọn nốt tàn dư
-          find . -type f ! -name "*.h" -delete
-
-          echo "✨ Sau khi thanh tẩy: $(ls -1 | wc -l) file Headers chất lượng."
-
+          # Dọn dẹp rác ngay lập tức
+          rm -rf "$TEMP_DUMP"
+          echo "📦 Tổng hàng 'tuyển chọn' đã nhập kho: $(ls -1 "$TARGET_DIR" | wc -l) file."
 
       # ==========================================
       # BƯỚC 4: NHẬP KHO REPO
