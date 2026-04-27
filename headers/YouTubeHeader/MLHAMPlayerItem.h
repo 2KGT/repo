@@ -1,3 +1,5 @@
+        @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; 
+        @protocol NSObject, NSCopying, NSCoding;
 @interface MLHAMPlayerItem : NSObject <MLABRPolicyDelegate, MLAncillaryStreamStateObserver, MLBitrateCapDelegate, MLCaptionControllerDelegate, MLFairPlayContentKeyControllerDelegate, MLWidevineDRMControllerDelegate, MLHAMManifestlessSegmentMetadataFetcherDelegate, MLHAMVODCaptionPlaceholderSampleBufferSourceControlDelegate, MLManifestlessPartialResponseHandlerDelegate, MLOnesieVideoDataQOEErrorDelegate, MLServerABRLoaderDelegate, MLViewportSizeObserver, HAMCacheManagerDelegate, MLHAMPlayerItemProtocol> {
     /* instance variables */
     id <HAMClock> _clock;

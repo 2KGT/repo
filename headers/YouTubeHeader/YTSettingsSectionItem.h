@@ -1,3 +1,5 @@
+        @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; 
+        @protocol NSObject, NSCopying, NSCoding;
 @interface YTSettingsSectionItem : NSObject <YTSettingsItemViewModel, YTResponder> {
     /* instance variables */
     YTVisualElement *_proxyButton;

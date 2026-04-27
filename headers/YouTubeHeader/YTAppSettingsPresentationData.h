@@ -1,3 +1,5 @@
+        @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; 
+        @protocol NSObject, NSCopying, NSCoding;
 @interface YTAppSettingsPresentationData : NSObject
 
 /* class methods */

@@ -1,3 +1,5 @@
+        @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; 
+        @protocol NSObject, NSCopying, NSCoding;
 @interface YTSettingsSectionItemManager : NSObject <YTBedtimeReminderSettingsControllerDelegate, YTAppSettingsStoreObserver, YTSheetControllerDelegate, YTUserDefaultsObserver, OSSLicensesViewControllerDelegate, YTResponder> {
     /* instance variables */
     id <YTAppSettingsSectionItemControllerDelegate> _controllerDelegate;
