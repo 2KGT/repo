@@ -11,19 +11,23 @@ on:
         description: '📁 Thư mục lưu'
         required: true
         default: 'YouTubeHeader'
-        type: string
       target_classes:
         description: '🎯 Nhập Class (cách nhau bằng dấu cách)'
         required: false
-        type: string
       config_path:
         description: '📄 Đường dẫn file .txt (Dự án)'
         required: false
-        type: string
+      delete_files:
+        description: '🗑️ Nhập tên file muốn XÓA (vd: File1.h File2.h)'
+        required: false
       smart_filter:
-        description: '✨ Chế độ Sàng Lọc Vàng'
+        description: '✨ Chế độ Sàng Lọc (Swift, Apple)'
         type: boolean
         default: true
+      clear_all:
+        description: '🧨 XÓA SẠCH thư mục trước khi dump'
+        type: boolean
+        default: false
 
 jobs:
   dump_process:
@@ -48,56 +52,73 @@ jobs:
           BIN=$(find app_extracted/Payload -name "*.app" | head -n 1)
           echo "binary=$BIN/$(basename "$BIN" .app)" >> $GITHUB_OUTPUT
 
-      - name: ⚡ Smart Dumping & Sàng Lọc Vàng
+      - name: ⚡ Smart Dumping & Targeted Management
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           TEMP_DUMP="temp_headers"
+          
+          # 1. XỬ LÝ DỌN DẸP TRƯỚC (Nếu bật công tắc Nuclear)
+          if [ "${{ github.event.inputs.clear_all }}" == "true" ]; then
+              echo "🧨 Chế độ Nuclear: Đang dọn sạch kho cũ..."
+              rm -rf "$TARGET_DIR"
+          fi
           mkdir -p "$TARGET_DIR" "$TEMP_DUMP"
-          
-          # 🔥 CHIẾN THUẬT GOM QUÂN
+
+          # 2. XÓA CÓ CHỦ ĐÍCH (Targeted Delete)
+          if [ -n "${{ github.event.inputs.delete_files }}" ]; then
+              echo "🗑️ Đang xóa các file theo danh sách đen..."
+              for DEL_FILE in ${{ github.event.inputs.delete_files }}; do
+                  # Xoá cả trường hợp nhập có .h hoặc không có .h
+                  BASE_DEL=$(echo "$DEL_FILE" | sed 's/\.h//g')
+                  rm -f "$TARGET_DIR/$BASE_DEL.h"
+                  echo "  -> Đã xóa: $BASE_DEL.h"
+              done
+          fi
+
+          # 3. CHIẾN THUẬT GOM QUÂN
           CLASSES="${{ github.event.inputs.target_classes }}"
-          
           if [ -z "$CLASSES" ] && [ -n "${{ github.event.inputs.config_path }}" ]; then
               if [ -f "${{ github.event.inputs.config_path }}" ]; then
-                  echo "📝 Đang đọc danh sách từ file: ${{ github.event.inputs.config_path }}"
-                  # Đọc file, xóa đuôi .h và gom thành chuỗi
+                  echo "📝 Đọc danh sách từ dự án: ${{ github.event.inputs.config_path }}"
                   CLASSES=$(tr '\r\n' ' ' < "${{ github.event.inputs.config_path }}" | sed 's/\.h//g')
               fi
           fi
 
-          # 🔥 THỰC THI DUMP (Xử lý thông minh lỗi flag ipsw)
+          # 4. THỰC THI DUMP & VÁ LỖI (Smart Patch)
           if [ -n "$CLASSES" ]; then
-              echo "🎯 Chế độ gắp thú mục tiêu cho các class..."
               for CLS in $CLASSES; do
                   [ -z "$CLS" ] && continue
-                  echo "  -> Đang băm header class: $CLS"
-                  # Khi dùng --class thì KHÔNG được dùng --headers, phải hứng luồng (>)
+                  echo "🎯 Đang băm: $CLS"
                   ipsw class-dump "${{ steps.locate.outputs.binary }}" --class "$CLS" > "$TEMP_DUMP/$CLS.h"
+                  
+                  # Chèn giáp chống lỗi build (Forward Declaration)
+                  sed -i '' '1i\
+                  @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
+                  @protocol NSObject, NSCopying, NSCoding;
+                  ' "$TEMP_DUMP/$CLS.h"
               done
           else
-              echo "🌊 Chế độ càn quét (Dump All)..."
-              # Dump toàn bộ thì mới dùng cờ --headers
+              echo "🌊 Dump All (Vì không có yêu cầu cụ thể)..."
               ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers -o "$TEMP_DUMP"
           fi
 
-          # 🔥 BỘ LỌC SÀNG VÀNG
-          find "$TEMP_DUMP" -name "*.h" -exec mv {} "$TARGET_DIR/" \;
+          # 5. GHI ĐÈ THÔNG MINH & SÀNG LỌC VÀNG
+          find "$TEMP_DUMP" -name "*.h" -exec mv -f {} "$TARGET_DIR/" \;
           
           if [ "${{ github.event.inputs.smart_filter }}" == "true" ]; then
-              echo "✨ Đang thực hiện sàng lọc vàng..."
+              echo "✨ Đang lọc tinh..."
               cd "$TARGET_DIR"
-              # Diệt rác hệ thống & Swift & Category biến dị
-              rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h CGRect.h CGPoint.h UIEdgeInsets.h GPBMessage.h NSObject.h NSString.h NSArray.h NSDictionary.h NSValue.h NSNumber.h _Ttc*
+              rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h GPBMessage.h _Ttc* 2>/dev/null
               find . -name "*+*" | awk 'length > 100' | xargs rm -f 2>/dev/null
               cd - > /dev/null
           fi
 
           rm -rf "$TEMP_DUMP" app_extracted
-          echo "📦 Kho hàng thành phẩm: $(ls -1 "$TARGET_DIR" | wc -l) file."
+          echo "📦 Tổng số hàng trong kho: $(ls -1 "$TARGET_DIR" | wc -l) file."
 
       - name: 🚀 Commit & Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           git add -f "headers/${{ github.event.inputs.app_name }}"
-          git diff --staged --quiet || (git commit -m "🪄 [Factory] Smart Dump: ${{ github.event.inputs.app_name }}" && git push origin main)
+          git diff --staged --quiet || (git commit -m "🪄 [Factory] Managed Dump: ${{ github.event.inputs.app_name }}" && git push origin main)
