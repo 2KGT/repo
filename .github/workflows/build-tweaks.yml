@@ -49,29 +49,63 @@ jobs:
           mkdir -p $THEOS/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: 🚚 Cảm biến & Nạp Header (Zip 1-2-3)
+      - name: 🚚 Cảm biến "Quy Hoạch Đô Thị" (Zip + Internal)
         run: |
-          THEOS_INC="$THEOS/include/YouTubeHeader"
+          THEOS_INC="$THEOS/include"
           mkdir -p "$THEOS_INC"
           
-          # 1. Dọn sạch bãi cũ
-          rm -rf "$THEOS_INC/"*
-          
-          # 2. Xử lý tất cả file Zip trong folder headers/ (YouTube1 -> YouTube2 -> YouTube10)
-          if ls headers/*.zip 1> /dev/null 2>&1; then
-              echo "📦 Phát hiện kho Zip! Đang xả nén và trộn hàng..."
-              for zipfile in $(ls headers/*.zip | sort -V); do
-                  echo "🏗️ Đang xả và ghi đè: $zipfile"
-                  unzip -q -o "$zipfile" -d "$THEOS_INC"
+          # 1. QUÉT TẤT CẢ THƯ MỤC TRONG headers/ (YouTubeHeader, SpotifyHeader...)
+          if [ -d "headers" ]; then
+              for dir in headers/*/; do
+                  [ -d "$dir" ] || continue
+                  FOLDER_NAME=$(basename "$dir")
+                  TARGET_DIR="$THEOS_INC/$FOLDER_NAME"
+                  
+                  echo "📂 Đang xử lý khu vực: $FOLDER_NAME"
+                  mkdir -p "$TARGET_DIR"
+                  rm -rf "$TARGET_DIR/"* # Dọn sạch kho cũ trong Theos trước khi nạp mẻ mới
+                  
+                  # XẢ NÉN TẤT CẢ FILE ZIP TRONG THƯ MỤC ĐÓ (Theo thứ tự thông minh 1 -> 2 -> 10)
+                  if ls "$dir"*.zip 1> /dev/null 2>&1; then
+                      for zipfile in $(ls "$dir"*.zip | sort -V); do
+                          echo "🏗️ Đang xả và ghi đè: $(basename "$zipfile")"
+                          unzip -q -o "$zipfile" -d "$TARGET_DIR"
+                      done
+                      
+                      # PHẲNG HÓA THƯ MỤC: Lôi toàn bộ file .h trốn trong folder con ra ngoài 
+                      # (Trị dứt điểm lỗi nén cả thư mục từ điện thoại)
+                      find "$TARGET_DIR" -mindepth 2 -type f -name "*.h" -exec mv -t "$TARGET_DIR" {} +
+                      find "$TARGET_DIR" -type d -empty -delete
+                  fi
               done
-              
-          # 3. PHẲNG HÓA (Lôi hết file .h ra ngoài cấp cao nhất của YouTubeHeader)
-              find "$THEOS_INC" -mindepth 2 -type f -name "*.h" -exec mv -t "$THEOS_INC" {} +
-              find "$THEOS_INC" -type d -empty -delete
-              echo "✅ Đã thông nòng $(ls "$THEOS_INC" | wc -l) file .h."
-          else
-              echo "⚠️ Không tìm thấy file Zip nào trong folder headers/."
           fi
+
+          # 2. XỬ LÝ headers.txt (Cho các Header kéo từ GitHub ngoài)
+          DP_NAME="${{ github.event.inputs.project }}"
+          [ "$DP_NAME" = "(none)" ] && exit 0
+          
+          CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
+          if [ -n "$CTRL" ]; then
+              DIR=$(dirname "$CTRL")
+              if [ -f "$DIR/headers.txt" ]; then
+                  echo "🔍 Kiểm tra headers.txt cho $DP_NAME..."
+                  while IFS= read -r repo_name || [ -n "$repo_name" ]; do
+                      repo_name=$(echo $repo_name | tr -d '\r' | xargs)
+                      # Nếu folder đã có (do xả Zip ở bước 1) thì bỏ qua không clone nữa
+                      [ -z "$repo_name" ] || [ -d "$THEOS_INC/$repo_name" ] && continue
+                      
+                      echo "🚀 Kéo hàng ngoại: 2KGT/$repo_name"
+                      git clone --depth 1 https://github.com/2KGT/$repo_name "$THEOS_INC/$repo_name" || true
+                  done < "$DIR/headers.txt"
+              fi
+          fi
+          
+          # 3. DỌN RÁC HỆ THỐNG (Chống xung đột với SDK mặc định)
+          find "$THEOS_INC" -type d -name "CoreImage" -exec rm -rf {} +
+          find "$THEOS_INC" -type d -name "UIKit" -exec rm -rf {} +
+          
+          echo "✅ Cảm biến đã thông nòng toàn bộ hệ thống Header!"
+
           # 4. PHẦN XỬ LÝ THEO HEADERS.TXT
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
