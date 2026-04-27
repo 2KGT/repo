@@ -1,4 +1,4 @@
-name: Anti-Permission Dump Factory
+name: Dump Header Factory
 
 on:
   workflow_dispatch:
@@ -22,28 +22,16 @@ jobs:
         uses: actions/checkout@v4
 
       # ==========================================
-      # BƯỚC 1: TỰ XÂY DỰNG CÔNG CỤ (KHÔNG DÙNG LINK TẢI)
+      # BƯỚC 1: CÀI ĐẶT IPSW (DÙNG BREW - CỰC NHANH)
       # ==========================================
-      - name: 🛠️ Build dsdump from Source
+      - name: 🛠️ Setup IPSW Tool
         run: |
-          echo "--- ĐANG TỰ RÈN DAO MỔ DSDUMP ---"
-          # Tải mã nguồn công khai (Link này ai cũng có quyền clone)
-          git clone --recursive https://github.com/DerekSelander/dsdump.git dsdump_src
-          cd dsdump_src
-          
-          # Dùng máy ảo macOS tự biên dịch ra file chạy
-          xcodebuild -project dsdump.xcodeproj -scheme dsdump -configuration Release -derivedDataPath build_folder
-          
-          # Đưa file vừa rèn xong vào hệ thống để dùng
-          sudo cp build_folder/Build/Products/Release/dsdump /usr/local/bin/
-          
-          cd ..
-          rm -rf dsdump_src
-          echo "✅ Đã rèn xong dao mổ dsdump!"
-          dsdump --version
+          echo "--- ĐANG CÀI ĐẶT IPSW TOOL ---"
+          brew install blacktop/tap/ipsw
+          echo "✅ Đã cài đặt ipsw:" && ipsw version
 
       # ==========================================
-      # BƯỚC 2: TIẾP NHẬN BỆNH NHÂN (IPA)
+      # BƯỚC 2: TẢI VÀ GIẢI NÉN IPA
       # ==========================================
       - name: 📦 Download & Extract IPA
         run: |
@@ -54,32 +42,31 @@ jobs:
       - name: 🔍 Locate Binary
         id: locate
         run: |
-          # Tìm "trái tim" của App bên trong Payload
           BINARY_PATH=$(find app_extracted/Payload -name "*.app" | head -n 1)
           APP_NAME=$(basename "$BINARY_PATH" .app)
           echo "binary=$BINARY_PATH/$APP_NAME" >> $GITHUB_OUTPUT
           echo "🎯 Đã xác định mục tiêu: $APP_NAME"
 
       # ==========================================
-      # BƯỚC 3: GIẢI PHẪU & BOT PHÂN LOẠI
+      # BƯỚC 3: GIẢI PHẪU (DUMP HEADER BẰNG IPSW)
       # ==========================================
-      - name: ⚡ Full Dumping & Cleaning
+      - name: ⚡ Full Dumping
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           mkdir -p "$TARGET_DIR"
-          rm -rf "$TARGET_DIR"/*
           
-          echo "🚀 Đang mổ xẻ lấy Header..."
-          dsdump --objc --swift -f public --gen-header -o "$TARGET_DIR" "${{ steps.locate.outputs.binary }}"
+          echo "🚀 IPSW đang mổ xẻ lấy Header..."
+          # Lệnh dump header cực mạnh của ipsw
+          ipsw class-dump "${{ steps.locate.outputs.binary }}" -o "$TARGET_DIR"
           
-          echo "🤖 Bot đang dọn dẹp hiện trường..."
-          # Lôi toàn bộ file .h về thư mục chính, xóa đống folder rác
-          find "$TARGET_DIR" -mindepth 2 -type f -name "*.h" -exec mv {} "$TARGET_DIR/" \;
+          echo "🤖 Bot đang dọn dẹp..."
+          # Đưa toàn bộ file .h về mặt tiền
+          find "$TARGET_DIR" -type f -name "*.h" -exec mv {} "$TARGET_DIR/" \;
           find "$TARGET_DIR" -type d -empty -delete
           find "$TARGET_DIR" -type f ! -name "*.h" -delete
 
       # ==========================================
-      # BƯỚC 4: XUẤT XƯỞNG THÀNH PHẨM
+      # BƯỚC 4: XUẤT XƯỞNG
       # ==========================================
       - name: 🚀 Commit & Push
         run: |
@@ -88,9 +75,9 @@ jobs:
           git add "headers/${{ github.event.inputs.app_name }}"
           
           if git diff --staged --quiet; then
-            echo "💎 Không có thay đổi nào."
+            echo "💎 Không có thay đổi."
           else
-            git commit -m "🪄 [2KGT] Dumped: ${{ github.event.inputs.app_name }}"
+            git commit -m "🪄 [2KGT Factory] Dumped with IPSW: ${{ github.event.inputs.app_name }}"
             git push origin main
             echo "🎉 CA PHẪU THUẬT THÀNH CÔNG RỰC RỠ!"
           fi
