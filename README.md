@@ -21,6 +21,7 @@
 
 [![Build Multi Tweak](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml/badge.svg)](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml)
 
+[![Dump Factory](https://img.shields.io/badge/🚀_Run-Dump_Factory-blue?style=for-the-badge)](https://github.com/YOUR_USER/YOUR_REPO/actions/workflows/dump_header.yml)
 
 ---
 
