@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ipa_url:
-        description: '🔗 Link IPA Decrypt'
+        description: '🔗 Link ipa decrypt'
         required: true
         type: string
       app_name:
@@ -13,18 +13,18 @@ on:
         default: 'YouTubeHeader'
         type: string
       target_classes:
-        description: '🎯 Nhập Class (cách nhau bằng dấu cách)'
+        description: '🎯 Nhập Class 
+(cách nhau bằng dấu cách)'
         required: false
         type: string
       config_path:
-        description: '📄 Đường dẫn file .txt (Dự án)'
+        description: '📄 Đường dẫn file .txt (Dự án cần dump)'
         required: false
         type: string
       smart_filter:
-        description: '✨ Chế độ Sàng Lọc Vàng'
+        description: '✨ Chế độ Sàng lọc Vàng'
         type: boolean
         default: true
-
 
 jobs:
   dump_process:
