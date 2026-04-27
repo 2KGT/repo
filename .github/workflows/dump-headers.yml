@@ -11,17 +11,21 @@ on:
         description: '📁 Thư mục lưu'
         required: true
         default: 'YouTubeHeader'
+        type: string
       target_classes:
-        description: '🎯 Nhập Class (cách dấu cách)'
+        description: '🎯 Nhập Class (cách nhau dấu cách)'
         required: false
+        type: string
       config_path:
         description: '📄 Đường dẫn dự án .txt'
         required: false
+        type: string
       delete_files:
-        description: '🗑️ 'Tên file .h muốn xoá'
+        description: '🗑️ Tên file .h muốn xoá'
         required: false
+        type: string
       smart_filter:
-        description: '✨ Sàng lọc Swift,Apple'
+        description: '✨ Sàng lọc Swift, Apple'
         type: boolean
         default: true
       clear_all:
@@ -57,18 +61,17 @@ jobs:
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           TEMP_DUMP="temp_headers"
           
-          # 1. XỬ LÝ DỌN DẸP TRƯỚC (Nếu bật công tắc Nuclear)
+          # 1. XỬ LÝ DỌN DẸP TRƯỚC
           if [ "${{ github.event.inputs.clear_all }}" == "true" ]; then
               echo "🧨 Chế độ Nuclear: Đang dọn sạch kho cũ..."
               rm -rf "$TARGET_DIR"
           fi
           mkdir -p "$TARGET_DIR" "$TEMP_DUMP"
 
-          # 2. XÓA CÓ CHỦ ĐÍCH (Targeted Delete)
+          # 2. XÓA CÓ CHỦ ĐÍCH
           if [ -n "${{ github.event.inputs.delete_files }}" ]; then
               echo "🗑️ Đang xóa các file theo danh sách đen..."
               for DEL_FILE in ${{ github.event.inputs.delete_files }}; do
-                  # Xoá cả trường hợp nhập có .h hoặc không có .h
                   BASE_DEL=$(echo "$DEL_FILE" | sed 's/\.h//g')
                   rm -f "$TARGET_DIR/$BASE_DEL.h"
                   echo "  -> Đã xóa: $BASE_DEL.h"
@@ -84,21 +87,20 @@ jobs:
               fi
           fi
 
-          # 4. THỰC THI DUMP & VÁ LỖI (Smart Patch)
+          # 4. THỰC THI DUMP & VÁ LỖI
           if [ -n "$CLASSES" ]; then
               for CLS in $CLASSES; do
                   [ -z "$CLS" ] && continue
                   echo "🎯 Đang băm: $CLS"
                   ipsw class-dump "${{ steps.locate.outputs.binary }}" --class "$CLS" > "$TEMP_DUMP/$CLS.h"
                   
-                  # Chèn giáp chống lỗi build (Forward Declaration)
                   sed -i '' '1i\
                   @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
                   @protocol NSObject, NSCopying, NSCoding;
                   ' "$TEMP_DUMP/$CLS.h"
               done
           else
-              echo "🌊 Dump All (Vì không có yêu cầu cụ thể)..."
+              echo "🌊 Dump All..."
               ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers -o "$TEMP_DUMP"
           fi
 
