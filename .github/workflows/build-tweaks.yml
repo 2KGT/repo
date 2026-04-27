@@ -119,57 +119,35 @@ jobs:
         run: |
           DIR="${{ steps.picker.outputs.proj_dir }}"
           CTRL="$DIR/control"
-          
-          # 1. Định danh nhãn mác
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
-          RAW_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
-          NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$RAW_VER" || echo "$RAW_VER-test$(date +%H%M)")
-          
-          # 2. DỌN SÂN (Theos Clean)
-          make -C "$DIR" clean
+          NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$(grep "^Version:" "$CTRL" | cut -d' ' -f2)" || echo "$(grep "^Version:" "$CTRL" | cut -d' ' -f2)-test$(date +%H%M)")
 
-          # 3. NHẶT TRỰC TIẾP (Vì kho headers đã được lọc phẳng bởi Factory)
+          # 1. DỌN SÂN & GHI NHÃN
+          make -C "$DIR" clean
+          sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
+
+          # 2. DÁN HÀNG GIỮA TRẬN (Chỉ lấy .h)
           if [ -f "$DIR/headers.txt" ]; then
-              echo "🚚 Bốc hàng trực tiếp từ kho đã thanh tẩy..."
               DEST_DIR="$THEOS/include/YouTubeHeader"
               mkdir -p "$DEST_DIR"
-              
-              KHO_CHUAN="$(pwd)/headers/YouTubeHeader"
-              
-              while IFS= read -r file || [ -n "$file" ]; do
-                  FILE_NEED=$(echo "$file" | tr -d '\r' | xargs)
-                  [ -z "$FILE_NEED" ] && continue
-                  
-                  # Nhặt trực tiếp, không dùng find lằng nhằng vì hàng đã nằm ngay mặt tiền
-                  if [ -f "$KHO_CHUAN/$FILE_NEED" ]; then
-                      cp -fL "$KHO_CHUAN/$FILE_NEED" "$DEST_DIR/"
-                      echo "✅ Đã dán: $FILE_NEED"
-                  else
-                      # Nếu Factory lọc chưa kỹ, dùng find hỗ trợ nốt lần cuối cho chắc
-                      find "$KHO_CHUAN" -type f -name "$FILE_NEED" -exec cp -fL {} "$DEST_DIR/" \;
-                      [ -f "$DEST_DIR/$FILE_NEED" ] && echo "⚠️ Đã tìm thấy trong hẻm: $FILE_NEED" || echo "❌ Mất dấu: $FILE_NEED"
-                  fi
+              while IFS= read -r f || [ -n "$f" ]; do
+                  FILE=$(echo "$f" | tr -d '\r' | xargs)
+                  [[ "$FILE" == *.h ]] && find "$(pwd)/headers/YouTubeHeader" -type f -name "$FILE" -exec cp -fL {} "$DEST_DIR/" \;
               done < "$DIR/headers.txt"
           fi
 
-          # 4. THỔI LỬA BUILD
-          echo "🔥 Nấu mẻ tweak: $SAFE..."
-          sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
-          INC_FLAGS="-I$THEOS/include"
+          # 3. BUILD KHÔNG KHOAN NHƯỢNG
+          make -C "$DIR" package FINALPACKAGE=1 TARGET=iphone:clang:14.5:14.5 \
+            ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -DTHEOS_LEAN_AND_MEAN -I$THEOS/include"
           
-          make -C "$DIR" package FINALPACKAGE=1 \
-            TARGET=iphone:clang:14.5:14.5 \
-            ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -Wno-duplicate-protocol -DTHEOS_LEAN_AND_MEAN $INC_FLAGS"
-          
-          # 5. CẤT HÀNG & DỌN DẸP
-          mkdir -p deb_output
-          cp "$DIR/packages/"*.deb deb_output/
+          # 4. CẤT BIẾN & DỌN RÁC CUỐI
+          mkdir -p deb_output && cp "$DIR/packages/"*.deb deb_output/
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
-
-          echo "🧹 Xưởng sạch, hàng đã vào két!"
+          
+          # QUÉT SẠCH XƯỞNG
           find $THEOS/include -maxdepth 1 -type d ! -path $THEOS/include -exec rm -rf {} +
-
+          rm -rf "$DIR/.theos"
 
       # ==========================================
       # BƯỚC 5: LƯU TRỮ & PHÁT HÀNH
