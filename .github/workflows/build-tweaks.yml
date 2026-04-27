@@ -84,6 +84,10 @@ jobs:
                         -e 's/#import "NSObject.h"/#import <Foundation\/NSObject.h>/g' \
                         -e 's/#import "UIKit\/UIKit.h"/#import <UIKit\/UIKit.h>/g' \
                         -e 's/#import "Foundation\/Foundation.h"/#import <Foundation\/Foundation.h>/g' {} +
+                      # 🧬 ĐẶC TRỊ LỖI -PROTOCOL: Nhân bản file tự động
+                      echo "🧬 Đang xử lý lỗi đuôi -Protocol..."
+                      find "$TARGET_DIR" -type f -name "*-Protocol.h" | while read f; do cp -n "$f" "${f%-Protocol.h}.h"; done
+
                   fi
               done
           fi
