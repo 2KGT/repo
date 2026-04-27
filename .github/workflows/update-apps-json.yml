@@ -1,4 +1,4 @@
-name: Auto Update Releases+apps/ apps.json
+name: Auto Sync Releases+apps/ apps.json
 
 on:
   push:
