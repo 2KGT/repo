@@ -65,14 +65,39 @@ jobs:
                   unzip -q -o "$zipfile" -d "$THEOS_INC"
               done
               
-              # 3. PHẲNG HÓA (Lôi hết file .h ra ngoài cấp cao nhất của YouTubeHeader)
+          # 3. PHẲNG HÓA (Lôi hết file .h ra ngoài cấp cao nhất của YouTubeHeader)
               find "$THEOS_INC" -mindepth 2 -type f -name "*.h" -exec mv -t "$THEOS_INC" {} +
               find "$THEOS_INC" -type d -empty -delete
               echo "✅ Đã thông nòng $(ls "$THEOS_INC" | wc -l) file .h."
           else
               echo "⚠️ Không tìm thấy file Zip nào trong folder headers/."
           fi
+          # 4. PHẦN XỬ LÝ THEO HEADERS.TXT
+          CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
+          DIR=$(dirname "$CTRL")
+          
+          if [ -f "$DIR/headers.txt" ]; then
+              echo "🔍 Tìm thấy headers.txt cho $DP_NAME..."
+              while IFS= read -r repo_name || [ -n "$repo_name" ]; do
+                  repo_name=$(echo $repo_name | tr -d '\r' | xargs)
+                  # Bỏ qua YouTubeHeader vì đã xả Zip ở trên rồi
+                  [ -z "$repo_name" ] || [ "$repo_name" = "YouTubeHeader" ] && continue
 
+                  if [ -d "headers/$repo_name" ]; then
+                      echo "📂 Dùng hàng nội bộ: headers/$repo_name"
+                      rm -rf "$THEOS_INC/$repo_name"
+                      ln -sf "$(pwd)/headers/$repo_name" "$THEOS_INC/$repo_name"
+                  else
+                      echo "🚀 Kéo từ GitHub: 2KGT/$repo_name"
+                      git clone --depth 1 https://github.com/2KGT/$repo_name "$THEOS_INC/$repo_name" || true
+                  fi
+              done < "$DIR/headers.txt"
+          fi
+          
+          # 5. DỌN RÁC APPLE (Để build không bị xung đột)
+          find $THEOS_INC -type d -name "CoreImage" -exec rm -rf {} +
+          find $THEOS_INC -type d -name "UIKit" -exec rm -rf {} +
+          echo "✅ Nhà máy đã sẵn sàng luyện đan!"
       - name: ⚙️ Băm Trộn & Gán (Automation)
         id: metadata
         run: |
@@ -131,7 +156,7 @@ jobs:
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
 
-      - name: 🚀 Lên Kệ & Đồng bộ Repo
+      - name: 🚀 Lên Kệ & Đồng bộ
         if: github.event.inputs.publish == 'true'
         run: |
           brew install dpkg
