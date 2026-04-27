@@ -13,12 +13,13 @@ on:
         default: 'YouTubeHeader'
         type: string
       target_classes:
-        description: '🎯 Nhập Class 
-(cách nhau bằng dấu cách)'
+        description: '🎯 Nhập class 
+  (cách nhau bằng dấu cách)'
         required: false
         type: string
       config_path:
-        description: '📄 Đường dẫn file .txt (Dự án cần dump)'
+        description: '📄 Đường dẫn file .txt
+  (Dự án cần dump)'
         required: false
         type: string
       smart_filter:
