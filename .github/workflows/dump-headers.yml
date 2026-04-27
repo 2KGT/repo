@@ -12,16 +12,16 @@ on:
         required: true
         default: 'YouTubeHeader'
       target_classes:
-        description: '🎯 Nhập Class (cách nhau bằng dấu cách)'
+        description: '🎯 Nhập Class (cách dấu cách)'
         required: false
       config_path:
-        description: '📄 Đường dẫn file .txt (Dự án)'
+        description: '📄 Đường dẫn dự án .txt'
         required: false
       delete_files:
-        description: '🗑️ Nhập tên file muốn XÓA (vd: File1.h File2.h)'
+        description: '🗑️ 'Tên file .h muốn xoá'
         required: false
       smart_filter:
-        description: '✨ Chế độ Sàng Lọc (Swift, Apple)'
+        description: '✨ Sàng lọc Swift,Apple'
         type: boolean
         default: true
       clear_all:
