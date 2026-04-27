@@ -51,58 +51,48 @@ jobs:
       - name: 🏗️ Setup Theos Environment
         if: steps.cache-theos.outputs.cache-hit != 'true'
         run: |
-          # San phẳng folder cũ cho sạch đường
           rm -rf $THEOS
-          
-          # Bắt đầu kéo hàng mới
           git clone --recursive https://github.com/theos/theos.git $THEOS
           mkdir -p $THEOS/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
       # ==========================================
-      # BƯỚC 3: XỬ LÝ HEADER (LOẠI BỎ ZIP - ĐỌC TRỰC TIẾP)
+      # BƯỚC 3: XỬ LÝ HEADER CHỦ ĐỘNG (LỌC QUA TXT)
       # ==========================================
-      - name: 🚚 Cảm biến "Pháp Sư" (File Trần + Tối Ưu)
+      - name: 🎯 Selective Header Picker
+        id: picker
         run: |
-          THEOS_INC="$THEOS/include"
+          THEOS_INC="$THEOS/include/YouTubeHeader"
+          KHO_TONG="$(pwd)/headers/YouTubeHeader"
           mkdir -p "$THEOS_INC"
           
-          # 1. Liên kết các thư mục Header có sẵn trong repo vào Theos
-          if [ -d "headers" ]; then
-              echo "--- BẮT ĐẦU KẾT NỐI HEADER TRẦN ---"
-              for dir in headers/*/; do
-                  [ -d "$dir" ] || continue
-                  FOLDER_NAME=$(basename "$dir")
-                  echo "🔗 Liên kết thư mục: $FOLDER_NAME"
-                  # Sử dụng Symbolic Link để Theos đọc trực tiếp không cần copy
-                  ln -sf "$(pwd)/headers/$FOLDER_NAME" "$THEOS_INC/$FOLDER_NAME"
-                  
-                  # 🔧 Tiêm vaccine & Fix lỗi Protocol cho file trần
-                  echo "🔧 Tối ưu hóa file .h trong $FOLDER_NAME..."
-                  find "headers/$FOLDER_NAME" -type f -name "*.h" -exec sed -i '' \
-                    -e 's/#import "NSObject.h"/#import <Foundation\/NSObject.h>/g' \
-                    -e 's/#import "UIKit\/UIKit.h"/#import <UIKit\/UIKit.h>/g' \
-                    -e 's/#import "Foundation\/Foundation.h"/#import <Foundation\/Foundation.h>/g' {} +
-                  
-                  find "headers/$FOLDER_NAME" -type f -name "*-Protocol.h" -exec sh -c 'cp -n "$1" "${1%-Protocol.h}.h"' _ {} \;
-              done
-          fi
-
-          # 2. Xử lý file headers.txt (Nếu dự án yêu cầu thêm Repo từ bên ngoài)
+          # Xác định thư mục dự án
           DP_NAME="${{ github.event.inputs.project }}"
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
-          if [ -f "$DIR/headers.txt" ]; then
-              echo "--- TẢI THÊM HEADER TỪ NGOÀI ---"
-              while IFS= read -r repo_name || [ -n "$repo_name" ]; do
-                  repo_name=$(echo $repo_name | tr -d '\r' | xargs)
-                  [ -z "$repo_name" ] || [ -d "$THEOS_INC/$repo_name" ] && continue
-                  git clone --depth 1 https://github.com/2KGT/$repo_name "$THEOS_INC/$repo_name" || true
-              done < "$DIR/headers.txt"
+          echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
+
+          # Nhặt hàng theo headers.txt trong thư mục dự án
+          LIST_FILE="$DIR/headers.txt"
+          if [ -f "$LIST_FILE" ]; then
+              echo "📋 Đang nhặt hàng theo danh sách tại $LIST_FILE..."
+              while IFS= read -r file || [ -n "$file" ]; do
+                  file=$(echo "$file" | tr -d '\r' | xargs)
+                  [ -z "$file" ] && continue
+                  # Dùng ln -sf để liên kết file từ kho tổng vào xưởng build
+                  find "$KHO_TONG" -name "$file" -exec ln -sf {} "$THEOS_INC/" \;
+                  echo "✅ Đã nhặt: $file"
+              done < "$LIST_FILE"
+          else
+              echo "⚠️ Không tìm thấy headers.txt tại $DIR. Sẽ dùng mặc định nếu có."
           fi
-          
-          # 3. Dọn dẹp các thư mục trùng lặp gây lỗi build
-          rm -rf "$THEOS_INC/UIKit" "$THEOS_INC/CoreImage"
+
+          # Thanh trừng Header Apple gây xung đột build
+          echo "🧹 Đang dọn dẹp Header Apple rác..."
+          cd "$THEOS_INC"
+          rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h NSSecureCoding-Protocol.h \
+                CGRect.h CGPoint.h UIEdgeInsets.h UIAppearanceContainer-Protocol.h \
+                UIGestureRecognizerDelegate-Protocol.h OS_dispatch_object-Protocol.h
 
       # ==========================================
       # BƯỚC 4: BUILD TWEAK & TỰ ĐỘNG HÓA DEPICTION
@@ -110,29 +100,19 @@ jobs:
       - name: ⚙️ Băm Trộn & Đóng Gói
         id: metadata
         run: |
-          DP_NAME="${{ github.event.inputs.project }}"
-          [ "$DP_NAME" = "(none)" ] && exit 1
-          
-          CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
-          DIR=$(dirname "$CTRL")
+          DIR="${{ steps.picker.outputs.proj_dir }}"
+          CTRL="$DIR/control"
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           
-          # Tính toán Version (Thêm đuôi -test nếu không phải bản chính thức)
           RAW_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$RAW_VER" || echo "$RAW_VER-test$(date +%H%M)")
           
-          # Tự động gán I-Flags cho toàn bộ thư mục trong include
-          INC_FLAGS=""
-          for d in $THEOS/include/*/; do
-              [ -d "$d" ] && INC_FLAGS="$INC_FLAGS -I$d"
-          done
+          INC_FLAGS="-I$THEOS/include -I$THEOS/include/YouTubeHeader"
 
-          # Cập nhật thông tin Control file
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
           
-          # Tạo file Depiction JSON tự động
           mkdir -p depictions
           cat <<EOF > "depictions/${SAFE}.json"
           {
@@ -143,7 +123,7 @@ jobs:
                 "tabname": "Details",
                 "class": "DepictionStackView",
                 "views": [
-                  { "class": "DepictionHeaderView", "title": "$DP_NAME" },
+                  { "class": "DepictionHeaderView", "title": "${{ github.event.inputs.project }}" },
                   { "class": "DepictionMarkdownView", "markdown": "Build version: $NEW_VER" }
                 ]
               }
@@ -151,10 +131,9 @@ jobs:
           }
           EOF
           
-          # CHẠY LỆNH BUILD CHÍNH
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
-            ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -DTHEOS_LEAN_AND_MEAN $INC_FLAGS"
+            ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -Wno-duplicate-protocol -DTHEOS_LEAN_AND_MEAN $INC_FLAGS"
           
           mkdir -p deb_output
           cp "$DIR/packages/"*.deb deb_output/
@@ -164,13 +143,13 @@ jobs:
       # ==========================================
       # BƯỚC 5: LƯU TRỮ & PHÁT HÀNH
       # ==========================================
-      - name: 📦 Xuất xưởng file .deb (Tải về máy để test)
+      - name: 📦 Xuất xưởng file .deb
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.metadata.outputs.safe_name }}_v${{ steps.metadata.outputs.proj_ver }}
           path: deb_output/*.deb
 
-      - name: 🚀 Lên Kệ Sileo (Chỉ chạy khi tích Official)
+      - name: 🚀 Lên Kệ Sileo
         if: github.event.inputs.publish == 'true'
         run: |
           mkdir -p debs
