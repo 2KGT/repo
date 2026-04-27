@@ -111,39 +111,58 @@ jobs:
               fi
           done
 
-      # ==========================================
-      # BƯỚC 4: BUILD -> RA DEB -> DỌN RÁC TRIỆT ĐỂ
+            # ==========================================
+      # BƯỚC 4: BUILD -> RA DEB -> DỌN RÁC (BẢN FIX CHỐT)
       # ==========================================
       - name: ⚙️ Build & Clean Up
         id: metadata
         run: |
           DIR="${{ steps.picker.outputs.proj_dir }}"
-          # Thủ tục Metadata (Lấy SAFE name, NEW_VER...)
           CTRL="$DIR/control"
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           RAW_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$RAW_VER" || echo "$RAW_VER-test$(date +%H%M)")
           
-          # Cập nhật thông tin và tạo Depiction (sed, cat...)
-          # [Chèn đoạn code sed/cat xử lý version của ông vào đây]
+          # 1. Cập nhật nhãn mác
+          sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
+          sed -i '' "/^SileoDepiction:/d" "$CTRL"
+          echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
 
-          # TIẾN HÀNH BUILD
+          # 2. DỌN DẸP TRƯỚC (Để không xóa nhầm Header vừa nhặt)
+          make -C "$DIR" clean
+
+          # 3. NHẶT HÀNG TƯƠI (Thực hiện lại bước bốc hàng ngay trước khi build)
+          # Đây là chiêu chốt để đảm bảo file .h luôn có mặt lúc build
+          if [ -f "$DIR/headers.txt" ]; then
+              echo "🚚 Đang đưa Header vào vị trí chiến đấu..."
+              DEST_DIR="$THEOS/include/YouTubeHeader"
+              mkdir -p "$DEST_DIR"
+              while IFS= read -r line || [ -n "$line" ]; do
+                  FILE_NEED=$(echo "$line" | tr -d '\r' | xargs)
+                  [ -z "$FILE_NEED" ] && continue
+                  find "$(pwd)/headers/YouTubeHeader" -type f -name "$FILE_NEED" -exec cp -fL {} "$DEST_DIR/" \;
+              done < "$DIR/headers.txt"
+              
+              # Thanh tẩy nhanh rác Apple
+              rm -f "$DEST_DIR"/NSObject-Protocol.h "$DEST_DIR"/CGRect.h "$DEST_DIR"/CGPoint.h "$DEST_DIR"/UIEdgeInsets.h
+          fi
+
+          # 4. TIẾN HÀNH BUILD (Bỏ clean ở lệnh này)
           INC_FLAGS="-I$THEOS/include"
-          make -C "$DIR" clean package FINALPACKAGE=1 \
+          make -C "$DIR" package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
             ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -Wno-duplicate-protocol -DTHEOS_LEAN_AND_MEAN $INC_FLAGS"
           
-          # CẤT DEB VÀO NƠI AN TOÀN
+          # 5. CẤT DEB & DỌN RÁC CUỐI
           mkdir -p deb_output
           cp "$DIR/packages/"*.deb deb_output/
+          
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
 
-          # TỔNG VỆ SINH
-          echo "🧹 Build xong rồi! Đang dọn dẹp xưởng..."
-          make -C "$DIR" clean
+          echo "🧹 Tổng vệ sinh cuối cùng..."
           find $THEOS/include -maxdepth 1 -type d ! -path $THEOS/include -exec rm -rf {} +
-          rm -rf "$DIR/.theos"
+
 
       # ==========================================
       # BƯỚC 5: LƯU TRỮ & PHÁT HÀNH
