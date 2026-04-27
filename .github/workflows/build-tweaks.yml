@@ -49,82 +49,63 @@ jobs:
           mkdir -p $THEOS/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: 🚚 Cảm biến "Quy Hoạch & Vá Lỗi" (Fix NSObject)
+      - name: 🚚 Cảm biến "Pháp Sư" (Hệ Zip + Vá Lỗi + headers.txt)
         run: |
           THEOS_INC="$THEOS/include"
           mkdir -p "$THEOS_INC"
-          
-          # 1. QUÉT & XẢ NÉN (Giữ nguyên logic cũ của ông)
+          DP_NAME="${{ github.event.inputs.project }}"
+          [ "$DP_NAME" = "(none)" ] && exit 0
+
+          # 1. XỬ LÝ HỆ ZIP TRONG headers/ (YouTubeHeader, SpotifyHeader...)
           if [ -d "headers" ]; then
               for dir in headers/*/; do
                   [ -d "$dir" ] || continue
                   FOLDER_NAME=$(basename "$dir")
                   TARGET_DIR="$THEOS_INC/$FOLDER_NAME"
                   
-                  echo "📂 Đang xử lý: $FOLDER_NAME"
+                  echo "📂 Đang xử lý khu vực Zip: $FOLDER_NAME"
                   mkdir -p "$TARGET_DIR"
                   rm -rf "$TARGET_DIR/"*
                   
                   if ls "$dir"*.zip 1> /dev/null 2>&1; then
                       for zipfile in $(ls "$dir"*.zip | sort -V); do
+                          echo "🏗️ Đang xả và đè: $(basename "$zipfile")"
                           unzip -q -o "$zipfile" -d "$TARGET_DIR"
                       done
+                      # Phẳng hóa & Vá lỗi NSObject.h
                       find "$TARGET_DIR" -mindepth 2 -type f -name "*.h" -exec mv -t "$TARGET_DIR" {} +
                       find "$TARGET_DIR" -type d -empty -delete
+                      find "$TARGET_DIR" -type f -name "*.h" -exec sed -i '' 's/#import "NSObject.h"/#import <Foundation\/NSObject.h>/g' {} +
                   fi
-
-                  # 🛠️ BƯỚC VÁ LỖI: Tự động sửa lỗi import NSObject.h "bẩn"
-                  echo "🔧 Đang vá lỗi Header cho $FOLDER_NAME..."
-                  find "$TARGET_DIR" -type f -name "*.h" -exec sed -i '' 's/#import "NSObject.h"/#import <Foundation\/NSObject.h>/g' {} +
               done
           fi
 
-          # 2. XỬ LÝ headers.txt (Giữ nguyên)
-          DP_NAME="${{ github.event.inputs.project }}"
-          [ "$DP_NAME" = "(none)" ] && exit 0
-          CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
-          if [ -n "$CTRL" ]; then
-              DIR=$(dirname "$CTRL")
-              if [ -f "$DIR/headers.txt" ]; then
-                  while IFS= read -r repo_name || [ -n "$repo_name" ]; do
-                      repo_name=$(echo $repo_name | tr -d '\r' | xargs)
-                      [ -z "$repo_name" ] || [ -d "$THEOS_INC/$repo_name" ] && continue
-                      git clone --depth 1 https://github.com/2KGT/$repo_name "$THEOS_INC/$repo_name" || true
-                  done < "$DIR/headers.txt"
-              fi
-          fi
-          
-          # 3. DỌN RÁC APPLE (Chống xung đột)
-          find "$THEOS_INC" -type d -name "CoreImage" -exec rm -rf {} +
-          find "$THEOS_INC" -type d -name "UIKit" -exec rm -rf {} +
-          echo "✅ Đã vá và nạp xong!"
-
-          # 4. PHẦN XỬ LÝ THEO HEADERS.TXT
+          # 2. XỬ LÝ DANH SÁCH headers.txt (Bù đắp hàng thiếu)
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
           
           if [ -f "$DIR/headers.txt" ]; then
-              echo "🔍 Tìm thấy headers.txt cho $DP_NAME..."
+              echo "🔍 Xử lý danh sách từ headers.txt cho $DP_NAME..."
               while IFS= read -r repo_name || [ -n "$repo_name" ]; do
                   repo_name=$(echo $repo_name | tr -d '\r' | xargs)
-                  # Bỏ qua YouTubeHeader vì đã xả Zip ở trên rồi
-                  [ -z "$repo_name" ] || [ "$repo_name" = "YouTubeHeader" ] && continue
+                  # Nếu đã có folder (do xả Zip ở trên) thì bỏ qua
+                  [ -z "$repo_name" ] || [ -d "$THEOS_INC/$repo_name" ] && continue
 
                   if [ -d "headers/$repo_name" ]; then
-                      echo "📂 Dùng hàng nội bộ: headers/$repo_name"
-                      rm -rf "$THEOS_INC/$repo_name"
+                      echo "📂 Dùng hàng nội bộ (Folder): headers/$repo_name"
                       ln -sf "$(pwd)/headers/$repo_name" "$THEOS_INC/$repo_name"
                   else
-                      echo "🚀 Kéo từ GitHub: 2KGT/$repo_name"
+                      echo "🚀 Kéo hàng ngoại (GitHub): 2KGT/$repo_name"
                       git clone --depth 1 https://github.com/2KGT/$repo_name "$THEOS_INC/$repo_name" || true
                   fi
               done < "$DIR/headers.txt"
           fi
           
-          # 5. DỌN RÁC APPLE (Để build không bị xung đột)
-          find $THEOS_INC -type d -name "CoreImage" -exec rm -rf {} +
-          find $THEOS_INC -type d -name "UIKit" -exec rm -rf {} +
-          echo "✅ Nhà máy đã sẵn sàng luyện đan!"
+          # 3. DỌN RÁC APPLE (Tránh lỗi xung đột SDK)
+          find "$THEOS_INC" -type d -name "CoreImage" -exec rm -rf {} +
+          find "$THEOS_INC" -type d -name "UIKit" -exec rm -rf {} +
+          echo "✅ Hệ thống Header đã thông nòng!"
+
       - name: ⚙️ Băm Trộn & Gán (Automation)
         id: metadata
         run: |
@@ -183,7 +164,7 @@ jobs:
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
 
-      - name: 🚀 Lên Kệ & Đồng bộ
+      - name: 🚀 Lên Kệ & Đồng bộ Repo
         if: github.event.inputs.publish == 'true'
         run: |
           brew install dpkg
