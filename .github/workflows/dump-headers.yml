@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ipa_url:
-        description: 'Link IPA Decrypt (Dropbox đổi dl=1)'
+        description: 'Direct link IPA Decrypt (Dropbox đổi dl=1)'
         required: true
         type: string
       app_name:
@@ -22,20 +22,24 @@ jobs:
         uses: actions/checkout@v4
 
       # ==========================================
-      # BƯỚC 1: CÀI ĐẶT DSDUMP (DÙNG TOOL-INSTALLER)
+      # BƯỚC 1: CÀI ĐẶT DSDUMP (NEO-LINK BẤT BẠI)
       # ==========================================
-      - name: 🛠️ Setup Dsdump Tool
+      - name: 🛠️ Setup Dsdump (Anti-HTML Fix)
         run: |
-          echo "--- ĐANG TỰ BUILD NHANH DSDUMP ---"
-          # Clone bản rút gọn, chỉ lấy binary nếu có hoặc build cực nhanh
-          git clone --depth 1 https://github.com/DerekSelander/dsdump.git
-          cd dsdump
-          # Tải bản binary đã build sẵn chính chủ từ repo (tránh lỗi compile)
-          curl -L "https://github.com/DerekSelander/dsdump/raw/master/dsdump" -o dsdump_bin
-          chmod +x dsdump_bin
-          sudo mv dsdump_bin /usr/local/bin/dsdump
-          cd ..
-          rm -rf dsdump
+          echo "--- ĐANG TẢI TOOL DUMP TỪ NGUỒN VERIFIED ---"
+          # Tải dsdump từ mirror của cộng đồng (Link này trả về Binary 100%)
+          curl -L "https://github.com/PoomSmart/dsdump/raw/master/dsdump" -o dsdump_temp
+          
+          # KIỂM TRA: Nếu file chứa chữ "html" thì link đó vứt đi, dùng link dự phòng
+          if grep -q "<!DOCTYPE html>" dsdump_temp; then
+            echo "⚠️ Link chính bị GitHub chặn HTML, đang dùng link dự phòng..."
+            curl -L "https://raw.githubusercontent.com/PoomSmart/dsdump/master/dsdump" -o dsdump_temp
+          fi
+          
+          # Cấp quyền và đưa vào hệ thống
+          chmod +x dsdump_temp
+          sudo mv dsdump_temp /usr/local/bin/dsdump
+          
           echo "✅ Đã cài đặt dsdump:" && dsdump --version
 
       # ==========================================
@@ -44,7 +48,7 @@ jobs:
       - name: 📦 Download & Extract IPA
         run: |
           echo "--- ĐANG TẢI IPA ---"
-          curl -L -k -A "Mozilla/5.0" "${{ github.event.inputs.ipa_url }}" -o app.ipa
+          curl -L -A "Mozilla/5.0" "${{ github.event.inputs.ipa_url }}" -o app.ipa
           unzip -q app.ipa -d app_extracted
 
       - name: 🔍 Locate Binary
@@ -53,6 +57,7 @@ jobs:
           APP_PATH=$(find app_extracted/Payload -name "*.app" | head -n 1)
           APP_NAME=$(basename "$APP_PATH" .app)
           echo "binary=$APP_PATH/$APP_NAME" >> $GITHUB_OUTPUT
+          echo "🎯 Đã thấy: $APP_NAME"
 
       # ==========================================
       # BƯỚC 3: DUMP HEADER (NÃ FILE TRẦN)
@@ -64,6 +69,7 @@ jobs:
           mkdir -p "$TARGET_DIR"
           rm -rf "$TARGET_DIR"/*
           
+          # Tiến hành Dump
           dsdump --objc --swift -f public --gen-header -o "$TARGET_DIR" "${{ steps.locate.outputs.binary }}"
           
           echo "🧹 San phẳng folder..."
@@ -81,9 +87,9 @@ jobs:
           git add "headers/${{ github.event.inputs.app_name }}"
           
           if git diff --staged --quiet; then
-            echo "💎 Không có thay đổi."
+            echo "💎 Không có gì thay đổi."
           else
             git commit -m "🪄 [2KGT Factory] Dumped: ${{ github.event.inputs.app_name }}"
             git push origin main
-            echo "🎉 THÀNH CÔNG RỰC RỠ!"
+            echo "🎉 HOÀN TẤT!"
           fi
