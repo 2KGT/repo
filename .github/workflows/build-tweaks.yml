@@ -49,37 +49,28 @@ jobs:
           mkdir -p $THEOS/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: 🚚 Cảm biến & Nạp Header
+      - name: 🚚 Cảm biến & Nạp Header (Zip 1-2-3)
         run: |
-          THEOS_INC="$THEOS/include"
-          DP_NAME="${{ github.event.inputs.project }}"
-          [ "$DP_NAME" = "(none)" ] && exit 0
+          THEOS_INC="$THEOS/include/YouTubeHeader"
+          mkdir -p "$THEOS_INC"
           
-          CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
-          DIR=$(dirname "$CTRL")
+          # 1. Dọn sạch bãi cũ
+          rm -rf "$THEOS_INC/"*
           
-          if [ -f "$DIR/headers.txt" ]; then
-              echo "🔍 Tìm thấy headers.txt cho $DP_NAME..."
-              while IFS= read -r repo_name || [ -n "$repo_name" ]; do
-                  repo_name=$(echo $repo_name | tr -d '\r' | xargs)
-                  [ -z "$repo_name" ] && continue
-
-                  # KIỂM TRA HÀNG NỘI BỘ
-                  if [ -d "headers/$repo_name" ]; then
-                      echo "📂 Dùng hàng nội bộ: headers/$repo_name"
-                      ln -sf "$(pwd)/headers/$repo_name" "$THEOS_INC/$repo_name"
-                  else
-                      echo "🚀 Không thấy hàng nội bộ, đang kéo từ GitHub: 2KGT/$repo_name"
-                      git clone --depth 1 https://github.com/2KGT/$repo_name $THEOS_INC/$repo_name
-                  fi
-              done < "$DIR/headers.txt"
+          # 2. Xử lý tất cả file Zip trong folder headers/ (YouTube1 -> YouTube2 -> YouTube10)
+          if ls headers/*.zip 1> /dev/null 2>&1; then
+              echo "📦 Phát hiện kho Zip! Đang xả nén và trộn hàng..."
+              for zipfile in $(ls headers/*.zip | sort -V); do
+                  echo "🏗️ Đang xả và ghi đè: $zipfile"
+                  unzip -q -o "$zipfile" -d "$THEOS_INC"
+              done
               
-              # Dọn rác module hệ thống
-              find $THEOS_INC -type d -name "CoreImage" -exec rm -rf {} +
-              find $THEOS_INC -type d -name "UIKit" -exec rm -rf {} +
-              echo "✅ Đã thông nòng Header nội bộ."
+              # 3. PHẲNG HÓA (Lôi hết file .h ra ngoài cấp cao nhất của YouTubeHeader)
+              find "$THEOS_INC" -mindepth 2 -type f -name "*.h" -exec mv -t "$THEOS_INC" {} +
+              find "$THEOS_INC" -type d -empty -delete
+              echo "✅ Đã thông nòng $(ls "$THEOS_INC" | wc -l) file .h."
           else
-              echo "⚠️ Không có headers.txt, bỏ qua."
+              echo "⚠️ Không tìm thấy file Zip nào trong folder headers/."
           fi
 
       - name: ⚙️ Băm Trộn & Gán (Automation)
@@ -94,7 +85,6 @@ jobs:
           DESC=$(grep "^Description:" "$CTRL" | cut -d: -f2- | sed 's/^ *//')
           
           RAW_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
-
           NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$RAW_VER" || echo "$RAW_VER-test$(date +%H%M)")
           
           IMG_PATH="${{ env.BASE_URL }}/depictions/images/${SAFE}"
