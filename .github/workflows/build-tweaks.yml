@@ -56,7 +56,7 @@ jobs:
           DP_NAME="${{ github.event.inputs.project }}"
           [ "$DP_NAME" = "(none)" ] && exit 0
 
-          # 1. XỬ LÝ HỆ ZIP TRONG headers/ (YouTubeHeader, SpotifyHeader...)
+          # 1. XỬ LÝ HỆ ZIP (YouTubeHeader, SpotifyHeader...)
           if [ -d "headers" ]; then
               for dir in headers/*/; do
                   [ -d "$dir" ] || continue
@@ -72,39 +72,38 @@ jobs:
                           echo "🏗️ Đang xả và đè: $(basename "$zipfile")"
                           unzip -q -o "$zipfile" -d "$TARGET_DIR"
                       done
-                      # Phẳng hóa & Vá lỗi NSObject.h
+                      # Phẳng hóa: Lôi file .h ra ngoài (Trị lỗi nén lồng folder)
                       find "$TARGET_DIR" -mindepth 2 -type f -name "*.h" -exec mv -t "$TARGET_DIR" {} +
                       find "$TARGET_DIR" -type d -empty -delete
-                      find "$TARGET_DIR" -type f -name "*.h" -exec sed -i '' 's/#import "NSObject.h"/#import <Foundation\/NSObject.h>/g' {} +
+                      
+                      # 🔧 VACCINE SIÊU CẤP: Vá lỗi import "bẩn" cho đồ Dump
+                      echo "🔧 Đang tiêm vaccine cho Header..."
+                      find "$TARGET_DIR" -type f -name "*.h" -exec sed -i '' \
+                        -e 's/#import "NSObject.h"/#import <Foundation\/NSObject.h>/g' \
+                        -e 's/#import "UIKit\/UIKit.h"/#import <UIKit\/UIKit.h>/g' \
+                        -e 's/#import "Foundation\/Foundation.h"/#import <Foundation\/Foundation.h>/g' {} +
                   fi
               done
           fi
 
-          # 2. XỬ LÝ DANH SÁCH headers.txt (Bù đắp hàng thiếu)
+          # 2. XỬ LÝ headers.txt (Bù đắp hàng thiếu)
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
-          
           if [ -f "$DIR/headers.txt" ]; then
-              echo "🔍 Xử lý danh sách từ headers.txt cho $DP_NAME..."
               while IFS= read -r repo_name || [ -n "$repo_name" ]; do
                   repo_name=$(echo $repo_name | tr -d '\r' | xargs)
-                  # Nếu đã có folder (do xả Zip ở trên) thì bỏ qua
                   [ -z "$repo_name" ] || [ -d "$THEOS_INC/$repo_name" ] && continue
-
                   if [ -d "headers/$repo_name" ]; then
-                      echo "📂 Dùng hàng nội bộ (Folder): headers/$repo_name"
                       ln -sf "$(pwd)/headers/$repo_name" "$THEOS_INC/$repo_name"
                   else
-                      echo "🚀 Kéo hàng ngoại (GitHub): 2KGT/$repo_name"
                       git clone --depth 1 https://github.com/2KGT/$repo_name "$THEOS_INC/$repo_name" || true
                   fi
               done < "$DIR/headers.txt"
           fi
           
-          # 3. DỌN RÁC APPLE (Tránh lỗi xung đột SDK)
+          # 3. DỌN RÁC APPLE
           find "$THEOS_INC" -type d -name "CoreImage" -exec rm -rf {} +
           find "$THEOS_INC" -type d -name "UIKit" -exec rm -rf {} +
-          echo "✅ Hệ thống Header đã thông nòng!"
 
       - name: ⚙️ Băm Trộn & Gán (Automation)
         id: metadata
@@ -120,6 +119,13 @@ jobs:
           RAW_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$RAW_VER" || echo "$RAW_VER-test$(date +%H%M)")
           
+          # --- ĐOẠN KHAI THÔNG ĐƯỜNG DẪN (FIX LỖI FILE NOT FOUND) ---
+          INC_FLAGS=""
+          for d in $THEOS/include/*/; do
+              [ -d "$d" ] && INC_FLAGS="$INC_FLAGS -I$d"
+          done
+          # -------------------------------------------------------
+
           IMG_PATH="${{ env.BASE_URL }}/depictions/images/${SAFE}"
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
@@ -155,9 +161,10 @@ jobs:
           }
           EOF
           
+          # BUILD VỚI CÁC CỜ HEADER MỚI (-I)
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
-            ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -DTHEOS_LEAN_AND_MEAN"
+            ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -DTHEOS_LEAN_AND_MEAN $INC_FLAGS"
           
           mkdir -p deb_output
           cp "$DIR/packages/"*.deb deb_output/
