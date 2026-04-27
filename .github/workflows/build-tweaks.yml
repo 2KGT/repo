@@ -56,7 +56,6 @@ jobs:
           DP_NAME="${{ github.event.inputs.project }}"
           [ "$DP_NAME" = "(none)" ] && exit 0
 
-          # 1. XỬ LÝ HỆ ZIP (YouTubeHeader, SpotifyHeader...)
           if [ -d "headers" ]; then
               for dir in headers/*/; do
                   [ -d "$dir" ] || continue
@@ -73,26 +72,22 @@ jobs:
                           unzip -q -o "$zipfile" -d "$TARGET_DIR"
                       done
                       
-                      # 🚨 BẢN FIX DÀNH RIÊNG CHO MACOS: Phẳng hóa thư mục
                       echo "🧹 Đang san phẳng thư mục con..."
                       find "$TARGET_DIR" -mindepth 2 -type f -name "*.h" -exec mv {} "$TARGET_DIR/" \;
                       find "$TARGET_DIR" -type d -empty -delete
                       
-                      # 🔧 VACCINE SIÊU CẤP
                       echo "🔧 Đang tiêm vaccine cho Header..."
                       find "$TARGET_DIR" -type f -name "*.h" -exec sed -i '' \
                         -e 's/#import "NSObject.h"/#import <Foundation\/NSObject.h>/g' \
                         -e 's/#import "UIKit\/UIKit.h"/#import <UIKit\/UIKit.h>/g' \
                         -e 's/#import "Foundation\/Foundation.h"/#import <Foundation\/Foundation.h>/g' {} +
                         
-                      # 🧬 ĐẶC TRỊ LỖI -PROTOCOL: Nhân bản file tự động (ĐÃ SỬA LỖI MACOS)
                       echo "🧬 Đang xử lý lỗi đuôi -Protocol..."
                       find "$TARGET_DIR" -type f -name "*-Protocol.h" -exec sh -c 'cp -n "$1" "${1%-Protocol.h}.h"' _ {} \;
                   fi
               done
           fi
 
-          # 2. XỬ LÝ headers.txt 
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
           if [ -f "$DIR/headers.txt" ]; then
@@ -107,7 +102,6 @@ jobs:
               done < "$DIR/headers.txt"
           fi
           
-          # 3. DỌN RÁC APPLE
           find "$THEOS_INC" -type d -name "CoreImage" -exec rm -rf {} +
           find "$THEOS_INC" -type d -name "UIKit" -exec rm -rf {} +
 
@@ -125,12 +119,10 @@ jobs:
           RAW_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$RAW_VER" || echo "$RAW_VER-test$(date +%H%M)")
           
-          # --- ĐOẠN KHAI THÔNG ĐƯỜNG DẪN (FIX LỖI FILE NOT FOUND) ---
           INC_FLAGS=""
           for d in $THEOS/include/*/; do
               [ -d "$d" ] && INC_FLAGS="$INC_FLAGS -I$d"
           done
-          # -------------------------------------------------------
 
           IMG_PATH="${{ env.BASE_URL }}/depictions/images/${SAFE}"
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
@@ -167,7 +159,6 @@ jobs:
           }
           EOF
           
-          # BUILD VỚI CÁC CỜ HEADER MỚI (-I)
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
             ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -DTHEOS_LEAN_AND_MEAN $INC_FLAGS"
@@ -176,6 +167,13 @@ jobs:
           cp "$DIR/packages/"*.deb deb_output/
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
+
+      - name: 📦 Xuất xưởng file .deb (Artifact tải về)
+        uses: actions/upload-artifact@v4
+        with:
+          name: tweak-${{ steps.metadata.outputs.safe_name }}-${{ steps.metadata.outputs.proj_ver }}
+          path: deb_output/*.deb
+          retention-days: 7
 
       - name: 🚀 Lên Kệ & Đồng bộ Repo
         if: github.event.inputs.publish == 'true'
