@@ -32,7 +32,7 @@ jobs:
     runs-on: macos-latest
     permissions:
       contents: write
-    steps:
+   steps:
       - name: 📥 Checkout Repo
         uses: actions/checkout@v4
 
@@ -58,39 +58,43 @@ jobs:
           
           # 🔥 CHIẾN THUẬT GOM QUÂN
           CLASSES="${{ github.event.inputs.target_classes }}"
-          # Nếu không nhập ô trên web, check file config theo đường dẫn tùy chỉnh
-          if [ -z "$CLASSES" ] && [ -f "${{ github.event.inputs.config_path }}" ]; then
-              echo "📝 Đang đọc danh sách từ: ${{ github.event.inputs.config_path }}"
-              CLASSES=$(tr '\r\n' ' ' < "${{ github.event.inputs.config_path }}" | sed 's/\.h//g')
+          
+          if [ -z "$CLASSES" ] && [ -n "${{ github.event.inputs.config_path }}" ]; then
+              if [ -f "${{ github.event.inputs.config_path }}" ]; then
+                  echo "📝 Đang đọc danh sách từ file: ${{ github.event.inputs.config_path }}"
+                  # Đọc file, xóa đuôi .h và gom thành 1 dòng cách nhau bởi dấu cách
+                  CLASSES=$(tr '\r\n' ' ' < "${{ github.event.inputs.config_path }}" | sed 's/\.h//g')
+              fi
           fi
 
-          # 🔥 THỰC THI DUMP
+          # 🔥 THỰC THI DUMP (Sửa lỗi cờ --filter thành --class)
           if [ -n "$CLASSES" ]; then
-              echo "🎯 Chế độ gắp thú mục tiêu..."
+              echo "🎯 Chế độ gắp thú mục tiêu cho các class..."
               for CLS in $CLASSES; do
                   [ -z "$CLS" ] && continue
-                  ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers --filter "$CLS" -o "$TEMP_DUMP"
+                  echo "  -> Trích xuất class: $CLS"
+                  # SỬA TẠI ĐÂY: --filter đổi thành --class
+                  ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers --class "$CLS" -o "$TEMP_DUMP"
               done
           else
               echo "🌊 Chế độ càn quét (Dump All)..."
               ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers -o "$TEMP_DUMP"
           fi
 
-          # 🔥 BỘ LỌC SÀNG VÀNG (Smart Filter)
+          # 🔥 BỘ LỌC SÀNG VÀNG
           find "$TEMP_DUMP" -name "*.h" -exec mv {} "$TARGET_DIR/" \;
           
           if [ "${{ github.event.inputs.smart_filter }}" == "true" ]; then
-              echo "✨ Đang sàng lọc vàng (Lọc tinh)..."
+              echo "✨ Đang sàng lọc vàng..."
               cd "$TARGET_DIR"
-              # Diệt rác Apple & System
-              rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h \
-                    CGRect.h CGPoint.h UIEdgeInsets.h GPBMessage.h NSObject.h \
-                    NSString.h NSArray.h NSDictionary.h NSValue.h NSNumber.h
-              # Diệt rác Swift & Category biến dị
-              rm -f _Ttc*
-              find . -name "*+*" | awk 'length > 100' | xargs rm -f
+              rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h CGRect.h CGPoint.h UIEdgeInsets.h GPBMessage.h NSObject.h NSString.h NSArray.h NSDictionary.h NSValue.h NSNumber.h _Ttc*
+              find . -name "*+*" | awk 'length > 100' | xargs rm -f 2>/dev/null
               cd - > /dev/null
           fi
+
+          rm -rf "$TEMP_DUMP" app_extracted
+          echo "📦 Kho hàng thành phẩm: $(ls -1 "$TARGET_DIR" | wc -l) file."
+fi
 
           rm -rf "$TEMP_DUMP" app_extracted
           echo "📦 Hoàn tất! Kho hàng có: $(ls -1 "$TARGET_DIR" | wc -l) file."
