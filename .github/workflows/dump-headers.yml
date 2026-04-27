@@ -11,6 +11,10 @@ on:
         description: 'Tên thư mục lưu Header'
         required: true
         default: 'YouTubeHeader'
+      purge_swift:
+        description: 'Thanh trừng rác Swift (_Ttc...)'
+        type: boolean
+        default: true
 
 jobs:
   dump_process:
@@ -22,7 +26,7 @@ jobs:
         uses: actions/checkout@v4
 
       # ==========================================
-      # BƯỚC 1: CÀI ĐẶT IPSW
+      # BƯỚC 1: CHUẨN BỊ VŨ KHÍ (IPSW)
       # ==========================================
       - name: 🛠️ Setup IPSW Tool
         run: |
@@ -30,7 +34,7 @@ jobs:
           ipsw version
 
       # ==========================================
-      # BƯỚC 2: TẢI VÀ GIẢI NÉN IPA
+      # BƯỚC 2: TIẾP NHẬN & GIẢI PHẪU IPA
       # ==========================================
       - name: 📦 Download & Extract IPA
         run: |
@@ -41,47 +45,75 @@ jobs:
         id: locate
         run: |
           BINARY_PATH=$(find app_extracted/Payload -name "*.app" | head -n 1)
-          APP_NAME=$(basename "$BINARY_PATH" .app)
-          echo "binary=$BINARY_PATH/$APP_NAME" >> $GITHUB_OUTPUT
-          echo "🎯 Mục tiêu: $APP_NAME"
+          APP_BIN=$(basename "$BINARY_PATH" .app)
+          echo "binary=$BINARY_PATH/$APP_BIN" >> $GITHUB_OUTPUT
+          echo "🎯 Mục tiêu mổ xẻ: $APP_BIN"
 
-            # ==========================================
-      # BƯỚC 3: GIẢI PHẪU & BOT DỌN DẸP (BẢN NÂNG CẤP)
       # ==========================================
-      - name: ⚡ Full Dumping
+      # BƯỚC 3: CHIẾN DỊCH "THANH TẨY NGUỒN HÀNG"
+      # ==========================================
+      - name: ⚡ Full Dumping & Smart Filter
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           TEMP_DUMP="temp_headers"
+          
+          # 1. Xoá kho cũ, dựng sân bãi mới
+          echo "🗑️ Đang xoá bỏ dữ liệu cũ..."
+          rm -rf "$TARGET_DIR"
           mkdir -p "$TARGET_DIR"
           mkdir -p "$TEMP_DUMP"
           
-          echo "🚀 IPSW đang mổ xẻ..."
+          # 2. Thực thi Class-dump
+          echo "🚀 IPSW đang mổ xẻ Binary..."
           ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers -o "$TEMP_DUMP"
           
-          echo "🤖 Bot thợ lặn đang gom file..."
-          # Lệnh này sẽ tìm TẤT CẢ file .h ở bất kỳ thư mục con nào và đưa về TARGET_DIR
+          # 3. Gom hàng & LÀM PHẲNG (Flat structure)
+          echo "🤖 Bot thợ lặn đang gom file về một mặt phẳng..."
           find "$TEMP_DUMP" -name "*.h" -exec mv {} "$TARGET_DIR/" \;
           
-          # Xóa dấu vết tạm
-          rm -rf "$TEMP_DUMP"
+          # 4. ÉP BỘ LỌC CHỐNG XUNG ĐỘT
+          echo "🧹 Bắt đầu khâu lọc hàng chất lượng cao..."
+          cd "$TARGET_DIR"
+
+          # Loại bỏ Header Apple & System (Tránh lỗi Redefinition khi build)
+          rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h \
+                NSSecureCoding-Protocol.h CGRect.h CGPoint.h UIEdgeInsets.h \
+                UIAppearanceContainer-Protocol.h UIGestureRecognizerDelegate-Protocol.h \
+                OS_dispatch_object-Protocol.h OS_dispatch_queue-Protocol.h \
+                OS_dispatch_source-Protocol.h GPBMessage.h NSObject.h NSString.h \
+                NSArray.h NSDictionary.h NSValue.h NSNumber.h
+
+          # Công tắc phụ: Diệt rác Swift (_Ttc... dài loằng ngoằng)
+          if [ "${{ github.event.inputs.purge_swift }}" == "true" ]; then
+            echo "🍎 Đang thanh trừng rác Swift..."
+            rm -f _Ttc*
+          fi
           
-          # Kiểm tra xem có file nào không
+          # Dọn dẹp tàn dư không phải file .h
+          find . -type f ! -name "*.h" -delete
+
+          cd - > /dev/null
+          rm -rf "$TEMP_DUMP"
+          rm -rf app_extracted
+          
           COUNT=$(ls -1 "$TARGET_DIR" | wc -l)
-          echo "📦 Tổng cộng thu hoạch được: $COUNT file headers."
+          echo "📦 THÀNH PHẨM: $COUNT file headers sạch đã lên kệ!"
 
       # ==========================================
-      # BƯỚC 4: XUẤT XƯỞNG
+      # BƯỚC 4: NHẬP KHO REPO
       # ==========================================
-      - name: 🚀 Commit & Push
+      - name: 🚀 Commit & Push Clean Headers
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          git add "headers/${{ github.event.inputs.app_name }}"
+          
+          # Force add để tránh sót file có tên đặc biệt
+          git add -f "headers/${{ github.event.inputs.app_name }}"
           
           if git diff --staged --quiet; then
-            echo "💎 Không có thay đổi."
+            echo "💎 Không có gì mới để cập nhật."
           else
-            git commit -m "🪄 [2KGT Factory] Dumped: ${{ github.event.inputs.app_name }}"
+            git commit -m "🪄 [2KGT Factory] Dumped & Filtered: ${{ github.event.inputs.app_name }}"
             git push origin main
-            echo "🎉 THÀNH CÔNG RỰC RỠ!"
+            echo "🎉 KHO HÀNG ĐÃ ĐƯỢC LÀM MỚI SẠCH SẼ - PHẲNG LÌ!"
           fi
