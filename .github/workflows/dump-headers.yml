@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       ipa_url:
-        description: 'Dán link tải IPA Decrypt (Link trực tiếp)'
+        description: 'Direct link IPA Decrypt'
         required: true
         type: string
       app_name:
-        description: 'Tên thư mục lưu (VD: YouTubeHeader)'
+        description: 'Thư mục lưu (VD: YouTubeHeader)'
         required: true
         default: 'YouTubeHeader'
 
