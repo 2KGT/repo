@@ -1,1 +1,7 @@
-YouTubeHeader
+MLHAMPlayerItem.h
+YTAppSettingsPresentationData.h
+YTSettingsViewController.h
+YTSettingsSectionItem.h
+YTSettingsSectionItemManager.h
+YTSettingsGroupData.h
+
