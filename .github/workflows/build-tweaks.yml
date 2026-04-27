@@ -72,11 +72,13 @@ jobs:
                           echo "🏗️ Đang xả và đè: $(basename "$zipfile")"
                           unzip -q -o "$zipfile" -d "$TARGET_DIR"
                       done
-                      # Phẳng hóa: Lôi file .h ra ngoài (Trị lỗi nén lồng folder)
-                      find "$TARGET_DIR" -mindepth 2 -type f -name "*.h" -exec mv -t "$TARGET_DIR" {} +
+                      
+                      # 🚨 BẢN FIX DÀNH RIÊNG CHO MACOS: Phẳng hóa thư mục
+                      echo "🧹 Đang san phẳng thư mục con..."
+                      find "$TARGET_DIR" -mindepth 2 -type f -name "*.h" -exec mv {} "$TARGET_DIR/" \;
                       find "$TARGET_DIR" -type d -empty -delete
                       
-                      # 🔧 VACCINE SIÊU CẤP: Vá lỗi import "bẩn" cho đồ Dump
+                      # 🔧 VACCINE SIÊU CẤP
                       echo "🔧 Đang tiêm vaccine cho Header..."
                       find "$TARGET_DIR" -type f -name "*.h" -exec sed -i '' \
                         -e 's/#import "NSObject.h"/#import <Foundation\/NSObject.h>/g' \
@@ -86,7 +88,7 @@ jobs:
               done
           fi
 
-          # 2. XỬ LÝ headers.txt (Bù đắp hàng thiếu)
+          # 2. XỬ LÝ headers.txt 
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
           if [ -f "$DIR/headers.txt" ]; then
