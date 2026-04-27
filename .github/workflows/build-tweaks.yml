@@ -56,55 +56,52 @@ jobs:
           mkdir -p $THEOS/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-            # ==========================================
-      # BƯỚC 3: XỬ LÝ HEADER CHỦ ĐỘNG (BẢN FIX TRIỆT ĐỂ)
+      # ==========================================
+      # BƯỚC 3: XỬ LÝ HEADER CHỦ ĐỘNG (CHỈ KHI CẦN)
       # ==========================================
       - name: 🎯 Selective Header Picker
         id: picker
         run: |
-          # 1. Định nghĩa đường dẫn sạch
-          THEOS_INC="$THEOS/include/YouTubeHeader"
-          KHO_TONG="$(pwd)/headers/YouTubeHeader"
+          # 1. Reset xưởng include cho sạch sẽ
+          rm -rf "$THEOS/include/YouTubeHeader"
           
-          # Xóa trắng folder include để làm mới hoàn toàn
-          rm -rf "$THEOS_INC"
-          mkdir -p "$THEOS_INC"
-          
-          # 2. Xác định dự án mục tiêu
+          # 2. Xác định dự án
           DP_NAME="${{ github.event.inputs.project }}"
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
 
-          # 3. Bốc hàng theo danh sách headers.txt
+          # 3. Kiểm tra file lệnh headers.txt
           LIST_FILE="$DIR/headers.txt"
           if [ -f "$LIST_FILE" ]; then
-              echo "📋 Đang bốc hàng theo danh sách tại $LIST_FILE..."
+              echo "🚀 Phát hiện headers.txt. Bắt đầu khâu bốc hàng..."
+              THEOS_APP_INC="$THEOS/include/YouTubeHeader"
+              KHO_TONG="$(pwd)/headers/YouTubeHeader"
+              mkdir -p "$THEOS_APP_INC"
+
               while IFS= read -r file || [ -n "$file" ]; do
                   file=$(echo "$file" | tr -d '\r' | xargs)
                   [ -z "$file" ] && continue
                   
-                  # Tìm trong KHO_TONG, nếu thấy thì COPY vào THEOS_INC
-                  # Dùng -j để làm phẳng cấu trúc thư mục (không bị lồng YouTubeHeader/YouTubeHeader)
-                  find "$KHO_TONG" -name "$file" -exec cp {} "$THEOS_INC/" \;
+                  # Tìm sâu trong kho tổng nhưng copy PHẲNG ra mặt tiền include
+                  find "$KHO_TONG" -name "$file" -exec cp -L {} "$THEOS_APP_INC/" \;
+                  echo "✅ Đã nhặt: $file"
               done < "$LIST_FILE"
+
+              # 4. Thanh trừng Header Apple (Chống nổ build)
+              echo "🧹 Đang quét sạch rác Apple gây xung đột..."
+              cd "$THEOS_APP_INC"
+              rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h \
+                    NSSecureCoding-Protocol.h CGRect.h CGPoint.h UIEdgeInsets.h \
+                    UIAppearanceContainer-Protocol.h UIGestureRecognizerDelegate-Protocol.h \
+                    OS_dispatch_object-Protocol.h OS_dispatch_queue-Protocol.h \
+                    OS_dispatch_source-Protocol.h GPBMessage.h NSObject.h NSString.h
+              
+              echo "📦 Kiểm kê: $(ls | wc -l) file Headers đã sẵn sàng."
           else
-              echo "⚠️ Không thấy headers.txt tại $DIR! Build sẽ hên xui."
+              echo "🍃 Không có headers.txt. Bỏ qua khâu xử lý Header."
           fi
 
-          # 4. CHIẾN DỊCH THANH TRỪNG (Mạnh tay hơn)
-          echo "🧹 Đang quét sạch Header Apple gây xung đột..."
-          cd "$THEOS_INC"
-          # Diệt tận gốc các Protocol/Struct trùng tên với iOS SDK
-          rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h NSSecureCoding-Protocol.h \
-                CGRect.h CGPoint.h UIEdgeInsets.h UIAppearanceContainer-Protocol.h \
-                UIGestureRecognizerDelegate-Protocol.h OS_dispatch_object-Protocol.h \
-                OS_dispatch_queue-Protocol.h OS_dispatch_source-Protocol.h \
-                NSObject.h NSString.h NSArray.h NSDictionary.h \
-                GPBMessage.h # Thằng này cũng hay gây lỗi redefinition
-          
-          # Liệt kê số lượng file thực tế để ông soi Log
-          echo "📦 Tổng số Header đã chuẩn bị: $(ls | wc -l) file."
 
       # ==========================================
       # BƯỚC 4: BUILD TWEAK & TỰ ĐỘNG HÓA DEPICTION
