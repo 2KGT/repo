@@ -19,19 +19,24 @@ jobs:
       contents: write
     steps:
       # ==========================================
-      # BƯỚC 1: CÀI ĐẶT CÔNG CỤ
+      # BƯỚC 1: CÀI ĐẶT DSDUMP (DÙNG GH CLI - CHỐNG CHẶN)
       # ==========================================
       - name: 📥 Checkout Repo
         uses: actions/checkout@v4
 
-      - name: 🛠️ Setup Dsdump (Fixed Link)
+      - name: 🛠️ Setup Dsdump (Fixed with GH CLI)
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo "--- ĐANG TẢI DSDUMP PHIÊN BẢN 0.0.29 ---"
-          curl -L "https://github.com/DerekSelander/dsdump/releases/download/v0.0.29/dsdump.zip" -o dsdump.zip
+          echo "--- ĐANG TẢI DSDUMP BẰNG GH CLI ---"
+          # Tải file từ release bằng chính tool của GitHub để không bị chặn
+          gh release download v0.0.29 -R DerekSelander/dsdump -p 'dsdump.zip'
+          
           unzip -q dsdump.zip
           chmod +x dsdump
           sudo mv dsdump /usr/local/bin/
-          echo "✅ Cài đặt dsdump thành công!"
+          echo "✅ Đã cài đặt dsdump thành công!"
+          dsdump --version
 
       # ==========================================
       # BƯỚC 2: TẢI VÀ GIẢI NÉN IPA
@@ -39,7 +44,9 @@ jobs:
       - name: 📦 Download & Extract IPA
         run: |
           echo "--- ĐANG TẢI IPA TỪ NGUỒN ---"
-          curl -L "${{ github.event.inputs.ipa_url }}" -o app.ipa
+          # Thêm User-Agent để tránh bị Dropbox/Web chặn tải
+          curl -L -A "Mozilla/5.0" "${{ github.event.inputs.ipa_url }}" -o app.ipa
+          
           echo "🏗️ Đang giải nén IPA..."
           unzip -q app.ipa -d app_extracted
 
@@ -49,43 +56,40 @@ jobs:
           APP_PATH=$(find app_extracted/Payload -name "*.app" | head -n 1)
           APP_NAME=$(basename "$APP_PATH" .app)
           echo "binary=$APP_PATH/$APP_NAME" >> $GITHUB_OUTPUT
-          echo "🎯 Mục tiêu tìm thấy: $APP_NAME"
+          echo "🎯 Mục tiêu: $APP_NAME"
 
       # ==========================================
-      # BƯỚC 3: DUMP HEADER (THEO TÊN ÔNG NHẬP)
+      # BƯỚC 3: DUMP HEADER
       # ==========================================
-      - name: ⚡ Full Dumping (Straight to Headers)
+      - name: ⚡ Full Dumping
         run: |
-          # Lấy tên từ Input của ông
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
-          
           echo "--- BẮT ĐẦU DUMP VÀO $TARGET_DIR ---"
+          
           mkdir -p "$TARGET_DIR"
           rm -rf "$TARGET_DIR"/*
           
           dsdump --objc --swift -f public --gen-header -o "$TARGET_DIR" "${{ steps.locate.outputs.binary }}"
           
-          echo "🧹 San phẳng cấu trúc file .h..."
+          echo "🧹 San phẳng cấu trúc..."
           find "$TARGET_DIR" -mindepth 2 -type f -name "*.h" -exec mv {} "$TARGET_DIR/" \;
           find "$TARGET_DIR" -type d -empty -delete
           find "$TARGET_DIR" -type f ! -name "*.h" -delete
-          echo "✅ Đã nôn hết file trần vào folder!"
+          echo "✅ Hoàn tất dump."
 
       # ==========================================
-      # BƯỚC 4: ĐẨY HÀNG LÊN REPO
+      # BƯỚC 4: LƯU TRỮ
       # ==========================================
-      - name: 🚀 Commit & Push to Repo
+      - name: 🚀 Commit & Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          
-          # Add đúng cái folder vừa tạo/cập nhật
           git add "headers/${{ github.event.inputs.app_name }}"
           
           if git diff --staged --quiet; then
-            echo "💎 Không có gì mới để cập nhật."
+            echo "💎 Không có thay đổi."
           else
             git commit -m "🪄 [2KGT Factory] Dumped: ${{ github.event.inputs.app_name }}"
             git push origin main
-            echo "🎉 Đã đẩy Header lên Repo thành công!"
+            echo "🎉 Xong! Kiểm tra mục headers của ông nhé."
           fi
