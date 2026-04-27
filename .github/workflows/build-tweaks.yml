@@ -57,57 +57,67 @@ jobs:
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
       # ==========================================
-      # BƯỚC 3: XỬ LÝ HEADER CHỦ ĐỘNG (BẢN FIX TRIỆT ĐỂ)
+      # BƯỚC 3: NGƯỜI VẬN CHUYỂN ĐA NĂNG (DYNAMIC PICKER)
       # ==========================================
-      - name: 🎯 Selective Header Picker
+      - name: 🎯 Dynamic Header Picker
         id: picker
         run: |
-          # 1. Khai báo biến đường dẫn
-          THEOS_INC="$THEOS/include"
-          KHO_TONG="$(pwd)/headers/YouTubeHeader"
-          
-          # Định nghĩa folder mục tiêu (Phải khớp với #import <YouTubeHeader/...>)
-          DEST_DIR="$THEOS_INC/YouTubeHeader"
-          
-          # Reset folder mục tiêu cho sạch
-          rm -rf "$DEST_DIR"
-          mkdir -p "$DEST_DIR"
-          
-          # 2. Xác định dự án
+          # 1. Xác định dự án và đơn hàng (headers.txt)
           DP_NAME="${{ github.event.inputs.project }}"
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
+          LIST_FILE="$DIR/headers.txt"
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
 
-          # 3. Chỉ nhặt hàng nếu có headers.txt
-          LIST_FILE="$DIR/headers.txt"
-          if [ -f "$LIST_FILE" ]; then
-              echo "🚀 Phát hiện headers.txt. Đang bốc hàng về xưởng..."
-              while IFS= read -r file || [ -n "$file" ]; do
-                  file=$(echo "$file" | tr -d '\r' | xargs)
-                  [ -z "$file" ] && continue
+          if [ ! -f "$LIST_FILE" ]; then
+              echo "🍃 Không có headers.txt, bỏ qua khâu bốc hàng."
+              exit 0
+          fi
+
+          echo "🚀 Đã nhận đơn hàng từ $LIST_FILE. Bắt đầu quét kho..."
+
+          # 2. Duyệt qua TẤT CẢ các thư mục App có trong kho root/headers/
+          for KHO_APP in headers/*/; do
+              [ -d "$KHO_APP" ] || continue
+              APP_NAME=$(basename "$KHO_APP")
+              DEST_DIR="$THEOS/include/$APP_NAME"
+              
+              echo "📂 Đang kiểm tra kho: $APP_NAME"
+
+              # Tạo folder đích trong include (ví dụ: $THEOS/include/YouTubeHeader)
+              mkdir -p "$DEST_DIR"
+
+              # 3. Lọc hàng: Chỉ bốc những file có tên trong txt
+              while IFS= read -r line || [ -n "$line" ]; do
+                  # Làm sạch tên file từ txt
+                  FILE_NEED=$(echo "$line" | tr -d '\r' | xargs)
+                  [ -z "$FILE_NEED" ] && continue
                   
-                  # CHIÊU MỚI: Tìm file và copy nội dung file (.h), KHÔNG copy folder
-                  # Dùng -exec cp -t để ép tất cả vào cùng 1 thư mục DEST_DIR
-                  find "$KHO_TONG" -type f -name "$file" -exec cp -L {} "$DEST_DIR/" \;
+                  # Tìm file trong kho App hiện tại
+                  # Nếu tìm thấy, bốc (copy) và làm phẳng cấu trúc thư mục
+                  find "$KHO_APP" -type f -name "$FILE_NEED" -exec cp -f {} "$DEST_DIR/" \;
               done < "$LIST_FILE"
 
-              # 4. THANH TRỪNG (Redefinition Guard)
-              echo "🧹 Đang dọn dẹp Header Apple rác..."
-              cd "$DEST_DIR"
-              rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h \
-                    NSSecureCoding-Protocol.h CGRect.h CGPoint.h UIEdgeInsets.h \
-                    UIAppearanceContainer-Protocol.h UIGestureRecognizerDelegate-Protocol.h \
-                    OS_dispatch_object-Protocol.h OS_dispatch_queue-Protocol.h \
-                    GPBMessage.h NSObject.h NSString.h
-              
-              echo "📊 --- KIỂM KÊ KHO HÀNG (QUAN TRỌNG) ---"
-              pwd
-              ls -F
-              echo "📦 Tổng cộng nhặt được: $(ls | wc -l) file."
-          else
-              echo "🍃 Tweak này không dùng Header ngoài. Bỏ qua."
-          fi
+              # 4. Thanh tẩy sau khi bốc (Lọc bỏ hàng Apple đi lạc trong từng folder)
+              if [ "$(ls -A "$DEST_DIR")" ]; then
+                  echo "🧹 Đang vệ sinh kho $APP_NAME..."
+                  cd "$DEST_DIR"
+                  rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h \
+                        NSSecureCoding-Protocol.h CGRect.h CGPoint.h UIEdgeInsets.h \
+                        UIAppearanceContainer-Protocol.h UIGestureRecognizerDelegate-Protocol.h \
+                        OS_dispatch_object-Protocol.h OS_dispatch_queue-Protocol.h \
+                        OS_dispatch_source-Protocol.h GPBMessage.h NSObject.h NSString.h
+                  
+                  echo "✅ Đã lên kệ $(ls | wc -l) file cho $APP_NAME."
+                  cd - > /dev/null
+              else
+                  # Nếu kho này không có file nào trong txt yêu cầu thì xóa folder trống cho gọn
+                  rm -rf "$DEST_DIR"
+              fi
+          done
+
+          echo "📊 --- SƠ ĐỒ XƯỞNG BUILD HIỆN TẠI ---"
+          ls -R "$THEOS/include"
 
       # ==========================================
       # BƯỚC 4: BUILD TWEAK (GÁN CỨNG FLAG)
