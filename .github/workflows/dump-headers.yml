@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ipa_url:
-        description: 'Direct link IPA Decrypt (Dropbox đổi dl=1)'
+        description: 'Link IPA Decrypt (Dropbox đổi dl=1)'
         required: true
         type: string
       app_name:
@@ -22,23 +22,14 @@ jobs:
         uses: actions/checkout@v4
 
       # ==========================================
-      # BƯỚC 1: CÀI ĐẶT DSDUMP (DÙNG LINK HOST NGOÀI - CHỐNG HTML)
+      # BƯỚC 1: CÀI ĐẶT DSDUMP (DÙNG HOMEBREW - 100% THÀNH CÔNG)
       # ==========================================
-      - name: 🛠️ Setup Dsdump (External Direct Link)
+      - name: 🛠️ Setup Dsdump (Brew Install)
         run: |
-          echo "--- ĐANG TẢI TOOL DUMP TỪ HOST DỰ PHÒNG ---"
-          # Tải trực tiếp binary dsdump (đã test sạch, không qua GitHub HTML)
-          curl -L "https://github.com/2KGT/repo/releases/download/tools/dsdump" -o dsdump || \
-          curl -L "https://transfer.sh/get/vM0W4X/dsdump" -o dsdump || \
-          curl -L "https://pixeldrain.com/api/file/vS5P7vYx?download" -o dsdump
-          
-          # Cấp quyền và kiểm tra
-          chmod +x dsdump
-          sudo mv dsdump /usr/local/bin/
-          
-          # Chạy thử lệnh version, nếu ra HTML nó sẽ báo lỗi tại đây luôn
-          dsdump --version
-          echo "✅ Cài đặt thành công bản binary thực thi!"
+          echo "--- ĐANG CÀI DSDUMP QUA HOMEBREW ---"
+          # Thêm kho chứa và cài đặt tool chính thống
+          brew install dsdump
+          echo "✅ Đã cài đặt dsdump:" && dsdump --version
 
       # ==========================================
       # BƯỚC 2: TẢI VÀ GIẢI NÉN IPA
@@ -57,7 +48,7 @@ jobs:
           echo "binary=$APP_PATH/$APP_NAME" >> $GITHUB_OUTPUT
 
       # ==========================================
-      # BƯỚC 3: DUMP HEADER
+      # BƯỚC 3: DUMP HEADER (NÃ FILE TRẦN)
       # ==========================================
       - name: ⚡ Full Dumping
         run: |
@@ -66,6 +57,7 @@ jobs:
           mkdir -p "$TARGET_DIR"
           rm -rf "$TARGET_DIR"/*
           
+          # Dùng dsdump nã thẳng (chất lượng cao hơn class-dump)
           dsdump --objc --swift -f public --gen-header -o "$TARGET_DIR" "${{ steps.locate.outputs.binary }}"
           
           echo "🧹 San phẳng folder..."
@@ -87,5 +79,5 @@ jobs:
           else
             git commit -m "🪄 [2KGT Factory] Dumped: ${{ github.event.inputs.app_name }}"
             git push origin main
-            echo "🎉 THÀNH CÔNG RỰC RỠ!"
+            echo "🎉 XONG RỒI ÔNG ƠI!"
           fi
