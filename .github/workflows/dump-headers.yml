@@ -60,20 +60,23 @@ jobs:
           if [ -z "$CLASSES" ] && [ -n "${{ github.event.inputs.config_path }}" ]; then
               if [ -f "${{ github.event.inputs.config_path }}" ]; then
                   echo "📝 Đang đọc danh sách từ file: ${{ github.event.inputs.config_path }}"
+                  # Đọc file, xóa đuôi .h và gom thành chuỗi
                   CLASSES=$(tr '\r\n' ' ' < "${{ github.event.inputs.config_path }}" | sed 's/\.h//g')
               fi
           fi
 
-          # 🔥 THỰC THI DUMP
+          # 🔥 THỰC THI DUMP (Xử lý thông minh lỗi flag ipsw)
           if [ -n "$CLASSES" ]; then
               echo "🎯 Chế độ gắp thú mục tiêu cho các class..."
               for CLS in $CLASSES; do
                   [ -z "$CLS" ] && continue
-                  echo "  -> Trích xuất class: $CLS"
-                  ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers --class "$CLS" -o "$TEMP_DUMP"
+                  echo "  -> Đang băm header class: $CLS"
+                  # Khi dùng --class thì KHÔNG được dùng --headers, phải hứng luồng (>)
+                  ipsw class-dump "${{ steps.locate.outputs.binary }}" --class "$CLS" > "$TEMP_DUMP/$CLS.h"
               done
           else
               echo "🌊 Chế độ càn quét (Dump All)..."
+              # Dump toàn bộ thì mới dùng cờ --headers
               ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers -o "$TEMP_DUMP"
           fi
 
@@ -81,8 +84,9 @@ jobs:
           find "$TEMP_DUMP" -name "*.h" -exec mv {} "$TARGET_DIR/" \;
           
           if [ "${{ github.event.inputs.smart_filter }}" == "true" ]; then
-              echo "✨ Đang sàng lọc vàng..."
+              echo "✨ Đang thực hiện sàng lọc vàng..."
               cd "$TARGET_DIR"
+              # Diệt rác hệ thống & Swift & Category biến dị
               rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h CGRect.h CGPoint.h UIEdgeInsets.h GPBMessage.h NSObject.h NSString.h NSArray.h NSDictionary.h NSValue.h NSNumber.h _Ttc*
               find . -name "*+*" | awk 'length > 100' | xargs rm -f 2>/dev/null
               cd - > /dev/null
