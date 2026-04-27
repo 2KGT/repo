@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       app_name:
-        description: 'Tên thư mục lưu (VD: YouTubeHeader)'
+        description: 'Tên thư mục lưu Header'
         required: true
         default: 'YouTubeHeader'
 
