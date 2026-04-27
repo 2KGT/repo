@@ -45,23 +45,29 @@ jobs:
           echo "binary=$BINARY_PATH/$APP_NAME" >> $GITHUB_OUTPUT
           echo "🎯 Mục tiêu: $APP_NAME"
 
-      # ==========================================
-      # BƯỚC 3: GIẢI PHẪU (ĐÃ FIX FLAG --HEADERS)
+            # ==========================================
+      # BƯỚC 3: GIẢI PHẪU & BOT DỌN DẸP (BẢN NÂNG CẤP)
       # ==========================================
       - name: ⚡ Full Dumping
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
+          TEMP_DUMP="temp_headers"
           mkdir -p "$TARGET_DIR"
+          mkdir -p "$TEMP_DUMP"
           
-          echo "🚀 IPSW đang mổ xẻ lấy Header..."
-          # Đã thêm --headers để ipsw hiểu là cần xuất file .h
-          ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers -o "$TARGET_DIR"
+          echo "🚀 IPSW đang mổ xẻ..."
+          ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers -o "$TEMP_DUMP"
           
-          echo "🤖 Bot đang dọn dẹp..."
-          # Đưa toàn bộ file .h về mặt tiền để ông dễ nhìn
-          find "$TARGET_DIR" -type f -name "*.h" -exec mv {} "$TARGET_DIR/" \;
-          find "$TARGET_DIR" -type d -empty -delete
-          find "$TARGET_DIR" -type f ! -name "*.h" -delete
+          echo "🤖 Bot thợ lặn đang gom file..."
+          # Lệnh này sẽ tìm TẤT CẢ file .h ở bất kỳ thư mục con nào và đưa về TARGET_DIR
+          find "$TEMP_DUMP" -name "*.h" -exec mv {} "$TARGET_DIR/" \;
+          
+          # Xóa dấu vết tạm
+          rm -rf "$TEMP_DUMP"
+          
+          # Kiểm tra xem có file nào không
+          COUNT=$(ls -1 "$TARGET_DIR" | wc -l)
+          echo "📦 Tổng cộng thu hoạch được: $COUNT file headers."
 
       # ==========================================
       # BƯỚC 4: XUẤT XƯỞNG
