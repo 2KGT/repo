@@ -5,6 +5,30 @@
 #import <YouTubeHeader/YTSettingsSectionItemManager.h>
 #import <YouTubeHeader/YTSettingsGroupData.h>
 
+// ==========================================
+// 🛡️ BÙA CHÚ VÁ LỖI YOUTUBE HEADER (HÀNG CHẾ)
+// ==========================================
+#ifndef CDUnknownBlockType
+typedef void (^CDUnknownBlockType)(void);
+#endif
+
+@protocol YTResponder <NSObject>
+@end
+
+@protocol YTAppSettingsSectionItemDataDelegate <NSObject>
+@end
+
+@protocol YTAppSettingsSectionItemControllerDelegate <NSObject>
+@end
+
+@interface YTAppSettingsSectionItemController : NSObject
+@end
+
+@interface YTSettingsViewController (AutoAC_Fix)
+- (void)setSectionItems:(id)arg1 forCategory:(unsigned long long)arg2 title:(id)arg3 titleDescription:(id)arg4;
+@end
+// ==========================================
+
 static const NSInteger AutoACSection = 'aacp';
 
 %hook YTAppSettingsPresentationData
