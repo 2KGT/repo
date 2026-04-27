@@ -23,7 +23,7 @@
 
 [![Dump Factory](https://img.shields.io/badge/🚀_Run-Dump_Factory-blue?style=for-the-badge)](https://github.com/2KGT/repo/actions/workflows/dump-headers.yml)
 
-[![Dump Factory](https://img.shields.io/badge/🚀_Run-Dump_Factory-blue?style=for-the-badge)](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml)
+[![Build Multi Tweak](https://img.shields.io/badge/🚀_Run-Dump_Factory-blue?style=for-the-badge)](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml)
 
 
 ---
