@@ -62,7 +62,7 @@ jobs:
       # ==========================================
       # BƯỚC 3: XỬ LÝ HEADER (LOẠI BỎ ZIP - ĐỌC TRỰC TIẾP)
       # ==========================================
-      - name: 🚚 Cảm biến "Pháp Sư" (Hệ File Trần + Tối Ưu)
+      - name: 🚚 Cảm biến "Pháp Sư" (File Trần + Tối Ưu)
         run: |
           THEOS_INC="$THEOS/include"
           mkdir -p "$THEOS_INC"
