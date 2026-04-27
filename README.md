@@ -23,7 +23,8 @@
 
 [![Dump Factory](https://img.shields.io/badge/🚀_Run-Dump_Factory-blue?style=for-the-badge)](https://github.com/YOUR_USER/YOUR_REPO/actions/workflows/dump_header.yml)
 
-[👉 Bấm vào đây để mở Xưởng Dump Header](https://github.com/YOUR_USER/YOUR_REPO/actions/workflows/dump_header.yml)
+[![Dump Factory](https://img.shields.io/badge/🚀_Run-Dump_Factory-blue?style=for-the-badge)](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml)
+
 
 ---
 
