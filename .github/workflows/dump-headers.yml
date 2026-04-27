@@ -22,23 +22,22 @@ jobs:
         uses: actions/checkout@v4
 
       # ==========================================
-      # BƯỚC 1: CÀI ĐẶT DSDUMP (DÙNG LINK DỰ PHÒNG XỊN)
+      # BƯỚC 1: TỰ BUILD DSDUMP (CHỐNG LỖI LINK)
       # ==========================================
-      - name: 🛠️ Setup Dsdump (Manual Fix)
+      - name: 🛠️ Build dsdump from Source
         run: |
-          echo "--- ĐANG TẢI DSDUMP TỪ NGUỒN DỰ PHÒNG ---"
-          # Tải bản dsdump đã được build sẵn cho macOS
-          curl -L "https://github.com/DerekSelander/dsdump/raw/master/dsdump" -o dsdump
+          echo "--- ĐANG TỰ BUILD DSDUMP ĐỂ TRÁNH LỖI LINK ---"
+          git clone --recursive https://github.com/DerekSelander/dsdump.git dsdump_src
+          cd dsdump_src
+          # Sử dụng xcodebuild để tự biên dịch file chạy dsdump
+          xcodebuild -project dsdump.xcodeproj -scheme dsdump -configuration Release
           
-          # Kiểm tra file
-          if [ ! -s dsdump ]; then
-            echo "⚠️ Lỗi tải file, đang dùng phương án 2..."
-            curl -L "https://raw.githubusercontent.com/DerekSelander/dsdump/master/dsdump" -o dsdump
-          fi
+          # Tìm file vừa build xong và đưa vào hệ thống
+          sudo mv build/Release/dsdump /usr/local/bin/
+          cd ..
+          rm -rf dsdump_src
           
-          chmod +x dsdump
-          sudo mv dsdump /usr/local/bin/
-          echo "✅ Đã cài đặt dsdump thành công!"
+          echo "✅ Đã tự Build dsdump thành công!"
           dsdump --version
 
       # ==========================================
@@ -88,4 +87,5 @@ jobs:
           else
             git commit -m "🪄 [2KGT Factory] Dumped: ${{ github.event.inputs.app_name }}"
             git push origin main
+            echo "🎉 Thành công rực rỡ! Check repo đi ông chủ ơi."
           fi
