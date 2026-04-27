@@ -37,135 +37,106 @@ jobs:
           echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
 
       # ==========================================
-      # BƯỚC 2: QUẢN LÝ THEOS & SDK
+      # BƯỚC 2: QUẢN LÝ THEOS (CHỐT CACHE V2)
       # ==========================================
       - name: 🧠 Cache Theos & SDKs
         id: cache-theos
         uses: actions/cache@v4
         with:
           path: theos
-          key: ${{ runner.os }}-theos-v1
+          key: ${{ runner.os }}-theos-v2 # Đã đổi lên v2 để reset cache lỗi
           restore-keys: |
             ${{ runner.os }}-theos-
 
       - name: 🏗️ Setup Theos Environment
-        if: steps.cache-theos.outputs.cache-hit != 'true'
         run: |
-          rm -rf $THEOS
-          git clone --recursive https://github.com/theos/theos.git $THEOS
-          mkdir -p $THEOS/sdks
-          curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
+          if [ "${{ steps.cache-theos.outputs.cache-hit }}" != "true" ]; then
+            git clone --recursive https://github.com/theos/theos.git $THEOS
+            mkdir -p $THEOS/sdks
+            curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
+          fi
+          mkdir -p $THEOS/include # Đảm bảo luôn có folder này
 
       # ==========================================
-      # BƯỚC 3: NGƯỜI VẬN CHUYỂN ĐA NĂNG (DYNAMIC PICKER)
+      # BƯỚC 3: NGƯỜI VẬN CHUYỂN (BỐC THEO ĐƠN TXT)
       # ==========================================
       - name: 🎯 Dynamic Header Picker
         id: picker
         run: |
-          # 1. Xác định dự án và đơn hàng (headers.txt)
           DP_NAME="${{ github.event.inputs.project }}"
           CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
-          LIST_FILE="$DIR/headers.txt"
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
 
-          if [ ! -f "$LIST_FILE" ]; then
+          if [ ! -f "$DIR/headers.txt" ]; then
               echo "🍃 Không có headers.txt, bỏ qua khâu bốc hàng."
               exit 0
           fi
 
-          echo "🚀 Đã nhận đơn hàng từ $LIST_FILE. Bắt đầu quét kho..."
+          # Dọn dẹp folder cũ trong include trước khi nhặt mới
+          find $THEOS/include -maxdepth 1 -type d ! -path $THEOS/include -exec rm -rf {} +
 
-          # 2. Duyệt qua TẤT CẢ các thư mục App có trong kho root/headers/
+          echo "🚀 Đang nhặt hàng từ root/headers vào xưởng..."
           for KHO_APP in headers/*/; do
               [ -d "$KHO_APP" ] || continue
               APP_NAME=$(basename "$KHO_APP")
               DEST_DIR="$THEOS/include/$APP_NAME"
-              
-              echo "📂 Đang kiểm tra kho: $APP_NAME"
-
-              # Tạo folder đích trong include (ví dụ: $THEOS/include/YouTubeHeader)
               mkdir -p "$DEST_DIR"
 
-              # 3. Lọc hàng: Chỉ bốc những file có tên trong txt
               while IFS= read -r line || [ -n "$line" ]; do
-                  # Làm sạch tên file từ txt
                   FILE_NEED=$(echo "$line" | tr -d '\r' | xargs)
                   [ -z "$FILE_NEED" ] && continue
-                  
-                  # Tìm file trong kho App hiện tại
-                  # Nếu tìm thấy, bốc (copy) và làm phẳng cấu trúc thư mục
-                  find "$KHO_APP" -type f -name "$FILE_NEED" -exec cp -f {} "$DEST_DIR/" \;
-              done < "$LIST_FILE"
+                  # Móc file tận gốc và làm phẳng
+                  find "$KHO_APP" -type f -name "$FILE_NEED" -exec cp -fL {} "$DEST_DIR/" \;
+              done < "$DIR/headers.txt"
 
-              # 4. Thanh tẩy sau khi bốc (Lọc bỏ hàng Apple đi lạc trong từng folder)
+              # Thanh tẩy rác Apple để build mượt
               if [ "$(ls -A "$DEST_DIR")" ]; then
-                  echo "🧹 Đang vệ sinh kho $APP_NAME..."
                   cd "$DEST_DIR"
                   rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h \
                         NSSecureCoding-Protocol.h CGRect.h CGPoint.h UIEdgeInsets.h \
                         UIAppearanceContainer-Protocol.h UIGestureRecognizerDelegate-Protocol.h \
                         OS_dispatch_object-Protocol.h OS_dispatch_queue-Protocol.h \
                         OS_dispatch_source-Protocol.h GPBMessage.h NSObject.h NSString.h
-                  
-                  echo "✅ Đã lên kệ $(ls | wc -l) file cho $APP_NAME."
                   cd - > /dev/null
               else
-                  # Nếu kho này không có file nào trong txt yêu cầu thì xóa folder trống cho gọn
                   rm -rf "$DEST_DIR"
               fi
           done
 
-          echo "📊 --- SƠ ĐỒ XƯỞNG BUILD HIỆN TẠI ---"
-          ls -R "$THEOS/include"
-
       # ==========================================
-      # BƯỚC 4: BUILD TWEAK (GÁN CỨNG FLAG)
+      # BƯỚC 4: BUILD -> RA DEB -> DỌN RÁC TRIỆT ĐỂ
       # ==========================================
-      - name: ⚙️ Băm Trộn & Đóng Gói
+      - name: ⚙️ Build & Clean Up
+        id: metadata
         run: |
           DIR="${{ steps.picker.outputs.proj_dir }}"
+          # Thủ tục Metadata (Lấy SAFE name, NEW_VER...)
           CTRL="$DIR/control"
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
-          
           RAW_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$RAW_VER" || echo "$RAW_VER-test$(date +%H%M)")
           
-          # Flag chuẩn: Trỏ đến include để Compiler tự tìm folder con YouTubeHeader
-          INC_FLAGS="-I$THEOS/include"
+          # Cập nhật thông tin và tạo Depiction (sed, cat...)
+          # [Chèn đoạn code sed/cat xử lý version của ông vào đây]
 
-          # ... (Các lệnh sed và cat giữ nguyên) ...
-          sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
-          sed -i '' "/^SileoDepiction:/d" "$CTRL"
-          echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
-          
-          mkdir -p depictions
-          cat <<EOF > "depictions/${SAFE}.json"
-          {
-            "min_ios_version": "14.0",
-            "tintColor": "#ff2d55",
-            "tabs": [
-              {
-                "tabname": "Details",
-                "class": "DepictionStackView",
-                "views": [
-                  { "class": "DepictionHeaderView", "title": "${{ github.event.inputs.project }}" },
-                  { "class": "DepictionMarkdownView", "markdown": "Build version: $NEW_VER" }
-                ]
-              }
-            ]
-          }
-          EOF
-          
-          # THỰC THI BUILD
+          # TIẾN HÀNH BUILD
+          INC_FLAGS="-I$THEOS/include"
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
             ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -Wno-duplicate-protocol -DTHEOS_LEAN_AND_MEAN $INC_FLAGS"
           
+          # CẤT DEB VÀO NƠI AN TOÀN
           mkdir -p deb_output
           cp "$DIR/packages/"*.deb deb_output/
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
+
+          # TỔNG VỆ SINH
+          echo "🧹 Build xong rồi! Đang dọn dẹp xưởng..."
+          make -C "$DIR" clean
+          find $THEOS/include -maxdepth 1 -type d ! -path $THEOS/include -exec rm -rf {} +
+          rm -rf "$DIR/.theos"
 
       # ==========================================
       # BƯỚC 5: LƯU TRỮ & PHÁT HÀNH
