@@ -57,14 +57,21 @@ jobs:
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
       # ==========================================
-      # BƯỚC 3: XỬ LÝ HEADER CHỦ ĐỘNG (BẢN FIX LỖI NOT FOUND)
+      # BƯỚC 3: XỬ LÝ HEADER CHỦ ĐỘNG (BẢN FIX TRIỆT ĐỂ)
       # ==========================================
       - name: 🎯 Selective Header Picker
         id: picker
         run: |
-          # 1. Định nghĩa đường dẫn (Lưu ý: Không xóa toàn bộ include để giữ header mặc định của Theos)
+          # 1. Khai báo biến đường dẫn
           THEOS_INC="$THEOS/include"
           KHO_TONG="$(pwd)/headers/YouTubeHeader"
+          
+          # Định nghĩa folder mục tiêu (Phải khớp với #import <YouTubeHeader/...>)
+          DEST_DIR="$THEOS_INC/YouTubeHeader"
+          
+          # Reset folder mục tiêu cho sạch
+          rm -rf "$DEST_DIR"
+          mkdir -p "$DEST_DIR"
           
           # 2. Xác định dự án
           DP_NAME="${{ github.event.inputs.project }}"
@@ -72,53 +79,79 @@ jobs:
           DIR=$(dirname "$CTRL")
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
 
-          # 3. Chỉ xử lý nếu có headers.txt
+          # 3. Chỉ nhặt hàng nếu có headers.txt
           LIST_FILE="$DIR/headers.txt"
           if [ -f "$LIST_FILE" ]; then
-              echo "🚀 Phát hiện headers.txt. Đang bốc hàng..."
-              # Tạo folder đúng tên để khớp với #import <YouTubeHeader/...>
-              DEST_DIR="$THEOS_INC/YouTubeHeader"
-              rm -rf "$DEST_DIR"
-              mkdir -p "$DEST_DIR"
-
+              echo "🚀 Phát hiện headers.txt. Đang bốc hàng về xưởng..."
               while IFS= read -r file || [ -n "$file" ]; do
                   file=$(echo "$file" | tr -d '\r' | xargs)
                   [ -z "$file" ] && continue
                   
-                  # Tìm và bốc file PHẲNG vào folder YouTubeHeader
-                  find "$KHO_TONG" -name "$file" -exec cp -L {} "$DEST_DIR/" \;
+                  # CHIÊU MỚI: Tìm file và copy nội dung file (.h), KHÔNG copy folder
+                  # Dùng -exec cp -t để ép tất cả vào cùng 1 thư mục DEST_DIR
+                  find "$KHO_TONG" -type f -name "$file" -exec cp -L {} "$DEST_DIR/" \;
               done < "$LIST_FILE"
 
-              # 4. Thanh trừng Header Apple rác
-              echo "🧹 Đang thanh tẩy Header Apple rác..."
+              # 4. THANH TRỪNG (Redefinition Guard)
+              echo "🧹 Đang dọn dẹp Header Apple rác..."
               cd "$DEST_DIR"
               rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h \
                     NSSecureCoding-Protocol.h CGRect.h CGPoint.h UIEdgeInsets.h \
                     UIAppearanceContainer-Protocol.h UIGestureRecognizerDelegate-Protocol.h \
                     OS_dispatch_object-Protocol.h OS_dispatch_queue-Protocol.h \
-                    OS_dispatch_source-Protocol.h GPBMessage.h NSObject.h NSString.h
+                    GPBMessage.h NSObject.h NSString.h
               
-              echo "📦 Xưởng đã sẵn sàng: $(ls | wc -l) file trong YouTubeHeader."
+              echo "📊 --- KIỂM KÊ KHO HÀNG (QUAN TRỌNG) ---"
+              pwd
+              ls -F
+              echo "📦 Tổng cộng nhặt được: $(ls | wc -l) file."
           else
-              echo "🍃 Không có headers.txt. Bỏ qua."
+              echo "🍃 Tweak này không dùng Header ngoài. Bỏ qua."
           fi
 
       # ==========================================
-      # BƯỚC 4: BUILD TWEAK (FIX FLAG -I)
+      # BƯỚC 4: BUILD TWEAK (GÁN CỨNG FLAG)
       # ==========================================
       - name: ⚙️ Băm Trộn & Đóng Gói
         run: |
           DIR="${{ steps.picker.outputs.proj_dir }}"
-          # Flag chỉ cần trỏ đến include, không trỏ sâu vào YouTubeHeader
+          CTRL="$DIR/control"
+          SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
+          
+          RAW_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
+          NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$RAW_VER" || echo "$RAW_VER-test$(date +%H%M)")
+          
+          # Flag chuẩn: Trỏ đến include để Compiler tự tìm folder con YouTubeHeader
           INC_FLAGS="-I$THEOS/include"
 
-          # ... (Các lệnh sed và cat giữ nguyên như cũ) ...
-
+          # ... (Các lệnh sed và cat giữ nguyên) ...
+          sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
+          sed -i '' "/^SileoDepiction:/d" "$CTRL"
+          echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
+          
+          mkdir -p depictions
+          cat <<EOF > "depictions/${SAFE}.json"
+          {
+            "min_ios_version": "14.0",
+            "tintColor": "#ff2d55",
+            "tabs": [
+              {
+                "tabname": "Details",
+                "class": "DepictionStackView",
+                "views": [
+                  { "class": "DepictionHeaderView", "title": "${{ github.event.inputs.project }}" },
+                  { "class": "DepictionMarkdownView", "markdown": "Build version: $NEW_VER" }
+                ]
+              }
+            ]
+          }
+          EOF
+          
+          # THỰC THI BUILD
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
             ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -Wno-duplicate-protocol -DTHEOS_LEAN_AND_MEAN $INC_FLAGS"
           
-          # ... (Các lệnh cp và output giữ nguyên) ...         
           mkdir -p deb_output
           cp "$DIR/packages/"*.deb deb_output/
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
