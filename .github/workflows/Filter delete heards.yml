@@ -20,8 +20,8 @@ jobs:
       - name: 📥 Checkout Repo
         uses: actions/checkout@v4
 
-      # ==========================================
-      # BƯỚC 2: CHIẾN DỊCH "THANH TẨY" (APPLE & ZIP)
+            # ==========================================
+      # BƯỚC 2: CHIẾN DỊCH "THANH TẨY" (CÓ LOG CHI TIẾT)
       # ==========================================
       - name: ⚔️ Executing Cleanup
         run: |
@@ -31,20 +31,38 @@ jobs:
             exit 1
           fi
 
-          echo "🧹 Đang dọn dẹp thư mục: $TARGET"
+          echo "🧹 Bắt đầu dọn dẹp thư mục: $TARGET"
           cd "$TARGET"
 
-          # 1. Xóa sạch các Header hệ thống Apple (Xung đột build)
-          # Bao gồm: Protocols, Structs và các Class cơ bản
-          rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h NSSecureCoding-Protocol.h \
-                CGRect.h CGPoint.h UIEdgeInsets.h UIAppearanceContainer-Protocol.h \
-                UIGestureRecognizerDelegate-Protocol.h OS_dispatch_object-Protocol.h \
-                OS_dispatch_queue-Protocol.h OS_dispatch_source-Protocol.h \
-                NSObject.h NSString.h NSArray.h NSDictionary.h # Thêm một số class rác hay gặp
+          # 🔘 Công tắc 1: Diệt Apple (Báo cáo từng file)
+          if [ "${{ github.event.inputs.purge_apple }}" == "true" ]; then
+            echo "🍎 --- ĐANG QUÉT HEADER APPLE ---"
+            APPLE_TRASH=(NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h \
+                         NSSecureCoding-Protocol.h CGRect.h CGPoint.h UIEdgeInsets.h \
+                         UIAppearanceContainer-Protocol.h UIGestureRecognizerDelegate-Protocol.h \
+                         OS_dispatch_object-Protocol.h OS_dispatch_queue-Protocol.h \
+                         OS_dispatch_source-Protocol.h NSObject.h NSString.h NSArray.h NSDictionary.h)
+            
+            for file in "${APPLE_TRASH[@]}"; do
+              if [ -f "$file" ]; then
+                rm -v "$file" # Lệnh rm -v sẽ tự hiện log "removed 'filename'"
+              fi
+            done
+          fi
 
-          # 2. Xóa sạch mọi file nén rác (.zip) trong thư mục này
-          echo "🗑️ Đang xóa các tệp nén .zip thừa..."
-          rm -f *.zip
+          # 🔘 Công tắc 2: Diệt Zip
+          if [ "${{ github.event.inputs.purge_zip }}" == "true" ]; then
+            echo "📦 --- ĐANG DỌN FILE NÉN ---"
+            # Tìm và xóa zip, hiện tên file bị xóa
+            find . -name "*.zip" -print -delete | sed 's/^/🗑️ Đã xóa: /'
+          fi
+
+          # 🧹 Dọn rác còn lại (không phải .h)
+          echo "🧹 --- ĐANG QUÉT RÁC PHÁT SINH (NON-H) ---"
+          find . -type f ! -name "*.h" -print -delete | sed 's/^/🗑️ Đã xóa rác: /'
+
+          echo "✅ Chiến dịch hoàn tất!"
+
 
           # 3. Xóa các file thừa không phải là Header (nếu có)
           find . -type f ! -name "*.h" -delete
