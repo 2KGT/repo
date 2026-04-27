@@ -36,26 +36,33 @@ jobs:
           brew install make ldid dpkg
           echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
 
-      # ==========================================
-      # BƯỚC 2: QUẢN LÝ THEOS (CHỐT CACHE V2)
+            # ==========================================
+      # BƯỚC 2: QUẢN LÝ THEOS (SỬA LỖI EXIT CODE 128)
       # ==========================================
       - name: 🧠 Cache Theos & SDKs
         id: cache-theos
         uses: actions/cache@v4
         with:
           path: theos
-          key: ${{ runner.os }}-theos-v2 # Đã đổi lên v2 để reset cache lỗi
+          key: ${{ runner.os }}-theos-v2 # Dùng v2 cho sạch
           restore-keys: |
             ${{ runner.os }}-theos-
 
       - name: 🏗️ Setup Theos Environment
         run: |
           if [ "${{ steps.cache-theos.outputs.cache-hit }}" != "true" ]; then
+            echo "📥 Cache trống hoặc lỗi, đang dọn dẹp và tải mới..."
+            # LỆNH QUAN TRỌNG: Xoá bỏ thư mục lỗi nếu nó tồn tại trước khi clone
+            rm -rf $THEOS
             git clone --recursive https://github.com/theos/theos.git $THEOS
+            
             mkdir -p $THEOS/sdks
             curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
+          else
+            echo "💎 Đã nhận hàng từ Cache, xưởng đã sẵn sàng!"
           fi
-          mkdir -p $THEOS/include # Đảm bảo luôn có folder này
+          # Luôn đảm bảo include tồn tại cho khâu nhặt hàng
+          mkdir -p $THEOS/include
 
       # ==========================================
       # BƯỚC 3: NGƯỜI VẬN CHUYỂN (BỐC THEO ĐƠN TXT)
