@@ -111,56 +111,63 @@ jobs:
               fi
           done
 
-            # ==========================================
-      # BƯỚC 4: BUILD -> RA DEB -> DỌN RÁC (BẢN FIX CHỐT)
+      # ==========================================
+      # BƯỚC 4: CHIẾN THUẬT NHẶT THẲNG (SAU KHI ĐÃ FILTER)
       # ==========================================
       - name: ⚙️ Build & Clean Up
         id: metadata
         run: |
           DIR="${{ steps.picker.outputs.proj_dir }}"
           CTRL="$DIR/control"
+          
+          # 1. Định danh nhãn mác
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           RAW_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$RAW_VER" || echo "$RAW_VER-test$(date +%H%M)")
           
-          # 1. Cập nhật nhãn mác
-          sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
-          sed -i '' "/^SileoDepiction:/d" "$CTRL"
-          echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
-
-          # 2. DỌN DẸP TRƯỚC (Để không xóa nhầm Header vừa nhặt)
+          # 2. DỌN SÂN (Theos Clean)
           make -C "$DIR" clean
 
-          # 3. NHẶT HÀNG TƯƠI (Thực hiện lại bước bốc hàng ngay trước khi build)
-          # Đây là chiêu chốt để đảm bảo file .h luôn có mặt lúc build
+          # 3. NHẶT TRỰC TIẾP (Vì kho headers đã được lọc phẳng bởi Factory)
           if [ -f "$DIR/headers.txt" ]; then
-              echo "🚚 Đang đưa Header vào vị trí chiến đấu..."
+              echo "🚚 Bốc hàng trực tiếp từ kho đã thanh tẩy..."
               DEST_DIR="$THEOS/include/YouTubeHeader"
               mkdir -p "$DEST_DIR"
-              while IFS= read -r line || [ -n "$line" ]; do
-                  FILE_NEED=$(echo "$line" | tr -d '\r' | xargs)
-                  [ -z "$FILE_NEED" ] && continue
-                  find "$(pwd)/headers/YouTubeHeader" -type f -name "$FILE_NEED" -exec cp -fL {} "$DEST_DIR/" \;
-              done < "$DIR/headers.txt"
               
-              # Thanh tẩy nhanh rác Apple
-              rm -f "$DEST_DIR"/NSObject-Protocol.h "$DEST_DIR"/CGRect.h "$DEST_DIR"/CGPoint.h "$DEST_DIR"/UIEdgeInsets.h
+              KHO_CHUAN="$(pwd)/headers/YouTubeHeader"
+              
+              while IFS= read -r file || [ -n "$file" ]; do
+                  FILE_NEED=$(echo "$file" | tr -d '\r' | xargs)
+                  [ -z "$FILE_NEED" ] && continue
+                  
+                  # Nhặt trực tiếp, không dùng find lằng nhằng vì hàng đã nằm ngay mặt tiền
+                  if [ -f "$KHO_CHUAN/$FILE_NEED" ]; then
+                      cp -fL "$KHO_CHUAN/$FILE_NEED" "$DEST_DIR/"
+                      echo "✅ Đã dán: $FILE_NEED"
+                  else
+                      # Nếu Factory lọc chưa kỹ, dùng find hỗ trợ nốt lần cuối cho chắc
+                      find "$KHO_CHUAN" -type f -name "$FILE_NEED" -exec cp -fL {} "$DEST_DIR/" \;
+                      [ -f "$DEST_DIR/$FILE_NEED" ] && echo "⚠️ Đã tìm thấy trong hẻm: $FILE_NEED" || echo "❌ Mất dấu: $FILE_NEED"
+                  fi
+              done < "$DIR/headers.txt"
           fi
 
-          # 4. TIẾN HÀNH BUILD (Bỏ clean ở lệnh này)
+          # 4. THỔI LỬA BUILD
+          echo "🔥 Nấu mẻ tweak: $SAFE..."
+          sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
           INC_FLAGS="-I$THEOS/include"
+          
           make -C "$DIR" package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
             ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -Wno-duplicate-protocol -DTHEOS_LEAN_AND_MEAN $INC_FLAGS"
           
-          # 5. CẤT DEB & DỌN RÁC CUỐI
+          # 5. CẤT HÀNG & DỌN DẸP
           mkdir -p deb_output
           cp "$DIR/packages/"*.deb deb_output/
-          
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
 
-          echo "🧹 Tổng vệ sinh cuối cùng..."
+          echo "🧹 Xưởng sạch, hàng đã vào két!"
           find $THEOS/include -maxdepth 1 -type d ! -path $THEOS/include -exec rm -rf {} +
 
 
