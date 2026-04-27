@@ -1,47 +1,72 @@
-name: Header Dumper
+name: 2KGT Header Factory
 
 on:
   workflow_dispatch:
     inputs:
       ipa_url:
-        description: 'Dán link tải file IPA (đã decrypt)'
+        description: 'Dán link tải IPA Decrypt (Link trực tiếp)'
         required: true
         type: string
+      app_name:
+        description: 'Tên thư mục lưu (VD: YouTubeHeader)'
+        required: true
+        default: 'YouTubeHeader'
 
 jobs:
-  dump:
+  dump_process:
     runs-on: macos-latest
+    permissions:
+      contents: write
     steps:
-      - name: 📥 Tải tool dsdump
+      - name: 📥 Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: 🛠️ Setup Dsdump
         run: |
           curl -L https://github.com/DerekSelander/dsdump/releases/download/v0.0.29/dsdump.zip -o dsdump.zip
           unzip dsdump.zip
           chmod +x dsdump
           sudo mv dsdump /usr/local/bin/
 
-      - name: 📦 Tải và giải nén IPA
+      - name: 📦 Download & Extract IPA
         run: |
           curl -L "${{ github.event.inputs.ipa_url }}" -o app.ipa
-          unzip app.ipa -d app_extracted
+          unzip -q app.ipa -d app_extracted
 
-      - name: 🔍 Tìm file thực thi chính (Binary)
+      - name: 🔍 Locate Binary
         id: locate
         run: |
-          # Tìm file thực thi nằm trong thư mục .app
           APP_PATH=$(find app_extracted/Payload -name "*.app" | head -n 1)
           APP_NAME=$(basename "$APP_PATH" .app)
-          BINARY_PATH="$APP_PATH/$APP_NAME"
-          echo "path=$BINARY_PATH" >> $GITHUB_OUTPUT
-          echo "name=$APP_NAME" >> $GITHUB_OUTPUT
+          echo "binary=$APP_PATH/$APP_NAME" >> $GITHUB_OUTPUT
+          echo "Found Binary: $APP_PATH/$APP_NAME"
 
-      - name: ⚡ Tiến hành Dump Header
+      - name: ⚡ Full Dumping (Straight to Headers)
         run: |
-          mkdir output_headers
-          # Sử dụng dsdump để xuất toàn bộ header ra thư mục
-          dsdump --objc --swift -f public --gen-header -o output_headers "${{ steps.locate.outputs.path }}"
+          TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
+          mkdir -p "$TARGET_DIR"
+          # Dọn sạch folder cũ nếu có để tránh chồng chéo phiên bản
+          rm -rf "$TARGET_DIR"/*
+          
+          echo "🚀 Đang tiến hành Dump toàn bộ Header..."
+          dsdump --objc --swift -f public --gen-header -o "$TARGET_DIR" "${{ steps.locate.outputs.binary }}"
+          
+          echo "🧹 San phẳng và dọn rác..."
+          # Lôi hết file .h ra ngoài mặt tiền
+          find "$TARGET_DIR" -mindepth 2 -type f -name "*.h" -exec mv {} "$TARGET_DIR/" \;
+          # Xoá các thư mục rỗng sau khi đã dọn file
+          find "$TARGET_DIR" -type d -empty -delete
 
-      - name: 📦 Nén và xuất xưởng
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.locate.outputs.name }}-Headers
-          path: output_headers/
+      - name: 🚀 Commit & Push to Repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "actions@github.com"
+          git add "headers/${{ github.event.inputs.app_name }}"
+          
+          # Chỉ commit nếu có sự thay đổi (tránh lỗi workflow)
+          if git diff --staged --quiet; then
+            echo "Nothin' changed, skip commit."
+          else
+            git commit -m "🪄 [2KGT Factory] Dumped: ${{ github.event.inputs.app_name }}"
+            git push
+          fi
