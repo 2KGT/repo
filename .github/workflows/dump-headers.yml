@@ -4,25 +4,29 @@ on:
   workflow_dispatch:
     inputs:
       ipa_url:
-        description: 'Direct link IPA Decrypt'
+        description: '🔗 Link IPA Decrypt'
         required: true
         type: string
       app_name:
-        description: 'Tên thư mục lưu Header (vd: YouTubeHeader)'
+        description: '📁 Thư mục lưu Header'
         required: true
         default: 'YouTubeHeader'
       config_path:
-        description: 'Đường dẫn file .txt (vd: src/build-tweaks/AutoAC/headers.txt)'
+        description: |
+          📄 Đường dẫn file .txt danh sách class
+          (Mặc định bên dưới, xóa đi nếu muốn dump hết)
         required: false
+        default: 'src/build-tweaks/AutoAC/headers.txt'
         type: string
       target_classes:
-        description: 'Hoặc nhập nhanh Class (cách nhau bằng dấu cách)'
+        description: '🎯 Nhập nhanh Class (cách nhau bằng dấu cách)'
         required: false
         type: string
       smart_filter:
-        description: 'Chế độ sàng lọc (Diệt rác Apple, Swift, Category dài)'
+        description: '✨ Chế độ Sàng Lọc Vàng (Apple, Swift, Category rác)'
         type: boolean
         default: true
+
 
 jobs:
   dump_process:
