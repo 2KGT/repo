@@ -22,7 +22,7 @@
 [![Build Multi Tweak](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml/badge.svg)](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml)
 
 
-    <a href="https://github.com/badges/shields/actions/workflows/daily-tests.yml">
+<a href="https://github.com/2KGT/repo/actions">
         <img src="https://img.shields.io/github/actions/workflow/status/badges/shields/daily-tests.yml?label=daily%20tests"
             alt="Daily Tests Status"></a>
 
