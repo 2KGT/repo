@@ -60,7 +60,7 @@ jobs:
           BIN=$(find app_extracted/Payload -name "*.app" | head -n 1)
           echo "binary=$BIN/$(basename "$BIN" .app)" >> $GITHUB_OUTPUT
 
-      - name: ⚡ Smart Dumping & Deep Collection Logic
+           - name: ⚡ Smart Dumping & Talent Scouting Logic
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           TEMP_DUMP="temp_headers"
@@ -72,7 +72,11 @@ jobs:
           fi
           mkdir -p "$TARGET_DIR" "$TEMP_DUMP"
 
-          # 2. XÁC ĐỊNH DANH SÁCH CLASS
+          # 2. XÁC ĐỊNH MỤC TIÊU (Tìm tất cả Binary có trong App)
+          # Logic tìm kiếm tương thích cả macOS/Linux
+          ALL_BINS=$(find app_extracted/Payload -name "*.app" -exec find {} -maxdepth 2 -type f ! -name "*.*" \; )
+          
+          # 3. CHIẾN THUẬT HỐT CẢ Ổ (Dump & Lây lan)
           CLASSES="${{ github.event.inputs.target_classes }}"
           if [ -z "$CLASSES" ] && [ -n "${{ github.event.inputs.config_path }}" ]; then
               if [ -f "${{ github.event.inputs.config_path }}" ]; then
@@ -81,62 +85,46 @@ jobs:
               fi
           fi
 
-                      # 3. THỰC THI DUMP (Bản thực chiến: Gắp từng Class vào file lẻ)
           if [ -n "$CLASSES" ]; then
-              # Tìm đúng file thực thi của App
-              APP_BIN=$(find app_extracted/Payload -name "*.app" -exec find {} -maxdepth 1 -type f -executable \; | head -n 1)
-              echo "🎯 Đang băm Class từ: $APP_BIN"
-              
+              echo "🎯 Bắt đầu chiến dịch săn lùng theo danh sách..."
               for CLS in $CLASSES; do
                   [ -z "$CLS" ] && continue
-                  echo "🎯 Gắp Class: $CLS"
-                  # class-dump không có --headers sẽ in ra stdout, ta hứng nó vào file
-                  ipsw class-dump "$APP_BIN" --class "$CLS" > "$TEMP_DUMP/$CLS.h"
+                  for BIN in $ALL_BINS; do
+                      # Dump class lẻ nhưng dùng --headers để ipsw tự hốt các file liên quan trong Binary đó
+                      ipsw class-dump "$BIN" --class "$CLS" --headers -o "$TEMP_DUMP" 2>/dev/null
+                  done
               done
           else
-              echo "🌊 Dump All: Đang bóc toàn bộ Header..."
-              APP_BIN=$(find app_extracted/Payload -name "*.app" -exec find {} -maxdepth 1 -type f -executable \; | head -n 1)
-              ipsw class-dump "$APP_BIN" --headers -o "$TEMP_DUMP"
+              echo "🌊 Dump All: Càn quét toàn bộ hang ổ..."
+              for BIN in $ALL_BINS; do
+                  ipsw class-dump "$BIN" --headers -o "$TEMP_DUMP" 2>/dev/null
+              done
           fi
 
-
-                    # 4. SÀNG LỌC TỐ CHẤT & CƯỠNG CHẾ CHUYỂN NHÀ
-          echo "🧐 Đang kiểm tra tố chất từng file trước khi cho nhập hộ khẩu..."
-          
-          # Tìm tất cả file .h trong khu tạm trú
+          # 4. VÒNG LỌC TỐ CHẤT & NHẬP HỘ KHẨU (Deep Scan + Filter)
+          echo "🧐 Đang kiểm tra tố chất từng file trước khi cho nhập tịch..."
+          # Quét sạch mọi xó xỉnh trong khu tạm trú
           find "$TEMP_DUMP" -name "*.h" -type f | while read -r FILE; do
-              # CHIẾN THUẬT LỌC:
-              # 1. File phải có nội dung (không rỗng)
-              # 2. Phải chứa từ khóa ObjC đặc trưng (@interface hoặc @protocol)
+              # Điều kiện: File có nội dung VÀ chứa cấu trúc ObjC (@interface/@protocol)
               if [ -s "$FILE" ] && grep -qE "@interface|@protocol" "$FILE"; then
-                  # Lấy tên file để báo cáo cho ông giáo
-                  FILENAME=$(basename "$FILE")
-                  # Ép chuyển nhà về kho chính
                   mv -f "$FILE" "$TARGET_DIR/"
-                  echo "✅ Tuyển thẳng: $FILENAME (Có tố chất)"
               else
-                  # Loại bỏ những file rác, file trắng hoặc file không phải ObjC
                   rm -f "$FILE"
               fi
           done
 
-          echo "✅ Chiến dịch tuyển quân hoàn tất!"
-
-          
-          # 5. VÁ LỖI ĐỒNG LOẠT (Patch Headers)
+          # 5. DÁN GIÁP ĐỒNG LOẠT (Patching)
           if [ "${{ github.event.inputs.patch_headers }}" == "true" ]; then
-              echo "🩹 Đang dán giáp Forward Declaration cho toàn bộ kho..."
+              echo "🩹 Dán giáp Forward Declaration cho các tân binh..."
               find "$TARGET_DIR" -name "*.h" -exec sed -i '' '1i\
               @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
               @protocol NSObject, NSCopying, NSCoding;
               ' {} +
           fi
 
-          # 6. SÀNG LỌC TINH (Chỉ bỏ rác hệ thống)
+          # 6. SÀNG LỌC RÁC CUỐI (Smart Filter)
           if [ "${{ github.event.inputs.smart_filter }}" == "true" ]; then
-              echo "✨ Đang lọc tinh rác Swift/Apple..."
               cd "$TARGET_DIR"
-              # Chỉ xóa những thứ thực sự vô dụng
               rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h GPBMessage.h 2>/dev/null
               find . -name "_Ttc*" -exec rm -f {} \;
               find . -name "*.h" | awk 'length > 100' | xargs rm -f 2>/dev/null
@@ -144,11 +132,4 @@ jobs:
           fi
 
           rm -rf "$TEMP_DUMP" app_extracted
-          echo "📦 Kho hàng hiện tại: $(ls -1 "$TARGET_DIR" | wc -l) file."
-
-      - name: 🚀 Commit & Push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "actions@github.com"
-          git add -f "headers/${{ github.event.inputs.app_name }}"
-          git diff --staged --quiet || (git commit -m "🪄 [Factory] managed-dump v6.0: ${{ github.event.inputs.app_name }}" && git push origin main)
+          echo "📦 Kho hàng tinh nhuệ hiện có: $(ls -1 "$TARGET_DIR" | wc -l) file."
