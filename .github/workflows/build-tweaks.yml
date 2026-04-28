@@ -169,60 +169,27 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           JSON_PATH="depictions/${SAFE}.json"
           IMG_BASE="${{ env.BASE_URL }}/depictions/images"
-          
-          # 1. Quét mô tả từ dấu # trong code
           SRC_FILE=$(find "$DIR" -name "*.x" -o -name "*.xm" | head -n 1)
           DESC_CONTENT="Phiên bản $SAFE từ 2KGT Repo."
           if [ -n "$SRC_FILE" ]; then
             EXTRACTED=$(grep "^#" "$SRC_FILE" | sed 's/^#//;s/^ //' | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
             [ -n "$EXTRACTED" ] && DESC_CONTENT="$EXTRACTED"
           fi
-
-          # 2. Đúc JSON (Chia làm 3 phần để kiểm soát dấu phẩy Screenshots)
           mkdir -p depictions
-          
-          # --- Phần đầu JSON ---
-          echo '{
-  "class": "DepictionTabView",
-  "tabs": [
-    {
-      "tabname": "Details",
-      "class": "DepictionStackView",
-      "views": [
-        { "class": "DepictionHeaderView", "title": "'$SAFE'" },
-        { "class": "DepictionImageView", "url": "'$IMG_BASE/${SAFE}-banner.png'", "width": 1242, "height": 500, "cornerRadius": 10 },
-        {
-          "class": "DepictionScreenshotsView",
-          "itemCornerRadius": 8,
-          "screenshots": [' > "$JSON_PATH"
-
-          # --- Phần quét Screenshots ---
+          echo '{"class":"DepictionTabView","tabs":[{"tabname":"Details","class":"DepictionStackView","views":[{"class":"DepictionHeaderView","title":"'$SAFE'"},{"class":"DepictionImageView","url":"'$IMG_BASE/${SAFE}-banner.png'","width":1242,"height":500,"cornerRadius":10},{"class":"DepictionScreenshotsView","itemCornerRadius":8,"screenshots":[' > "$JSON_PATH"
           FIRST=true
           for i in {1..5}; do
             if [ -f "depictions/images/${SAFE}${i}.png" ]; then
               [ "$FIRST" = true ] && FIRST=false || echo "," >> "$JSON_PATH"
-              echo '            { "url": "'$IMG_BASE/${SAFE}${i}.png'" }' >> "$JSON_PATH"
+              echo '{"url":"'$IMG_BASE/${SAFE}${i}.png'"}' >> "$JSON_PATH"
             fi
           done
-
-          # --- Phần đuôi JSON (Chứa Video + Markdown) ---
-          echo '          ]
-        },
-        { "class": "DepictionVideoView", "videoURL": "'$IMG_BASE/${SAFE}.mp4'", "cornerRadius": 8 },
-        { "class": "DepictionMarkdownView", "markdown": "'$DESC_CONTENT'", "useMargins": true }
-      ]
-    }
-  ]
-}' >> "$JSON_PATH"
-          
-          # 3. Đồng bộ ngược về Repo
+          echo ']},{"class":"DepictionVideoView","videoURL":"'$IMG_BASE/${SAFE}.mp4'","cornerRadius":8},{"class":"DepictionMarkdownView","markdown":"'$DESC_CONTENT'","useMargins":true}]}]}' >> "$JSON_PATH"
           git add src/build-tweaks/ depictions/
-          
           if [ "${{ github.event.inputs.publish }}" == "true" ]; then
             mkdir -p debs && cp deb_output/*.deb debs/
             dpkg-scanpackages -m debs /dev/null > Packages && bzip2 -fks Packages
@@ -231,13 +198,10 @@ jobs:
           else
             MSG="🛠️ Build: $SAFE v${{ steps.metadata.outputs.proj_ver }}"
           fi
-          
           git commit -m "$MSG" || exit 0
           git push origin main
 
-        - name: 📦 Xuất xưởng
-          uses: actions/upload-artifact@v4
+      - name: 📦 Xuất xưởng
+        uses: actions/upload-artifact@v4
         with:
-        name: ${{ steps.metadata.outputs.safe_name }}_v${{ steps.metadata.outputs.proj_ver }}
-          path: deb_output/*.deb
-
+          name: ${{ steps.metadata.outputs.safe_name }}_v${{ steps.metadata.outputs.proj_ver }}
