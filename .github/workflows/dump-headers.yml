@@ -4,32 +4,32 @@ on:
   workflow_dispatch:
     inputs:
       ipa_url:
-        description: '🔗 Link IPA Decrypt'
+        description: '🔗 Link IPA Decrypt (Hàng sạch)'
         required: true
         type: string
       app_name:
-        description: '📁 Thư mục lưu'
+        description: '📁 Tên thư mục lưu (VD: YouTubeHeader)'
         required: true
         default: 'YouTubeHeader'
         type: string
       target_classes:
-        description: '🎯 Nhập Class lẻ (để trống nếu dump tất)'
+        description: '🎯 Nhập Class cụ thể (Để trống sẽ hốt TẤT CẢ)'
         required: false
         type: string
       config_path:
-        description: '📄 Đường dẫn headers.txt'
+        description: '📄 Đường dẫn file headers.txt (Thánh chỉ)'
         required: false
         type: string
       patch_headers:
-        description: '🩹 Vá lỗi @class (Forward Declaration)'
+        description: '🩹 Vá lỗi @class (Né lỗi Forward Declaration)'
         type: boolean
         default: true
       smart_filter:
-        description: '✨ Tự động dọn rác (Siêu sạch)'
+        description: '✨ Thanh tẩy rác (Xoá rác Swift/Metadata/File rỗng)'
         type: boolean
         default: true
       clear_all:
-        description: '🧨 Xoá sạch kho cũ trước khi đổ mới'
+        description: '🧨 San phẳng kho cũ (Xoá hết file cũ trước khi dump)'
         type: boolean
         default: false
 
@@ -42,85 +42,74 @@ jobs:
       - name: 📥 Checkout Repo
         uses: actions/checkout@v4
 
-      - name: 🛠️ Setup Tools
+      - name: 🛠️ Cài đặt ipsw Tool
         run: brew install blacktop/tap/ipsw
 
-      - name: 📦 Download & Extract IPA
+      - name: 📦 Tải và Giải nén IPA
         run: |
-          IPA_LINK="${{ github.event.inputs.ipa_url }}"
-          echo "📥 Đang tải hàng từ: $IPA_LINK"
-          curl -L -A "Mozilla/5.0" "$IPA_LINK" -o app.ipa
+          echo "📥 Đang kéo hàng từ server..."
+          curl -L -A "Mozilla/5.0" "${{ github.event.inputs.ipa_url }}" -o app.ipa
           unzip -q app.ipa -d app_extracted
 
-      - name: ⚡ Nhà Máy San Phẳng (Dumping)
+      - name: ⚡ Khởi động Nhà Máy Dump
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           RAW_CACHE="raw_dump_cache"
           
-          # 1. KHỞI TẠO & DỌN SÂN
           [ "${{ github.event.inputs.clear_all }}" == "true" ] && rm -rf "$TARGET_DIR"
           mkdir -p "$TARGET_DIR" "$RAW_CACHE"
 
-          # 2. LẬP BẢN ĐỒ & DUMP (Lọc bỏ file rác hệ thống ngay từ bước tìm Binary)
+          echo "🔍 Tìm kiếm Binary xịn..."
           find app_extracted/Payload -type f ! -name "*.*" ! -name "CodeResources" ! -name "PkgInfo" > bin_list.txt
           
           while read -r BIN; do
               if file "$BIN" | grep -q "Mach-O"; then
-                  echo "🧬 Đang băm: $(basename "$BIN")"
-                  # Chỉ dùng cờ an toàn, đổ hết vào RAW_CACHE
+                  echo "🧬 Đang bóc tách: $(basename "$BIN")"
                   ipsw class-dump "$BIN" --headers -o "$RAW_CACHE" || true
               fi
           done < bin_list.txt
 
-          # 3. NHẬN DIỆN CHIẾU CHỈ (Nếu có list thì chỉ nhặt theo list, không thì nhặt tất)
+          # Logic nhặt hàng
           CLASSES="${{ github.event.inputs.target_classes }}"
           [ -z "$CLASSES" ] && [ -f "${{ github.event.inputs.config_path }}" ] && CLASSES=$(tr '\r\n' ' ' < "${{ github.event.inputs.config_path }}" | sed 's/\.h//g')
 
           if [ -n "$CLASSES" ]; then
-              echo "🧺 Nhặt hàng theo danh sách yêu cầu..."
+              echo "🧺 Đang nhặt hàng theo yêu cầu..."
               for CLS in $CLASSES; do
                   find "$RAW_CACHE" -name "*$CLS*.h" -exec mv -f {} "$TARGET_DIR/" \; 2>/dev/null || true
               done
           else
-              echo "🌊 Chế độ Dump All: Đổ toàn bộ kho đệm vào Repo..."
+              echo "🌊 Đang cưỡng chế đổ toàn bộ headers về kho..."
               find "$RAW_CACHE" -name "*.h" -exec mv -f {} "$TARGET_DIR/" \;
           fi
 
-      - name: 🧼 Thanh Tẩy Tự Động (Smart Filter)
+      - name: 🧼 Quy hoạch và Thanh tẩy (Smart Filter)
         if: github.event.inputs.smart_filter == 'true'
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           cd "$TARGET_DIR"
-          echo "🧹 Đang thanh lọc rác dựa trên quy hoạch tự động..."
-          
-          # A. Trảm file siêu nhỏ (vô giá trị) và file tên quá dài (rác Swift)
+          echo "🧹 Đang dọn dẹp rác rưởi..."
           find . -name "*.h" -type f -size -150c -delete
           find . -name "*.h" | awk 'length > 110' | xargs rm -f 2>/dev/null
-          
-          # B. Trảm rác ký tự lạ, metadata và framework con không cần thiết
           find . -name "*\$*" -delete
           rm -f _Ttc* GUL* GCK* GAI* *.metadata.h 2>/dev/null
-          
-          # C. Trảm Protocol hệ thống gây lỗi build
           rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h 2>/dev/null
           cd - > /dev/null
 
-      - name: 🩹 Vá Lỗi & Hoàn Tất (Patching)
+      - name: 🩹 Vá lỗi Forward Declaration
         if: github.event.inputs.patch_headers == 'true'
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
-          echo "🩹 Đang dán giáp Forward Declaration cho toàn kho..."
+          echo "🩹 Đang dán giáp vá lỗi cho $(ls -1 "$TARGET_DIR" | wc -l) file..."
           find "$TARGET_DIR" -name "*.h" -exec sed -i '' '1i\
           @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
           @protocol NSObject, NSCopying, NSCoding;
           ' {} +
-          
-          echo "📦 Kho hàng tinh nhuệ: $(ls -1 "$TARGET_DIR" | wc -l) file."
 
-      - name: 🚀 Push Hàng Về Kho Repo
+      - name: 🚀 Đẩy hàng về Repo
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
           git add headers/
-          git commit -m "🚀 Factory Update: ${{ github.event.inputs.app_name }} [auto-clean]" || exit 0
+          git commit -m "🚀 Factory: ${{ github.event.inputs.app_name }} updated" || exit 0
           git push
