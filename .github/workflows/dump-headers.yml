@@ -77,48 +77,45 @@ jobs:
               CLASSES=$(tr '\r\n' ' ' < "$CONFIG" | sed 's/\.h//g')
           fi
 
-          # 3. THỰC THI CHU DI (Săn lùng dòng họ)
-          if [ -n "$CLASSES" ]; then
-              for CLS in $CLASSES; do
+                    # 3. GIAI ĐOẠN "NHẶT VÀ LỌC" (Bản Fix Mắt Thần)
+          echo "🧺 Bot đang đi lục soát kho đệm..."
+          
+          # Đảm bảo CLASSES không bị dính ký tự lạ
+          CLEAN_CLASSES=$(echo $CLASSES | sed 's/\*/ /g') # Xử lý nếu ông giáo nhập dấu *
+
+          if [ -n "$CLEAN_CLASSES" ]; then
+              for CLS in $CLEAN_CLASSES; do
                   [ -z "$CLS" ] && continue
+                  echo "🔎 Truy quét mục tiêu: $CLS"
                   
-                  # Nếu bật Deep Scan (Ân xá file con), dùng Regex bắt cả họ. 
-                  # Nếu tắt, chỉ bắt đúng thằng đầu sỏ.
-                  if [ "${{ github.event.inputs.deep_scan }}" == "true" ]; then
-                      KINSHIP_REGEX="${CLS}.*"
-                      echo "⚔️ Đang chu di dòng họ: $KINSHIP_REGEX"
-                  else
-                      KINSHIP_REGEX="^${CLS}$"
-                      echo "🎯 Chỉ trảm đầu sỏ: $CLS"
+                  # CHƯƠNG TRÌNH NHẶT HÀNG ĐA TẦNG:
+                  # Tìm tất cả file .h bắt đầu bằng tên Class hoặc có chứa tên Class
+                  # Dùng -ipath để lục tung cả thư mục con
+                  FOUND_FILES=$(find "$ALL_DUMP_DIR" -type f -name "*$CLS*.h")
+                  
+                  if [ -z "$FOUND_FILES" ]; then
+                      echo "⚠️ Không tìm thấy họ hàng nhà: $CLS (Bỏ qua)"
+                      continue
                   fi
-                  
-                  while read -r BIN; do
-                      # Dùng objc dump để trích xuất cấu trúc Obj-C sạch sẽ
-                      ipsw objc dump "$BIN" --class "$KINSHIP_REGEX" > "$TEMP_DUMP/${CLS}_family_raw.h" 2>/dev/null || true
-                  done < bin_list.txt
+
+                  echo "$FOUND_FILES" | while read -r FILE; do
+                      # Vòng lọc tố chất: Chỉ lấy file có nội dung thực thụ
+                      if [ -s "$FILE" ] && grep -qE "@interface|@protocol" "$FILE"; then
+                          FILENAME=$(basename "$FILE")
+                          mv -f "$FILE" "$TARGET_DIR/"
+                          echo "✅ Đã thu nạp tân binh: $FILENAME"
+                      fi
+                  done
               done
           else
-              echo "🌊 Lệnh tổng lực: Càn quét không chừa một ai..."
-              while read -r BIN; do
-                  ipsw class-dump "$BIN" --headers -o "$TEMP_DUMP" || true
-              done < bin_list.txt
+              # Nếu không có danh sách, ân xá tất cả thằng có tố chất
+              echo "🚜 Không có thánh chỉ, nhặt sạch tinh anh!"
+              find "$ALL_DUMP_DIR" -name "*.h" -type f | while read -r FILE; do
+                  if [ -s "$FILE" ] && grep -qE "@interface|@protocol" "$FILE"; then
+                      mv -f "$FILE" "$TARGET_DIR/"
+                  fi
+              done
           fi
-
-          # 4. VÒNG LỌC ÂN XÁ (Lọc tố chất & Nhốt vào kho)
-          echo "🧐 Đang sàng lọc: Thằng nào ngoan thì cho về kho, rác thì trảm..."
-          
-          find "$TEMP_DUMP" -name "*.h" -type f | while read -r FILE; do
-              # Điều kiện ân xá: File không rỗng và có chứa code Obj-C thực thụ
-              if [ -s "$FILE" ] && grep -qE "@interface|@protocol" "$FILE"; then
-                  # Chỉnh sửa tên file cho ngay ngắn trước khi nhốt vào kho
-                  FINAL_NAME=$(basename "$FILE" _raw.h).h
-                  mv -f "$FILE" "$TARGET_DIR/$FINAL_NAME"
-                  echo "✅ Ân xá nhập tịch: $FINAL_NAME"
-              else
-                  # Rác rưởi hoặc file trắng thì trảm ngay
-                  rm -f "$FILE"
-              fi
-          done
 
           # 5. DÁN GIÁP & SMART FILTER (Bước dọn dẹp cuối cùng)
           if [ "${{ github.event.inputs.patch_headers }}" == "true" ]; then
