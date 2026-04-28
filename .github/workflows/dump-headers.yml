@@ -81,18 +81,24 @@ jobs:
               fi
           fi
 
-                 # 3. THỰC THI DUMP (Fix lỗi: Phải có --headers mới dùng được -o)
+                          # 3. THỰC THI DUMP (Bản chính quy: Dùng Regex để lách mọi biến số)
           if [ -n "$CLASSES" ]; then
-              for CLS in $CLASSES; do
-                  [ -z "$CLS" ] && continue
-                  echo "🎯 Đang băm Class: $CLS"
-                  # SỬA LẠI ĐÂY: Thêm --headers để ipsw chịu xuất file vào thư mục -o
-                  ipsw class-dump "app_extracted/Payload/YouTube.app/YouTube" --class "$CLS" --headers -o "$TEMP_DUMP"
-              done
+              # Biến danh sách "A B C" thành "A|B|C" để ipsw hiểu là Regex
+              CLASS_REGEX=$(echo "$CLASSES" | sed 's/ /|/g')
+              echo "🎯 Đang băm nhóm Class: $CLASS_REGEX"
+              
+              # Dùng cờ --class đi kèm --headers và -o (Cú pháp chuẩn nhất của ipsw)
+              ipsw class-dump "app_extracted/Payload/${{ github.event.inputs.app_name }}.app/$(basename "app_extracted/Payload/"*.app .app)" \
+                --headers \
+                --class "$CLASS_REGEX" \
+                -o "$TEMP_DUMP"
           else
               echo "🌊 Dump All: Đang bóc toàn bộ Header..."
-              ipsw class-dump "app_extracted/Payload/YouTube.app/YouTube" --headers -o "$TEMP_DUMP"
+              ipsw class-dump "app_extracted/Payload/${{ github.event.inputs.app_name }}.app/$(basename "app_extracted/Payload/"*.app .app)" \
+                --headers \
+                -o "$TEMP_DUMP"
           fi
+
 
           # 4. GOM HÀNG (Deep Scan - Trả tiền phụ in cho chủ quán)
           if [ "${{ github.event.inputs.deep_scan }}" == "true" ]; then
