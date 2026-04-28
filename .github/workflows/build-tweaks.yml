@@ -135,7 +135,13 @@ jobs:
       - name: 🔨 Thực thi Build DEB
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
-          DYNAMIC_INCLUDES=""
+          # Luôn trỏ vào gốc include để code nhận diện được YouTubeHeader/xxx.h
+          DYNAMIC_INCLUDES="-I$THEOS/include"
+          
+          make -C "$DIR" package FINALPACKAGE=1 TARGET=iphone:clang:14.5:14.5 \
+            ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -DTHEOS_LEAN_AND_MEAN $DYNAMIC_INCLUDES"
+          
+          mkdir -p deb_output && cp "$DIR/packages/"*.deb deb_output/
 
           # ĐIỀU KIỆN: Chỉ thiết lập đường dẫn động khi dự án có yêu cầu headers
           if [ -f "$DIR/headers.txt" ]; then
