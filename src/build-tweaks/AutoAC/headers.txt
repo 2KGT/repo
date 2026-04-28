@@ -1,7 +1,10 @@
-MLHAMPlayerItem.h
-YTAppSettingsPresentationData.h
-YTSettingsViewController.h
-YTSettingsSectionItem.h
-YTSettingsSectionItemManager.h
-YTSettingsGroupData.h
-
+YTAdSlotContainerView
+YTStyledViewController
+YTCollectionViewController
+YTFusedSettingsService
+YTAppSettingsSectionItemActionController
+YTResponder
+YTICommand
+YTPageStyleController
+YTAppSettingsViewControllerDelegate
+YTFusedSettingsServiceSessionDelegate
