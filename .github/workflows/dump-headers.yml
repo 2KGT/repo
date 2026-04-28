@@ -81,17 +81,17 @@ jobs:
               fi
           fi
 
-          # 3. THỰC THI DUMP (Hỗ trợ Deep Scan ngay từ khâu đầu)
+                 # 3. THỰC THI DUMP (Fix lỗi: Phải có --headers mới dùng được -o)
           if [ -n "$CLASSES" ]; then
               for CLS in $CLASSES; do
                   [ -z "$CLS" ] && continue
                   echo "🎯 Đang băm Class: $CLS"
-                  # Xuất ra folder để ipsw tự tạo cấu trúc con nếu cần
-                  ipsw class-dump "${{ steps.locate.outputs.binary }}" --class "$CLS" -o "$TEMP_DUMP"
+                  # SỬA LẠI ĐÂY: Thêm --headers để ipsw chịu xuất file vào thư mục -o
+                  ipsw class-dump "app_extracted/Payload/YouTube.app/YouTube" --class "$CLS" --headers -o "$TEMP_DUMP"
               done
           else
               echo "🌊 Dump All: Đang bóc toàn bộ Header..."
-              ipsw class-dump "${{ steps.locate.outputs.binary }}" --headers -o "$TEMP_DUMP"
+              ipsw class-dump "app_extracted/Payload/YouTube.app/YouTube" --headers -o "$TEMP_DUMP"
           fi
 
           # 4. GOM HÀNG (Deep Scan - Trả tiền phụ in cho chủ quán)
