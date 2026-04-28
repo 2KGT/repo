@@ -23,7 +23,10 @@
         <img src="https://img.shields.io/github/actions/workflow/status/badges/shields/daily-tests.yml?label=daily%20tests"
 
 
-[![EWorkflow](https://img.shields.io/badge/EWorkflow-blue?style=for-the-badge&logo=github)](https://github.com/2KGT/repo/tree/main/.github/workflows/)
+<a href="https://github.com/2KGT/repo/tree/main/.github/workflows/">
+  <img src="https://img.shields.io/badge/Edit_Workflows-blue?logo=github" alt="Edit Workflows">
+</a>
+
 
 ---
 
