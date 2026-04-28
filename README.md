@@ -21,7 +21,8 @@
 
 <a href="https://github.com/2KGT/repo/actions">
         <img src="https://img.shields.io/github/actions/workflow/status/badges/shields/daily-tests.yml?label=daily%20tests"
-            alt="workflows"></a>
+
+alt="workflows"></a>
 [![workflows](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml/badge.svg)(https://github.com/2KGT/repo/tree/main/.github/workflows)
 ---
 
