@@ -19,7 +19,6 @@
 ## 🚀 Danh sách dự án
 *Dưới đây là danh mục các dự án đang được duy trì trong Repo.*
 
-p>
 <a href="https://github.com/2KGT/repo/actions">
         <img src="https://img.shields.io/github/actions/workflow/status/badges/shields/daily-tests.yml?label=daily%20tests"
             alt="Daily Tests Status"></a>
@@ -42,9 +41,8 @@ p>
 
 ---
 
-## 📌 Hướng dẫn sử dụng [![github/workflows](https://img.shields.io/badge/github-repo-blue?logo=github?style=for-the-badge)](https://2kgt.github.io/repo/)
-</
-1. Copy link repo: `https://2kgt.github.io/repo/`
+## 📌 Hướng dẫn sử dụng
+1. Copy link repo: `https://2kgt.github.io/repo/` [![github/workflows](https://img.shields.io/badge/github-repo-blue?logo=github?style=for-the-badge)](https://2kgt.github.io/repo/)
 2. Mở trình quản lý gói (Sileo, Zebra, Cydia).
 3. Thêm nguồn và cài đặt tweak bạn yêu thích.
 
