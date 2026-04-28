@@ -2,6 +2,8 @@
   @protocol NSObject, NSCopying, NSCoding;
   @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; 
   @protocol NSObject, NSCopying, NSCoding;
+  @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; 
+  @protocol NSObject, NSCopying, NSCoding;
 @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; 
 @protocol NSObject, NSCopying, NSCoding;
 //
