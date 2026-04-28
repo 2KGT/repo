@@ -100,14 +100,28 @@ jobs:
           fi
 
 
-          # 4. GOM HÀNG (Deep Scan - Trả tiền phụ in cho chủ quán)
-          if [ "${{ github.event.inputs.deep_scan }}" == "true" ]; then
-              echo "📂 Deep Scan BẬT: Đang vét sạch từ mọi ngõ ngách thư mục con..."
-              find "$TEMP_DUMP" -name "*.h" -type f -exec mv -f {} "$TARGET_DIR/" \;
-          else
-              echo "📁 Standard Scan: Chỉ lấy file ở tầng mặt..."
-              find "$TEMP_DUMP" -maxdepth 1 -name "*.h" -type f -exec mv -f {} "$TARGET_DIR/" \;
-          fi
+                    # 4. SÀNG LỌC TỐ CHẤT & CƯỠNG CHẾ CHUYỂN NHÀ
+          echo "🧐 Đang kiểm tra tố chất từng file trước khi cho nhập hộ khẩu..."
+          
+          # Tìm tất cả file .h trong khu tạm trú
+          find "$TEMP_DUMP" -name "*.h" -type f | while read -r FILE; do
+              # CHIẾN THUẬT LỌC:
+              # 1. File phải có nội dung (không rỗng)
+              # 2. Phải chứa từ khóa ObjC đặc trưng (@interface hoặc @protocol)
+              if [ -s "$FILE" ] && grep -qE "@interface|@protocol" "$FILE"; then
+                  # Lấy tên file để báo cáo cho ông giáo
+                  FILENAME=$(basename "$FILE")
+                  # Ép chuyển nhà về kho chính
+                  mv -f "$FILE" "$TARGET_DIR/"
+                  echo "✅ Tuyển thẳng: $FILENAME (Có tố chất)"
+              else
+                  # Loại bỏ những file rác, file trắng hoặc file không phải ObjC
+                  rm -f "$FILE"
+              fi
+          done
+
+          echo "✅ Chiến dịch tuyển quân hoàn tất!"
+
           
           # 5. VÁ LỖI ĐỒNG LOẠT (Patch Headers)
           if [ "${{ github.event.inputs.patch_headers }}" == "true" ]; then
