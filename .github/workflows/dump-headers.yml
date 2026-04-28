@@ -60,7 +60,7 @@ jobs:
           BIN=$(find app_extracted/Payload -name "*.app" | head -n 1)
           echo "binary=$BIN/$(basename "$BIN" .app)" >> $GITHUB_OUTPUT
 
-           - name: ⚡ Smart Dumping & Talent Scouting Logic
+      - name: ⚡ Smart Dumping & Talent Scouting Logic
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           TEMP_DUMP="temp_headers"
