@@ -135,42 +135,26 @@ jobs:
       - name: 🔨 Thực thi Build DEB
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
-          # Luôn trỏ vào gốc include để code nhận diện được YouTubeHeader/xxx.h
-          DYNAMIC_INCLUDES="-I$THEOS/include"
-          
-          make -C "$DIR" package FINALPACKAGE=1 TARGET=iphone:clang:14.5:14.5 \
-            ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -DTHEOS_LEAN_AND_MEAN $DYNAMIC_INCLUDES"
-          
-          mkdir -p deb_output && cp "$DIR/packages/"*.deb deb_output/
+          DYNAMIC_INCLUDES=""
 
-          # ĐIỀU KIỆN: Chỉ thiết lập đường dẫn động khi dự án có yêu cầu headers
+          # 1. KIỂM TRA ĐIỀU KIỆN TRƯỚC KHI BUILD
           if [ -f "$DIR/headers.txt" ]; then
             echo "🎯 Dự án yêu cầu linh kiện ngoài, đang trỏ đường dẫn vào xưởng..."
-            # Trỏ vào gốc include để hỗ trợ cấu trúc #import "App/File.h"
             DYNAMIC_INCLUDES="-I$THEOS/include"
             
-            # Kiểm kê nhanh xem hàng đã nằm đúng chỗ chưa
-            echo "📦 Kiểm tra kho hàng thực tế tại include/:"
-            ls -R $THEOS/include | head -n 15
-          else
-            echo "🍃 Dự án build tự thân, không dùng linh kiện ngoài."
+            # Kiểm kê nhanh để đảm bảo hàng đã nằm đúng chỗ
+            ls -R $THEOS/include | head -n 10
           fi
 
-          echo "🚀 Khởi động Compiler..."
+          # 2. KHỞI ĐỘNG COMPILER
+          echo "🚀 Khởi động Compiler với cờ: $DYNAMIC_INCLUDES"
           
-          # Thực hiện lệnh build với các cờ tối ưu
           make -C "$DIR" package FINALPACKAGE=1 TARGET=iphone:clang:14.5:14.5 \
             ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -DTHEOS_LEAN_AND_MEAN $DYNAMIC_INCLUDES"
-          
-          # Gom hàng thành phẩm về một mối
+
+          # 3. GOM HÀNG THÀNH PHẨM
           mkdir -p deb_output
-          if ls "$DIR/packages/"*.deb 1> /dev/null 2>&1; then
-            cp "$DIR/packages/"*.deb deb_output/
-            echo "✅ Đã đóng gói xong file .deb"
-          else
-            echo "❌ Lỗi: Không tìm thấy file .deb sau khi build!"
-            exit 1
-          fi
+          cp "$DIR/packages/"*.deb deb_output/
 
       # =========================================================
       # CÔNG ĐOẠN 6: QUÉT DẤU # TRONG CODE -> ĐÚC JSON -> ĐỒNG BỘ
