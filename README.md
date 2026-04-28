@@ -19,15 +19,12 @@
 ## 🚀 Danh sách dự án
 *Dưới đây là danh mục các dự án đang được duy trì trong Repo.*
 
-[![github/workflows](https://img.shields.io/badge/github-repo-blue?logo=github?style=for-the-badge)](https://2kgt.github.io/repo/)
-</p>
+p>
 <a href="https://github.com/2KGT/repo/actions">
         <img src="https://img.shields.io/github/actions/workflow/status/badges/shields/daily-tests.yml?label=daily%20tests"
             alt="Daily Tests Status"></a>
 
 [![Build Multi Tweak](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml/badge.svg)](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml)
-
-[![Dump Factory](https://img.shields.io/badge/🚀_Run-Dump_Factory-blue?style=for-the-badge)](https://github.com/2KGT/repo/tree/main/.github/workflows)
 
 [![github/workflows](https://img.shields.io/badge/build-passing-brightgreen?style=for-the-badge)](https://github.com/2KGT/repo/tree/main/.github/workflows)
 
@@ -45,7 +42,8 @@
 
 ---
 
-## 📌 Hướng dẫn sử dụng
+## 📌 Hướng dẫn sử dụng [![github/workflows](https://img.shields.io/badge/github-repo-blue?logo=github?style=for-the-badge)](https://2kgt.github.io/repo/)
+</
 1. Copy link repo: `https://2kgt.github.io/repo/`
 2. Mở trình quản lý gói (Sileo, Zebra, Cydia).
 3. Thêm nguồn và cài đặt tweak bạn yêu thích.
