@@ -82,7 +82,7 @@ jobs:
       # =========================================================
       # CÔNG ĐOẠN 4: VẬN CHUYỂN HEADERS (CHỈ KHI CÓ ĐƠN)
       # =========================================================
-           - name: 🚛 Nhập kho Headers
+      - name: 🚛 Nhập kho Headers
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           
@@ -128,7 +128,7 @@ jobs:
       # =========================================================
       # CÔNG ĐOẠN 5: THỰC THI BUILD
       # =========================================================
-           - name: 🔨 Thực thi Build DEB
+      - name: 🔨 Thực thi Build DEB
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           DYNAMIC_INCLUDES=""
@@ -165,7 +165,7 @@ jobs:
       # =========================================================
       # CÔNG ĐOẠN 6: QUÉT DẤU # TRONG CODE -> ĐÚC JSON -> ĐỒNG BỘ
       # =========================================================
-     - name: 🚀 Quét # & Đồng bộ Repo
+      - name: 🚀 Quét # & Đồng bộ Repo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
@@ -235,7 +235,7 @@ jobs:
           git commit -m "$MSG" || exit 0
           git push origin main
 
-      - name: 📦 Xuất xưởng
+     - name: 📦 Xuất xưởng
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.metadata.outputs.safe_name }}_v${{ steps.metadata.outputs.proj_ver }}
