@@ -82,41 +82,51 @@ jobs:
       # =========================================================
       # CÔNG ĐOẠN 4: VẬN CHUYỂN HEADERS (CHỈ KHI CÓ ĐƠN)
       # =========================================================
-      - name: 🚛 Nhập kho Headers
+      - name: 🚛 Nhập kho Headers (Logic Tối Ưu)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           if [ ! -f "$DIR/headers.txt" ]; then
-            echo "🍃 Không tìm thấy đơn hàng headers.txt. Bỏ qua."
+            echo "🍃 Không có đơn hàng. Bỏ qua."
             exit 0
           fi
           
           rm -rf $THEOS/include/*
           
+          # Tạo danh sách cần nhặt từ headers.txt (bỏ dòng trống và rác)
+          sed -E 's/\r//g; /^\s*$/d; /^\.\.\./d' "$DIR/headers.txt" > pending_headers.txt
+          
+          echo "📦 Bắt đầu đi chợ theo danh sách..."
+          
           for KHO_APP in headers/*/; do
             [ -d "$KHO_APP" ] || continue
             APP_NAME=$(basename "$KHO_APP")
             DEST_DIR="$THEOS/include/$APP_NAME"
-            mkdir -p "$DEST_DIR"
             
-            echo "📜 Đang bốc linh kiện cho $APP_NAME..."
-            while IFS= read -r line || [ -n "$line" ]; do
-              FILE=$(echo "$line" | tr -d '\r' | xargs)
-              [ -z "$FILE" ] && continue
-              
-              # Đảm bảo có đuôi .h
+            # Kiểm tra xem kho này có món nào mình cần không
+            while IFS= read -r FILE || [ -n "$FILE" ]; do
               [[ "$FILE" != *.h ]] && FILE_H="${FILE}.h" || FILE_H="$FILE"
               
-              # Tìm kiếm không phân biệt hoa thường trong kho
               TARGET_FILE=$(find "$KHO_APP" -maxdepth 1 -iname "$FILE_H" | head -n 1)
               
               if [ -n "$TARGET_FILE" ]; then
+                mkdir -p "$DEST_DIR"
                 cp -f "$TARGET_FILE" "$DEST_DIR/"
-                echo "  + Đã nhặt: $(basename "$TARGET_FILE")"
-              else
-                echo "  ❌ THIẾU HÀNG: $FILE_H không có trong $APP_NAME"
+                echo "  ✅ [$APP_NAME] Đã nhặt: $(basename "$TARGET_FILE")"
+                
+                # Nhặt xong rồi thì xoá tên khỏi danh sách chờ (Chim cút!)
+                sed -i '' "/^$FILE$/d" pending_headers.txt
               fi
-            done < "$DIR/headers.txt"
+            done < pending_headers.txt
           done
+
+          # Kiểm tra xem còn món nào chưa nhặt được không
+          if [ -s pending_headers.txt ]; then
+            echo "⚠️ CẢNH BÁO: Còn thiếu các linh kiện sau:"
+            cat pending_headers.txt
+          else
+            echo "🏁 Đã nhặt đủ hàng. Đóng kho!"
+          fi
+
 
 
       # =========================================================
