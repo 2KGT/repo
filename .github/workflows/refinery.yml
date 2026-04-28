@@ -36,10 +36,12 @@ jobs:
           # Kiểm tra xem anh Bin đã nằm trong lò chưa
           ls -l src/refinery/staging/
 
-      - name: 🔪 Mổ xẻ (The Dump)
+      - name: 🔪 Mổ xẻ (The Dump - Optimized)
         run: |
-          # Băm file vừa gắp được
-          ipsw class-dump src/refinery/staging/YouTubeCore -o src/refinery/staging/headers --headers
+          # Dùng thêm tham số --objc để giảm tải cho ipsw
+          # Nếu vẫn lỗi, ta sẽ giới hạn chỉ lấy các Header quan trọng nhất
+          ipsw class-dump src/refinery/staging/YouTubeCore -o src/refinery/staging/headers --headers --objc
+
 
       - name: 🥩 Lọc xương (The Refinery Logic)
         run: |
