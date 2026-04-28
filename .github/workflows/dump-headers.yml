@@ -66,7 +66,6 @@ jobs:
           while read -r BIN; do
               if file "$BIN" | grep -q "Mach-O"; then
                   echo "🧬 Đang băm nát Binary: $(basename "$BIN")"
-                  # Đổ hết dầu thô vào RAW_CACHE
                   ipsw class-dump "$BIN" --headers -o "$RAW_CACHE" || true
               fi
           done < bin_list.txt
@@ -76,18 +75,12 @@ jobs:
           CONFIG_PATH="${{ github.event.inputs.config_path }}"
           FINAL_LIST=""
 
-          # 1. ƯU TIÊN SỐ 1: Kiểm tra ô nhập Class trực tiếp
           if [ -n "$TARGET_CLASSES" ]; then
               echo "🎯 Nhận lệnh từ ô nhập tay: $TARGET_CLASSES"
               FINAL_LIST="$TARGET_CLASSES"
-
-          # 2. ƯU TIÊN SỐ 2: Nếu ô nhập tay trống, kiểm tra file headers.txt
           elif [ -n "$CONFIG_PATH" ] && [ -f "$CONFIG_PATH" ]; then
               echo "📜 Ô nhập tay trống, đọc thánh chỉ từ file: $CONFIG_PATH"
-              # Xử lý file: lọc sạch rác, bỏ đuôi .h để lấy tên Class nguyên bản
               FINAL_LIST=$(tr '\r\n' ' ' < "$CONFIG_PATH" | sed 's/\.h//g' | xargs)
-
-          # 3. TRƯỜNG HỢP CUỐI: Cả hai đều trống -> Xả lũ (Dump All)
           else
               echo "🌊 Cả hai nguồn lệnh đều trống -> Kích hoạt chế độ DUMP ALL!"
           fi
@@ -97,16 +90,10 @@ jobs:
               echo "🧺 Đang nhặt hàng tinh nhuệ theo danh sách..."
               for CLS in $FINAL_LIST; do
                   [ -z "$CLS" ] && continue
-                  # Nhặt mọi file liên quan (Delegate, Cell, Protocol...)
                   find "$RAW_CACHE" -name "*$CLS*.h" -exec mv -f {} "$TARGET_DIR/" \; 2>/dev/null || true
               done
           else
-              echo "🚜 Đang ủi phẳng toàn bộ kho đệm về Repo..."
-              find "$RAW_CACHE" -name "*.h" -exec mv -f {} "$TARGET_DIR/" \;
-          fi
-
-          else
-              echo "🌊 Chế độ Xả Lũ: Đổ toàn bộ 35k+ file về kho..."
+              echo "🚜 Đang ủi phẳng toàn bộ 35k+ file về kho Repo..."
               find "$RAW_CACHE" -name "*.h" -exec mv -f {} "$TARGET_DIR/" \;
           fi
 
@@ -116,7 +103,7 @@ jobs:
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           if [ -d "$TARGET_DIR" ]; then
             cd "$TARGET_DIR"
-            echo "🧹 Đang thanh trừng rác rưởi để tối ưu bộ nhớ..."
+            echo "🧹 Đang thanh trừng rác rưởi..."
             find . -name "*.h" -type f -size -150c -delete
             find . -name "*.h" | awk 'length > 110' | xargs rm -f 2>/dev/null
             find . -name "*\$*" -delete
@@ -137,7 +124,7 @@ jobs:
             ' {} +
           fi
 
-      - name: 🚀 Đẩy hàng về Repo (Cưỡng chế)
+      - name: 🚀 Đẩy hàng về Repo
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
