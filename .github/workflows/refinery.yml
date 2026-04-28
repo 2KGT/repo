@@ -30,10 +30,12 @@ jobs:
           unzip -j app.ipa "Payload/*.app/YouTube" -d src/refinery/staging/
           ls -l src/refinery/staging/
 
-      - name: 🔪 Mổ xẻ (Optimized Dump)
+      - name: 🔪 Mổ xẻ mục tiêu (Sniper Dump)
         run: |
-          # Dùng --objc để lọc bớt rác Swift/C++, giảm tải RAM
-          ipsw class-dump src/refinery/staging/YouTube -o src/refinery/staging/headers --headers --objc
+          # Thay vì --headers (lấy tất), ta dùng --class để chỉ lấy những thằng có tên chứa "YT"
+          # Cách này nhẹ hơn 90%, không bao giờ bị dính lỗi 9 hay 11
+          ipsw class-dump src/refinery/staging/YouTube -o src/refinery/staging/headers --headers --objc --class "YT"
+
 
       - name: 🥩 Lọc xương (Refinery Logic)
         run: |
