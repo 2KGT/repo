@@ -72,34 +72,34 @@ jobs:
           fi
           mkdir -p "$TARGET_DIR" "$TEMP_DUMP"
 
-          # 2. XÁC ĐỊNH MỤC TIÊU (Tìm tất cả Binary có trong App)
-          # Logic tìm kiếm tương thích cả macOS/Linux
-          ALL_BINS=$(find app_extracted/Payload -name "*.app" -exec find {} -maxdepth 2 -type f ! -name "*.*" \; )
-          
-          # 3. CHIẾN THUẬT HỐT CẢ Ổ (Dump & Lây lan)
-          CLASSES="${{ github.event.inputs.target_classes }}"
-          if [ -z "$CLASSES" ] && [ -n "${{ github.event.inputs.config_path }}" ]; then
-              if [ -f "${{ github.event.inputs.config_path }}" ]; then
-                  echo "📝 Đọc danh sách từ dự án: ${{ github.event.inputs.config_path }}"
-                  CLASSES=$(tr '\r\n' ' ' < "${{ github.event.inputs.config_path }}" | sed 's/\.h//g')
-              fi
-          fi
+                    # 2. XÁC ĐỊNH MỤC TIÊU (Lấy danh sách Binary theo cách an toàn)
+          # Tìm các file thực thi chính và dylib trong Frameworks
+          echo "🔍 Đang lập bản đồ hang ổ..."
+          find app_extracted/Payload -name "*.app" -o -name "*.framework" -o -name "*.dylib" > bin_list.txt
 
+          # 3. CHIẾN THUẬT HỐT CẢ Ổ (Chạy vòng lặp từ file để tránh lỗi bộ nhớ shell)
           if [ -n "$CLASSES" ]; then
               echo "🎯 Bắt đầu chiến dịch săn lùng theo danh sách..."
               for CLS in $CLASSES; do
                   [ -z "$CLS" ] && continue
-                  for BIN in $ALL_BINS; do
-                      # Dump class lẻ nhưng dùng --headers để ipsw tự hốt các file liên quan trong Binary đó
-                      ipsw class-dump "$BIN" --class "$CLS" --headers -o "$TEMP_DUMP" 2>/dev/null
-                  done
+                  echo "🎯 Đang đòi nợ Class: $CLS"
+                  while read -r BIN; do
+                      # Chỉ xử lý nếu là file thực thi thực sự (không có đuôi file lẻ)
+                      if [[ -f "$BIN" && ! "$BIN" == *.* ]]; then
+                          # Bỏ 2>/dev/null để nếu có lỗi ta còn thấy đường mà sửa
+                          ipsw class-dump "$BIN" --class "$CLS" --headers -o "$TEMP_DUMP" || true
+                      fi
+                  done < bin_list.txt
               done
           else
               echo "🌊 Dump All: Càn quét toàn bộ hang ổ..."
-              for BIN in $ALL_BINS; do
-                  ipsw class-dump "$BIN" --headers -o "$TEMP_DUMP" 2>/dev/null
-              done
+              while read -r BIN; do
+                  if [[ -f "$BIN" && ! "$BIN" == *.* ]]; then
+                      ipsw class-dump "$BIN" --headers -o "$TEMP_DUMP" || true
+                  fi
+              done < bin_list.txt
           fi
+
 
           # 4. VÒNG LỌC TỐ CHẤT & NHẬP HỘ KHẨU (Deep Scan + Filter)
           echo "🧐 Đang kiểm tra tố chất từng file trước khi cho nhập tịch..."
