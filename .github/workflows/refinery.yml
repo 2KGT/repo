@@ -24,17 +24,20 @@ jobs:
           mkdir -p src/refinery/staging/headers
           mkdir -p headers-repo/YouTube
 
-      - name: 🚚 Bốc vác anh Bin (Dùng unzip cho chắc)
+      - name: 🚚 Bốc vác thẳng vào Lò (Direct Input)
         run: |
-          # 1. Tải IPA
+          # Tải IPA
           curl -L "${{ github.event.inputs.ipa_url }}" -o app.ipa
           
-          # 2. Xé xác IPA để gắp YouTubeCore (Dùng wildcard * để tự tìm đường dẫn)
-          # Lệnh này sẽ tìm file YouTubeCore và nhè thẳng vào staging/
+          # Đổ thẳng file cứng vào staging của Refinery
           unzip -j app.ipa "*YouTubeCore.framework/YouTubeCore" -d src/refinery/staging/
           
-          # Kiểm tra xem anh Bin đã nằm trong lò chưa
-          ls -l src/refinery/staging/
+      - name: 🔪 Mổ xẻ tại chỗ (In-place Dump)
+        run: |
+          # Ép ipsw chỉ làm việc trong khu vực lò để tránh tràn RAM (Exit code 11)
+          # Thêm --objc để nó chỉ tập trung vào phần "thịt" dễ tiêu hóa
+          ipsw class-dump src/refinery/staging/YouTubeCore -o src/refinery/staging/headers --headers --objc
+
 
       - name: 🔪 Mổ xẻ (The Dump - Optimized)
         run: |
