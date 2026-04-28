@@ -133,3 +133,11 @@ jobs:
           git add headers/
           git commit -m "🚀 Factory Update: ${{ github.event.inputs.app_name }} [v3.0]" || exit 0
           git push
+      - name: 🧹 Khử trùng Headers (Loại bỏ Include chéo)
+        run: |
+          TARGET_DIR="headers/YouTubeHeader"
+          echo "🧼 Đang quét sạch các lệnh include độc hại..."
+          # Lệnh này sẽ vô hiệu hoá tất cả các dòng #include và #import file nội bộ
+          # Nó chỉ giữ lại các import hệ thống như Foundation, UIKit...
+          find "$TARGET_DIR" -type f -name "*.h" -exec sed -i '' '/#include "/d; /#import "/ { /<.*>/!d; }' {} +
+
