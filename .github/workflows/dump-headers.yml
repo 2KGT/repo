@@ -60,7 +60,7 @@ jobs:
           curl -L -A "Mozilla/5.0" "$IPA_LINK" -o app.ipa
           unzip -q app.ipa -d app_extracted
 
-            - name: ⚡ Smart Dumping & Kinship Scouting Logic
+      - name: ⚡ Smart Dumping & Kinship Scouting Logic
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           TEMP_DUMP="temp_headers"
