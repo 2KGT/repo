@@ -60,65 +60,48 @@ jobs:
           curl -L -A "Mozilla/5.0" "$IPA_LINK" -o app.ipa
           unzip -q app.ipa -d app_extracted
 
-      - name: ⚡ Nhà Máy Sàng Lọc Đa Tầng (Filter & Sync)
+       - name: ⚡ Nhà Máy Cưỡng Chế (Dump All & Debug)
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           RAW_CACHE="raw_dump_cache"
-          REFINED_CACHE="refined_dump_cache"
           
-          # 1. KHỞI TẠO CÁC TẦNG NHỐT
-          mkdir -p "$TARGET_DIR" "$RAW_CACHE" "$REFINED_CACHE"
+          # 1. DỌN SÂN & KHỞI TẠO
+          rm -rf "$RAW_CACHE"
+          mkdir -p "$TARGET_DIR" "$RAW_CACHE"
 
-          # 2. ĐỔ ĐỆM (Dump sạch sành sanh)
-          echo "🌊 Bước 1: Đang đổ Header thô vào máy ảo..."
+          # 2. TÌM BINARY (Kiểm tra xem IPA có gì)
+          echo "🔍 Đang rà soát danh sách Binary..."
           find app_extracted/Payload -type f ! -name "*.*" > bin_list.txt
-          while read -r BIN; do
-              ipsw class-dump "$BIN" --headers -o "$RAW_CACHE" || true
-          done < bin_list.txt
-
-          # 3. LỌC THÔ & LỌC TINH (Xử lý trong máy ảo đệm)
-          echo "🧐 Bước 2: Đang sàng lọc tố chất (Dung lượng, Ký tự, Nội dung)..."
-          find "$RAW_CACHE" -name "*.h" -type f | while read -r FILE; do
-              FILENAME=$(basename "$FILE")
-              
-              # A. Kiểm tra dung lượng (Không nhốt file rỗng hoặc quá nhỏ < 100 bytes)
-              FILE_SIZE=$(stat -f%z "$FILE")
-              if [ "$FILE_SIZE" -lt 100 ]; then
-                  continue
-              fi
-
-              # B. Kiểm tra ký tự lạ & độ dài (Không nhốt file tên quá dài > 100 ký tự hoặc có dấu $)
-              if [ ${#FILENAME} -gt 100 ] || [[ "$FILENAME" == *\$* ]]; then
-                  continue
-              fi
-
-              # C. Kiểm tra nội dung (Chỉ nhốt file có cấu trúc Obj-C)
-              if grep -qE "@interface|@protocol" "$FILE"; then
-                  # Dán giáp Forward Declaration trước khi chuyển tầng
-                  sed -i '' '1i\
-                  @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
-                  @protocol NSObject, NSCopying, NSCoding;
-                  ' "$FILE"
-                  
-                  mv -f "$FILE" "$REFINED_CACHE/"
-              fi
-          done
-
-          # 4. GHI ĐÈ & NHẬP KHO (Chốt hạ về Repo)
-          echo "📦 Bước 3: Đang ghi đè và nhập kho tinh nhuệ..."
-          # Nếu bật clear_all thì dọn sạch kho cũ, không thì ghi đè file mới
-          [ "${{ github.event.inputs.clear_all }}" == "true" ] && rm -rf "$TARGET_DIR/*"
-          
-          cp -rf "$REFINED_CACHE/." "$TARGET_DIR/"
-
-          # 5. KIỂM KÊ CUỐI CÙNG
-          COUNT=$(ls -1 "$TARGET_DIR" | wc -l)
-          echo "🚀 Hoàn tất! Kho hàng hiện có: $COUNT file chất lượng cao."
-          
-          if [ "$COUNT" -eq 0 ]; then
-              echo "❌ Cảnh báo: Phễu lọc quá gắt, không có hàng về kho!"
-              exit 1
+          if [ ! -s bin_list.txt ]; then
+            echo "❌ LỖI: Không tìm thấy file thực thi nào trong IPA!"
+            exit 1
           fi
 
-          rm -rf "$RAW_CACHE" "$REFINED_CACHE" app_extracted bin_list.txt
+          # 3. DUMP TỔNG LỰC
+          while read -r BIN; do
+              echo "🧬 Đang băm: $(basename "$BIN")"
+              # Thêm --objc để ép ipsw chỉ tập trung vào Obj-C cho nhanh
+              ipsw class-dump "$BIN" --headers --objc -o "$RAW_CACHE" || true
+          done < bin_list.txt
 
+          # 4. KIỂM TRA KHO ĐỆM TRƯỚC KHI CHUYỂN
+          TEMP_COUNT=$(find "$RAW_CACHE" -name "*.h" | wc -l)
+          echo "📊 Máy ảo đã dump được: $TEMP_COUNT file .h"
+          
+          if [ "$TEMP_COUNT" -eq 0 ]; then
+            echo "❌ LỖI: ipsw không nhả ra file nào. Có thể IPA đã bị mã hóa hoặc sai kiến trúc!"
+            exit 1
+          fi
+
+          # 5. ĐẨY VỀ KHO REPO (Ủi phẳng không điều kiện)
+          echo "🧺 Đang cưỡng chế nhập kho..."
+          find "$RAW_CACHE" -name "*.h" -type f -exec mv -f {} "$TARGET_DIR/" \;
+
+          # 6. CHỐT HẠ & XÁC NHẬN
+          FINAL_COUNT=$(ls -1 "$TARGET_DIR" | wc -l)
+          echo "📦 Tổng hàng chuẩn bị đẩy lên Repo: $FINAL_COUNT file."
+          
+          # Tự động dán giáp nhanh cho toàn bộ
+          find "$TARGET_DIR" -name "*.h" -exec sed -i '' '1i\
+          @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
+          ' {} +
