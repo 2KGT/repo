@@ -60,73 +60,65 @@ jobs:
           curl -L -A "Mozilla/5.0" "$IPA_LINK" -o app.ipa
           unzip -q app.ipa -d app_extracted
 
-      - name: ⚡ Smart Dumping & Master Filtering
+      - name: ⚡ Nhà Máy Sàng Lọc Đa Tầng (Filter & Sync)
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
-          ALL_DUMP_DIR="full_dump_cache"
+          RAW_CACHE="raw_dump_cache"
+          REFINED_CACHE="refined_dump_cache"
           
-          # 1. KHỞI TẠO
-          [ "${{ github.event.inputs.clear_all }}" == "true" ] && rm -rf "$TARGET_DIR"
-          mkdir -p "$TARGET_DIR" "$ALL_DUMP_DIR"
+          # 1. KHỞI TẠO CÁC TẦNG NHỐT
+          mkdir -p "$TARGET_DIR" "$RAW_CACHE" "$REFINED_CACHE"
 
-          # 2. ĐỔ HÀNG VÀO KHO ĐỆM (San phẳng hang ổ)
-          echo "🌊 Đang bóc tách toàn bộ Binary vào kho đệm..."
+          # 2. ĐỔ ĐỆM (Dump sạch sành sanh)
+          echo "🌊 Bước 1: Đang đổ Header thô vào máy ảo..."
           find app_extracted/Payload -type f ! -name "*.*" > bin_list.txt
           while read -r BIN; do
-              echo "🧬 Băm xác: $(basename "$BIN")"
-              ipsw class-dump "$BIN" --headers -o "$ALL_DUMP_DIR" || true
+              ipsw class-dump "$BIN" --headers -o "$RAW_CACHE" || true
           done < bin_list.txt
 
-          # 3. ĐỌC CHIẾU CHỈ (headers.txt)
-          CLASSES="${{ github.event.inputs.target_classes }}"
-          CONFIG="${{ github.event.inputs.config_path }}"
-          if [ -z "$CLASSES" ] && [ -f "$CONFIG" ]; then
-              echo "📜 Đọc danh sách từ: $CONFIG"
-              # Lọc sạch khoảng trắng và đuôi .h nếu có
-              CLASSES=$(tr '\r\n' ' ' < "$CONFIG" | sed 's/\.h//g' | xargs)
-          fi
+          # 3. LỌC THÔ & LỌC TINH (Xử lý trong máy ảo đệm)
+          echo "🧐 Bước 2: Đang sàng lọc tố chất (Dung lượng, Ký tự, Nội dung)..."
+          find "$RAW_CACHE" -name "*.h" -type f | while read -r FILE; do
+              FILENAME=$(basename "$FILE")
+              
+              # A. Kiểm tra dung lượng (Không nhốt file rỗng hoặc quá nhỏ < 100 bytes)
+              FILE_SIZE=$(stat -f%z "$FILE")
+              if [ "$FILE_SIZE" -lt 100 ]; then
+                  continue
+              fi
 
-                   # 4. CHIẾN THUẬT "VÉT MÁNG" TỔNG LỰC
-          echo "🧺 Đang hốt sạch sành sanh headers về Repo..."
-          
-          # Không dùng vòng lặp Class nữa, quét thẳng vào kho đệm
-          find "$ALL_DUMP_DIR" -name "*.h" -type f | while read -r FILE; do
-              # Điều kiện: File có dung lượng (không rỗng)
-              if [ -s "$FILE" ]; then
-                  FILENAME=$(basename "$FILE")
-                  
-                  # Dán giáp ngay lập tức để build deb sau này đỡ lỗi
+              # B. Kiểm tra ký tự lạ & độ dài (Không nhốt file tên quá dài > 100 ký tự hoặc có dấu $)
+              if [ ${#FILENAME} -gt 100 ] || [[ "$FILENAME" == *\$* ]]; then
+                  continue
+              fi
+
+              # C. Kiểm tra nội dung (Chỉ nhốt file có cấu trúc Obj-C)
+              if grep -qE "@interface|@protocol" "$FILE"; then
+                  # Dán giáp Forward Declaration trước khi chuyển tầng
                   sed -i '' '1i\
                   @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
                   @protocol NSObject, NSCopying, NSCoding;
                   ' "$FILE"
                   
-                  # Đẩy về kho chính
-                  mv -f "$FILE" "$TARGET_DIR/"
+                  mv -f "$FILE" "$REFINED_CACHE/"
               fi
           done
 
-          # Đếm hàng phát cho phấn khởi
-          echo "📦 Tổng số hàng đã về kho: $(ls -1 "$TARGET_DIR" | wc -l) file."
+          # 4. GHI ĐÈ & NHẬP KHO (Chốt hạ về Repo)
+          echo "📦 Bước 3: Đang ghi đè và nhập kho tinh nhuệ..."
+          # Nếu bật clear_all thì dọn sạch kho cũ, không thì ghi đè file mới
+          [ "${{ github.event.inputs.clear_all }}" == "true" ] && rm -rf "$TARGET_DIR/*"
+          
+          cp -rf "$REFINED_CACHE/." "$TARGET_DIR/"
 
-
-          # 5. DÁN GIÁP & SMART FILTER (Giai đoạn hậu kiểm)
-          echo "🩹 Dán giáp và dọn rác cuối..."
-          if [ -d "$TARGET_DIR" ]; then
-              # Dán giáp Forward Declaration
-              find "$TARGET_DIR" -name "*.h" -exec sed -i '' '1i\
-              @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
-              @protocol NSObject, NSCopying, NSCoding;
-              ' {} +
-
-              if [ "${{ github.event.inputs.smart_filter }}" == "true" ]; then
-                  cd "$TARGET_DIR"
-                  # Trảm rác tên quá dài hoặc rác hệ thống trà trộn
-                  rm -f NSObject-Protocol.h NSCopying-Protocol.h 2>/dev/null
-                  find . -name "*.h" | awk 'length > 110' | xargs rm -f 2>/dev/null
-                  cd - > /dev/null
-              fi
+          # 5. KIỂM KÊ CUỐI CÙNG
+          COUNT=$(ls -1 "$TARGET_DIR" | wc -l)
+          echo "🚀 Hoàn tất! Kho hàng hiện có: $COUNT file chất lượng cao."
+          
+          if [ "$COUNT" -eq 0 ]; then
+              echo "❌ Cảnh báo: Phễu lọc quá gắt, không có hàng về kho!"
+              exit 1
           fi
 
-          rm -rf "$ALL_DUMP_DIR" app_extracted bin_list.txt
-          echo "📦 Kho hàng tinh nhuệ hiện có: $(ls -1 "$TARGET_DIR" | wc -l) file."
+          rm -rf "$RAW_CACHE" "$REFINED_CACHE" app_extracted bin_list.txt
+
