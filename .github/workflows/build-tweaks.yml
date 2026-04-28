@@ -86,40 +86,38 @@ jobs:
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           if [ ! -f "$DIR/headers.txt" ]; then
-            echo "🍃 Không có đơn hàng headers.txt. Bỏ qua."
+            echo "🍃 Không tìm thấy đơn hàng headers.txt. Bỏ qua."
             exit 0
           fi
           
-          # 1. Xoá sạch kho tạm
           rm -rf $THEOS/include/*
           
-          # 2. Chỉ thực hiện bốc linh kiện nếu thấy kho tương ứng
-          # Logic: Quét từng folder headers, nhưng chỉ nhặt nếu folder đó có file .h
           for KHO_APP in headers/*/; do
             [ -d "$KHO_APP" ] || continue
             APP_NAME=$(basename "$KHO_APP")
             DEST_DIR="$THEOS/include/$APP_NAME"
+            mkdir -p "$DEST_DIR"
             
-            echo "🔍 Đang kiểm tra kho: $APP_NAME"
-            HAD_FILE=false
-            
+            echo "📜 Đang bốc linh kiện cho $APP_NAME..."
             while IFS= read -r line || [ -n "$line" ]; do
               FILE=$(echo "$line" | tr -d '\r' | xargs)
               [ -z "$FILE" ] && continue
-              [[ "$FILE" != *.h ]] && FILE="${FILE}.h"
               
-              # Chỉ copy nếu file thực sự tồn tại trong đúng kho này
-              if [ -f "$KHO_APP/$FILE" ]; then
-                [ "$HAD_FILE" = false ] && mkdir -p "$DEST_DIR" && HAD_FILE=true
-                cp -f "$KHO_APP/$FILE" "$DEST_DIR/"
-                echo "  + Đã nhặt: $FILE"
+              # Đảm bảo có đuôi .h
+              [[ "$FILE" != *.h ]] && FILE_H="${FILE}.h" || FILE_H="$FILE"
+              
+              # Tìm kiếm không phân biệt hoa thường trong kho
+              TARGET_FILE=$(find "$KHO_APP" -maxdepth 1 -iname "$FILE_H" | head -n 1)
+              
+              if [ -n "$TARGET_FILE" ]; then
+                cp -f "$TARGET_FILE" "$DEST_DIR/"
+                echo "  + Đã nhặt: $(basename "$TARGET_FILE")"
+              else
+                echo "  ❌ THIẾU HÀNG: $FILE_H không có trong $APP_NAME"
               fi
             done < "$DIR/headers.txt"
-            
-            if [ "$HAD_FILE" = false ]; then
-              echo "  Skip: Kho $APP_NAME không chứa linh kiện trong đơn hàng."
-            fi
           done
+
 
       # =========================================================
       # CÔNG ĐOẠN 5: THỰC THI BUILD
