@@ -15,7 +15,6 @@ on:
         default: false
 
 env:
-  # Base URL chuẩn để lấy hàng Raw từ Repo
   BASE_URL: "https://raw.githubusercontent.com/2KGT/repo/main"
   TZ: "Asia/Ho_Chi_Minh"
   THEOS: ${{ github.workspace }}/theos
@@ -60,7 +59,7 @@ jobs:
           mkdir -p $THEOS/include
 
       # =========================================================
-      # CÔNG ĐOẠN 3: ĐỊNH VỊ & GÁN NHÃN ICON/DEPICTION (CỐ ĐỊNH)
+      # CÔNG ĐOẠN 3: ĐỊNH VỊ & GÁN NHÃN ICON/DEPICTION
       # =========================================================
       - name: 🎯 Gán nhãn Icon & Metadata
         id: metadata
@@ -73,16 +72,12 @@ jobs:
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$(grep "^Version:" "$CTRL" | cut -d' ' -f2)" || echo "$(grep "^Version:" "$CTRL" | cut -d' ' -f2)-test$(date +%H%M)")
           
-          # --- GÁN NHÃN ICON & DEPICTION TỪ LINK RAW ---
           sed -i '' "/^Icon:/d" "$CTRL"
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
           
-          # Gán Icon từ thư mục icons/ (tên file trùng với SAFE name)
           echo "Icon: ${{ env.BASE_URL }}/icons/${SAFE}.png" >> "$CTRL"
-          # Gán link JSON từ thư mục depictions/
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
           
-          # Cập nhật Version mới
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
           
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
@@ -91,13 +86,13 @@ jobs:
           make -C "$DIR" clean
 
       # =========================================================
-      # CÔNG ĐOẠN 4: VẬN CHUYỂN HEADERS (THEO ĐƠN HÀNG)
+      # CÔNG ĐOẠN 4: VẬN CHUYỂN HEADERS (CHỈ KHI CÓ ĐƠN)
       # =========================================================
       - name: 🚛 Nhập kho Headers
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           if [ ! -f "$DIR/headers.txt" ]; then
-              echo "🍃 Không có headers.txt, bỏ qua."
+              echo "🍃 Không có đơn hàng headers.txt. Bỏ qua."
               exit 0
           fi
           rm -rf $THEOS/include/*
@@ -143,10 +138,7 @@ jobs:
           JSON_PATH="depictions/${SAFE}.json"
           IMG_BASE="${{ env.BASE_URL }}/depictions/images"
           
-          echo "📝 Đúc khuôn nhãn Sileo cho $SAFE..."
           mkdir -p depictions
-          
-          # --- ĐÚC JSON: Banner + Screenshots + Video ---
           cat <<EOF > "$JSON_PATH"
 {
   "class": "DepictionTabView",
@@ -166,7 +158,6 @@ jobs:
           "itemCornerRadius": 8,
           "screenshots": [
 EOF
-          # Quét tối đa 5 ảnh screenshots
           FIRST=true
           for i in {1..5}; do
               if [ -f "depictions/images/${SAFE}${i}.png" ]; then
@@ -174,8 +165,6 @@ EOF
                   echo "            { \"url\": \"$IMG_BASE/${SAFE}${i}.png\" }" >> "$JSON_PATH"
               fi
           done
-
-          # Đóng cụm Screenshots và thêm mục Video MP4
           cat <<EOF >> "$JSON_PATH"
           ]
         },
@@ -189,9 +178,7 @@ EOF
   ]
 }
 EOF
-          # --- ĐỒNG BỘ NGƯỢC ---
           git add src/build-tweaks/ depictions/
-          
           if [ "${{ github.event.inputs.publish }}" == "true" ]; then
               mkdir -p debs
               cp deb_output/*.deb debs/
@@ -202,7 +189,6 @@ EOF
           else
               MSG="🛠️ Build: $SAFE v${{ steps.metadata.outputs.proj_ver }}"
           fi
-          
           git commit -m "$MSG" || exit 0
           git push origin main
 
