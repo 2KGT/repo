@@ -77,45 +77,50 @@ jobs:
               CLASSES=$(tr '\r\n' ' ' < "$CONFIG" | sed 's/\.h//g')
           fi
 
-          # 3. CHIẾN THUẬT "HỐT CẢ HỌ HÀNG" (Dùng Regex để nhặt file con)
+                  # 3. CHIẾN THUẬT "HỐT CẢ HỌ HÀNG" (Dùng Regex để bắt trọn gia phả)
           if [ -n "$CLASSES" ]; then
+              echo "🎯 Bắt đầu chiến dịch săn lùng theo dòng họ..."
               for CLS in $CLASSES; do
                   [ -z "$CLS" ] && continue
-                  # CHIÊU ĐỘC: Thêm ".*" vào sau tên Class để ipsw hốt luôn 
-                  # các Delegate, DataSource, Cell, Manager liên quan
+                  
+                  # Regex này sẽ khớp: Class, ClassDelegate, ClassManager, ClassCell...
                   KINSHIP_REGEX="${CLS}.*"
-                  echo "🎯 Săn lùng dòng họ: $KINSHIP_REGEX"
+                  echo "🔎 Đang truy quét dòng họ: $KINSHIP_REGEX"
                   
                   while read -r BIN; do
-                      # Dump class theo Regex giúp lách lỗi Cache và hốt được file con
-                      # Ta dùng dấu > để trích xuất trực tiếp, tránh lỗi cờ --headers
-                      ipsw class-dump "$BIN" --class "$KINSHIP_REGEX" > "$TEMP_DUMP/raw_dump.h" 2>/dev/null || true
-                      
-                      # Vì ipsw đổ hết vào 1 file hoặc in ra, ta dùng awk để xẻ nhỏ 
-                      # nếu có nhiều interface trong đó, hoặc đơn giản là lọc lấy ruột.
-                      # Nhưng để chắc chắn nhất, ta gọi lệnh dump lẻ cho từng thằng con tiềm năng:
-                      ipsw objc dump "$BIN" --class "$KINSHIP_REGEX" > "$TEMP_DUMP/${CLS}_family.h" 2>/dev/null || true
+                      # Dùng objc dump để lấy nội dung - cách này lách lỗi Cache tốt nhất
+                      # Nó sẽ tuôn toàn bộ cấu trúc của những thằng cùng họ ra Terminal
+                      ipsw objc dump "$BIN" --class "$KINSHIP_REGEX" > "$TEMP_DUMP/${CLS}_family_raw.h" 2>/dev/null || true
                   done < bin_list.txt
               done
           else
-              echo "🌊 Mode Dump All (Thận trọng)..."
+              echo "🌊 Dump All mode..."
               while read -r BIN; do
-                  # Dump headers từng binary một để tránh lỗi Shared Cache
                   ipsw class-dump "$BIN" --headers -o "$TEMP_DUMP" || true
               done < bin_list.txt
           fi
 
-          # 4. ÉP CHUYỂN NHÀ & SÀNG LỌC (Deep Scan san phẳng)
-          echo "🏘️ Đang gom quân và kiểm tra tố chất..."
-          # Quét sạch mọi file .h phát sinh
-          find "$TEMP_DUMP" -name "*.h" -type f | while read -r FILE; do
-              if [ -s "$FILE" ] && grep -qE "@interface|@protocol" "$FILE"; then
-                  # Nhặt thêm bước: Nếu file quá lớn (do dump cụm), ta vẫn giữ
-                  mv -f "$FILE" "$TARGET_DIR/"
+          # 4. VÒNG LỌC TỐ CHẤT & "XẺ THỊT" GIA PHẢ
+          echo "🏘️ Đang xẻ nhỏ gia phả và kiểm tra tố chất..."
+          
+          # Vì lệnh objc dump có thể nhét nhiều class vào 1 file raw, 
+          # ta dùng chiêu này để tách chúng ra hoặc giữ nguyên nếu ông giáo thích "gộp"
+          find "$TEMP_DUMP" -name "*_family_raw.h" -type f | while read -r RAW_FILE; do
+              if [ -s "$RAW_FILE" ]; then
+                  # Kiểm tra xem có ruột gan gì không
+                  if grep -qE "@interface|@protocol" "$RAW_FILE"; then
+                      # Chuyển về kho chính với tên sạch sẽ
+                      FINAL_NAME=$(basename "$RAW_FILE" _raw.h).h
+                      mv -f "$RAW_FILE" "$TARGET_DIR/$FINAL_NAME"
+                      echo "✅ Đã xích được dòng họ: $FINAL_NAME"
+                  else
+                      rm -f "$RAW_FILE"
+                  fi
               else
-                  rm -f "$FILE"
+                  rm -f "$RAW_FILE"
               fi
           done
+
 
           # 5. DÁN GIÁP & SMART FILTER (Giữ nguyên logic cũ nhưng gắt hơn)
           find "$TARGET_DIR" -name "*.h" -exec sed -i '' '1i\
