@@ -22,7 +22,8 @@
 <a href="https://github.com/2KGT/repo/actions">
         <img src="https://img.shields.io/github/actions/workflow/status/badges/shields/daily-tests.yml?label=daily%20tests"
 
-[![Build Status](https://github.com/2KGT/repo/actions/workflows/main.yml/badge.svg)](https://github.com/2KGT/repo/actions)
+
+[![EWorkflow](https://img.shields.io/badge/Sửa_Workflow-2KGT-blue?style=for-the-badge&logo=github)](https://github.com/2KGT/repo/tree/main/.github/workflows/)
 
 ---
 
