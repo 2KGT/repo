@@ -30,11 +30,22 @@ jobs:
           unzip -j app.ipa "Payload/*.app/YouTube" -d src/refinery/staging/
           ls -l src/refinery/staging/
 
-      - name: 🔪 Mổ xẻ mục tiêu (Sniper Dump)
+      - name: 🔪 Xẻ thịt bằng nm (Siêu nhẹ - Anti-Exit-9)
         run: |
-          # 1. Chỉ mổ những Class có tiền tố "YT" để tránh tràn RAM
-          # 2. Dùng --objc để bỏ qua các thành phần Swift/C++ nặng nề
-          ipsw class-dump src/refinery/staging/YouTube -o src/refinery/staging/headers --headers --objc --class "YT"
+          # 1. Dùng nm để lọc ra tất cả các Class Objective-C (tiền tố OBJC_CLASS_$_)
+          nm -gU src/refinery/staging/YouTube | grep "OBJC_CLASS_$_" | sed 's/.*OBJC_CLASS_$_\(.*\)/\1/' > src/refinery/staging/classes.txt
+          
+          # 2. Tạo folder kho
+          mkdir -p headers-repo/YouTube
+          
+          # 3. Với mỗi Class tìm được, ta tạo một file .h "rỗng" nhưng đủ để bắc cầu
+          # Chỉ lấy 500 Class quan trọng nhất (hoặc lọc theo YT) để tránh làm loãng kho
+          grep "YT" src/refinery/staging/classes.txt | head -n 500 | while read -r className; do
+            echo -e "@interface $className : NSObject\n@end" > "headers-repo/YouTube/$className.h"
+          done
+          
+          echo "✅ Đã tạo xong 500 bản thiết kế bắc cầu cho YouTube!"
+
           
           # 3. Kiểm tra xem đã có nạc chưa
           ls -R src/refinery/staging/headers | head -n 20
