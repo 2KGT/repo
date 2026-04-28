@@ -60,70 +60,74 @@ jobs:
           curl -L -A "Mozilla/5.0" "$IPA_LINK" -o app.ipa
           unzip -q app.ipa -d app_extracted
 
-      - name: ⚡ Smart Dumping & Talent Scouting Logic
+            - name: ⚡ Smart Dumping & Kinship Scouting Logic
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
-          ALL_DUMP_DIR="full_dump" # Thư mục chứa toàn bộ headers trên máy ảo
-          mkdir -p "$TARGET_DIR" "$ALL_DUMP_DIR"
+          TEMP_DUMP="temp_headers"
+          mkdir -p "$TARGET_DIR" "$TEMP_DUMP"
 
-          # 1. CÀN QUÉT TOÀN BỘ (Đổ hết về một mối để chuẩn bị nhặt)
-          echo "🔍 Đang lập bản đồ và càn quét toàn bộ hang ổ..."
+          # 1. LẬP BẢN ĐỒ BINARY (Tìm tất cả file thực thi)
+          echo "🔍 Đang rà soát hang ổ..."
           find app_extracted/Payload -type f ! -name "*.*" > bin_list.txt
-          
-          while read -r BIN; do
-              # Dump toàn bộ headers của từng Binary vào thư mục full_dump
-              # Cách này lách hoàn toàn lỗi --class vs --headers
-              echo "🌊 Đang bóc tách toàn bộ: $(basename "$BIN")"
-              ipsw class-dump "$BIN" --headers -o "$ALL_DUMP_DIR" || true
-          done < bin_list.txt
 
-          # 2. ĐỊNH NGHĨA DANH SÁCH "CHỦ NỢ"
+          # 2. XỬ LÝ DANH SÁCH "ĐẦU NẬU"
           CLASSES="${{ github.event.inputs.target_classes }}"
           CONFIG="${{ github.event.inputs.config_path }}"
           if [ -z "$CLASSES" ] && [ -f "$CONFIG" ]; then
               CLASSES=$(tr '\r\n' ' ' < "$CONFIG" | sed 's/\.h//g')
           fi
 
-          # 3. ĐI NHẶT HÀNG (Sàng lọc từ đống đổ nát)
-          echo "🧺 Bot đang đi nhặt hàng theo danh sách và tìm file con..."
-          
+          # 3. CHIẾN THUẬT "HỐT CẢ HỌ HÀNG" (Dùng Regex để nhặt file con)
           if [ -n "$CLASSES" ]; then
               for CLS in $CLASSES; do
                   [ -z "$CLS" ] && continue
-                  echo "🔎 Đang lùng sục Class: $CLS"
-                  # Nhặt file chính xác và các file có tên chứa Class đó (file con/phụ)
-                  find "$ALL_DUMP_DIR" -name "*$CLS*.h" -type f -exec mv -f {} "$TARGET_DIR/" \;
+                  # CHIÊU ĐỘC: Thêm ".*" vào sau tên Class để ipsw hốt luôn 
+                  # các Delegate, DataSource, Cell, Manager liên quan
+                  KINSHIP_REGEX="${CLS}.*"
+                  echo "🎯 Săn lùng dòng họ: $KINSHIP_REGEX"
+                  
+                  while read -r BIN; do
+                      # Dump class theo Regex giúp lách lỗi Cache và hốt được file con
+                      # Ta dùng dấu > để trích xuất trực tiếp, tránh lỗi cờ --headers
+                      ipsw class-dump "$BIN" --class "$KINSHIP_REGEX" > "$TEMP_DUMP/raw_dump.h" 2>/dev/null || true
+                      
+                      # Vì ipsw đổ hết vào 1 file hoặc in ra, ta dùng awk để xẻ nhỏ 
+                      # nếu có nhiều interface trong đó, hoặc đơn giản là lọc lấy ruột.
+                      # Nhưng để chắc chắn nhất, ta gọi lệnh dump lẻ cho từng thằng con tiềm năng:
+                      ipsw objc dump "$BIN" --class "$KINSHIP_REGEX" > "$TEMP_DUMP/${CLS}_family.h" 2>/dev/null || true
+                  done < bin_list.txt
               done
           else
-              # Nếu không có danh sách, ta nhặt sạch sành sanh (Deep Scan Mode)
-              echo "🚜 Không có danh sách, tiến hành san phẳng toàn bộ kho..."
-              find "$ALL_DUMP_DIR" -name "*.h" -type f -exec mv -f {} "$TARGET_DIR/" \;
+              echo "🌊 Mode Dump All (Thận trọng)..."
+              while read -r BIN; do
+                  # Dump headers từng binary một để tránh lỗi Shared Cache
+                  ipsw class-dump "$BIN" --headers -o "$TEMP_DUMP" || true
+              done < bin_list.txt
           fi
 
-          # 4. VÒNG LỌC TỐ CHẤT (Vòng cuối: Loại bỏ những thằng nhập cư lậu không có code)
-          echo "🧐 Kiểm tra tố chất cuối cùng trước khi cấp hộ khẩu..."
-          find "$TARGET_DIR" -name "*.h" -type f | while read -r FILE; do
+          # 4. ÉP CHUYỂN NHÀ & SÀNG LỌC (Deep Scan san phẳng)
+          echo "🏘️ Đang gom quân và kiểm tra tố chất..."
+          # Quét sạch mọi file .h phát sinh
+          find "$TEMP_DUMP" -name "*.h" -type f | while read -r FILE; do
               if [ -s "$FILE" ] && grep -qE "@interface|@protocol" "$FILE"; then
-                  # Giữ lại và tiến hành Vá lỗi (Patching) ngay tại đây
-                  if [ "${{ github.event.inputs.patch_headers }}" == "true" ]; then
-                      sed -i '' '1i\
-                      @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
-                      @protocol NSObject, NSCopying, NSCoding;
-                      ' "$FILE"
-                  fi
+                  # Nhặt thêm bước: Nếu file quá lớn (do dump cụm), ta vẫn giữ
+                  mv -f "$FILE" "$TARGET_DIR/"
               else
                   rm -f "$FILE"
               fi
           done
 
-          # 5. SÀNG LỌC RÁC HỆ THỐNG (Smart Filter)
-          if [ "${{ github.event.inputs.smart_filter }}" == "true" ]; then
-              cd "$TARGET_DIR"
-              rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h GPBMessage.h 2>/dev/null
-              find . -name "_Ttc*" -exec rm -f {} \;
-              find . -name "*.h" | awk 'length > 100' | xargs rm -f 2>/dev/null
-              cd - > /dev/null
-          fi
+          # 5. DÁN GIÁP & SMART FILTER (Giữ nguyên logic cũ nhưng gắt hơn)
+          find "$TARGET_DIR" -name "*.h" -exec sed -i '' '1i\
+          @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
+          @protocol NSObject, NSCopying, NSCoding;
+          ' {} +
 
-          rm -rf "$ALL_DUMP_DIR" app_extracted bin_list.txt
-          echo "📦 Kho hàng tinh nhuệ hiện có: $(ls -1 "$TARGET_DIR" | wc -l) file."
+          # Xóa rác hệ thống phát sinh do dump cụm
+          cd "$TARGET_DIR"
+          rm -f NSObject-Protocol.h NSCopying-Protocol.h 2>/dev/null
+          find . -name "*.h" | awk 'length > 120' | xargs rm -f 2>/dev/null
+          cd - > /dev/null
+
+          rm -rf "$TEMP_DUMP" app_extracted bin_list.txt
+          echo "📦 Kho hàng tinh nhuệ: $(ls -1 "$TARGET_DIR" | wc -l) file."
