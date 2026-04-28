@@ -86,27 +86,29 @@ jobs:
               CLASSES=$(tr '\r\n' ' ' < "$CONFIG" | sed 's/\.h//g' | xargs)
           fi
 
-          # 4. CHIẾN THUẬT NHẶT HÀNG (Mắt Thần)
-          echo "🧺 Bot đang đi lục soát và ân xá tinh anh..."
-          if [ -n "$CLASSES" ]; then
-              for CLS in $CLASSES; do
-                  [ -z "$CLS" ] && continue
-                  # Nhặt cả họ hàng (Delegate, Cell, v.v.)
-                  find "$ALL_DUMP_DIR" -type f -name "*$CLS*.h" | while read -r FILE; do
-                      if [ -s "$FILE" ] && grep -qE "@interface|@protocol" "$FILE"; then
-                          mv -f "$FILE" "$TARGET_DIR/"
-                          echo "✅ Thu nạp: $(basename "$FILE")"
-                      fi
-                  done
-              done
-          else
-              echo "🚜 Không có thánh chỉ, hốt sạch hàng có tố chất!"
-              find "$ALL_DUMP_DIR" -name "*.h" -type f | while read -r FILE; do
-                  if [ -s "$FILE" ] && grep -qE "@interface|@protocol" "$FILE"; then
-                      mv -f "$FILE" "$TARGET_DIR/"
-                  fi
-              done
-          fi
+                   # 4. CHIẾN THUẬT "VÉT MÁNG" TỔNG LỰC
+          echo "🧺 Đang hốt sạch sành sanh headers về Repo..."
+          
+          # Không dùng vòng lặp Class nữa, quét thẳng vào kho đệm
+          find "$ALL_DUMP_DIR" -name "*.h" -type f | while read -r FILE; do
+              # Điều kiện: File có dung lượng (không rỗng)
+              if [ -s "$FILE" ]; then
+                  FILENAME=$(basename "$FILE")
+                  
+                  # Dán giáp ngay lập tức để build deb sau này đỡ lỗi
+                  sed -i '' '1i\
+                  @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
+                  @protocol NSObject, NSCopying, NSCoding;
+                  ' "$FILE"
+                  
+                  # Đẩy về kho chính
+                  mv -f "$FILE" "$TARGET_DIR/"
+              fi
+          done
+
+          # Đếm hàng phát cho phấn khởi
+          echo "📦 Tổng số hàng đã về kho: $(ls -1 "$TARGET_DIR" | wc -l) file."
+
 
           # 5. DÁN GIÁP & SMART FILTER (Giai đoạn hậu kiểm)
           echo "🩹 Dán giáp và dọn rác cuối..."
