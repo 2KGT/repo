@@ -13,7 +13,13 @@
 <p align="center">
   Repo chuyên cung cấp Tweak & IPA chất lượng cao cho iOS
 </p>
+<a href="https://github.com/2KGT/repo/actions">
+        <img src="https://img.shields.io/github/actions/workflow/status/badges/shields/daily-tests.yml?label=daily%20tests"
 
+
+<a href="https://github.com/2KGT/repo/tree/main/.github/workflows/">
+  <img src="https://img.shields.io/badge/Edit_Workflows-blue?logo=github" alt="Edit Workflows">
+</a>
 ---
 
 ## 🚀 Danh sách dự án
