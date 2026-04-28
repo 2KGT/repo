@@ -23,11 +23,7 @@
         <img src="https://img.shields.io/github/actions/workflow/status/badges/shields/daily-tests.yml?label=daily%20tests"
             alt="Daily Tests Status"></a>
 
-[![Build Multi Tweak](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml/badge.svg)](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml)
-
-[![github/workflows](https://img.shields.io/badge/build-passing-brightgreen?style=for-the-badge)](https://github.com/2KGT/repo/tree/main/.github/workflows)
-
-
+[![workflows](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml/badge.svg)](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml)
 ---
 
 ## 🛠️ Chi tiết các Tweak nổi bật
