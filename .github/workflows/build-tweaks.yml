@@ -56,7 +56,7 @@ jobs:
           mkdir -p $THEOS/include
 
       # =========================================================
-      # CÔNG ĐOẠN 3: ĐỊNH VỊ & DÁN NHÃN ĐỘNG (CONTROL)
+      # CÔNG ĐOẠN 3: ĐỊNH VỊ & GÁN NHÃN ĐỘNG (CONTROL)
       # =========================================================
       - name: 🎯 Gán nhãn Icon & Metadata
         id: metadata
@@ -68,7 +68,6 @@ jobs:
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$(grep "^Version:" "$CTRL" | cut -d' ' -f2)" || echo "$(grep "^Version:" "$CTRL" | cut -d' ' -f2)-test$(date +%H%M)")
           
-          # Gán cứng link Raw cho Icon và Depiction
           sed -i '' "/^Icon:/d" "$CTRL"
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
           echo "Icon: ${{ env.BASE_URL }}/icons/${SAFE}.png" >> "$CTRL"
@@ -87,20 +86,20 @@ jobs:
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           if [ -f "$DIR/headers.txt" ]; then
-              rm -rf $THEOS/include/*
-              for KHO_APP in headers/*/; do
-                  [ -d "$KHO_APP" ] || continue
-                  APP_NAME=$(basename "$KHO_APP")
-                  DEST_DIR="$THEOS/include/$APP_NAME"
-                  mkdir -p "$DEST_DIR"
-                  while IFS= read -r line || [ -n "$line" ]; do
-                      FILE=$(echo "$line" | tr -d '\r' | xargs)
-                      [ -z "$FILE" ] && continue
-                      [[ "$FILE" != *.h ]] && FILE="${FILE}.h"
-                      [ -f "$KHO_APP/$FILE" ] && cp -f "$KHO_APP/$FILE" "$DEST_DIR/"
-                  done < "$DIR/headers.txt"
-                  [ "$(ls -A "$DEST_DIR" 2>/dev/null)" ] || rm -rf "$DEST_DIR"
-              done
+            rm -rf $THEOS/include/*
+            for KHO_APP in headers/*/; do
+              [ -d "$KHO_APP" ] || continue
+              APP_NAME=$(basename "$KHO_APP")
+              DEST_DIR="$THEOS/include/$APP_NAME"
+              mkdir -p "$DEST_DIR"
+              while IFS= read -r line || [ -n "$line" ]; do
+                FILE=$(echo "$line" | tr -d '\r' | xargs)
+                [ -z "$FILE" ] && continue
+                [[ "$FILE" != *.h ]] && FILE="${FILE}.h"
+                [ -f "$KHO_APP/$FILE" ] && cp -f "$KHO_APP/$FILE" "$DEST_DIR/"
+              done < "$DIR/headers.txt"
+              [ "$(ls -A "$DEST_DIR" 2>/dev/null)" ] || rm -rf "$DEST_DIR"
+            done
           fi
 
       # =========================================================
@@ -111,7 +110,7 @@ jobs:
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           DYNAMIC_INCLUDES=""
           if [ -f "$DIR/headers.txt" ]; then
-              for d in $THEOS/include/*/; do [ -d "$d" ] && DYNAMIC_INCLUDES="$DYNAMIC_INCLUDES -I$d"; done
+            for d in $THEOS/include/*/; do [ -d "$d" ] && DYNAMIC_INCLUDES="$DYNAMIC_INCLUDES -I$d"; done
           fi
           make -C "$DIR" package FINALPACKAGE=1 TARGET=iphone:clang:14.5:14.5 \
             ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -DTHEOS_LEAN_AND_MEAN $DYNAMIC_INCLUDES -I$THEOS/include"
@@ -130,60 +129,57 @@ jobs:
           JSON_PATH="depictions/${SAFE}.json"
           IMG_BASE="${{ env.BASE_URL }}/depictions/images"
           
-          # --- ⚡ LOGIC QUÉT MỌI DÒNG BẮT ĐẦU BẰNG DẤU # ---
-          echo "🔍 Đang tự động thu thập chú thích # từ code..."
-          # Tìm file nguồn .x hoặc .xm
           SRC_FILE=$(find "$DIR" -name "*.x" -o -name "*.xm" | head -n 1)
-          
           DESC_CONTENT="Phiên bản $SAFE từ 2KGT Repo."
           if [ -n "$SRC_FILE" ]; then
-              # Lấy tất cả các dòng bắt đầu bằng #, xóa dấu # và khoảng trắng thừa
-              EXTRACTED=$(grep "^#" "$SRC_FILE" | sed 's/^#//;s/^ //' | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
-              [ -n "$EXTRACTED" ] && DESC_CONTENT="$EXTRACTED"
+            EXTRACTED=$(grep "^#" "$SRC_FILE" | sed 's/^#//;s/^ //' | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
+            [ -n "$EXTRACTED" ] && DESC_CONTENT="$EXTRACTED"
           fi
 
           mkdir -p depictions
           cat <<EOF > "$JSON_PATH"
-{
-  "class": "DepictionTabView",
-  "tabs": [
-    {
-      "tabname": "Details",
-      "class": "DepictionStackView",
-      "views": [
-        { "class": "DepictionHeaderView", "title": "$SAFE" },
-        { "class": "DepictionImageView", "url": "$IMG_BASE/${SAFE}-banner.png", "width": 1242, "height": 500, "cornerRadius": 10 },
-        {
-          "class": "DepictionScreenshotsView",
-          "itemCornerRadius": 8,
-          "screenshots": [
-EOF
+          {
+            "class": "DepictionTabView",
+            "tabs": [
+              {
+                "tabname": "Details",
+                "class": "DepictionStackView",
+                "views": [
+                  { "class": "DepictionHeaderView", "title": "$SAFE" },
+                  { "class": "DepictionImageView", "url": "$IMG_BASE/${SAFE}-banner.png", "width": 1242, "height": 500, "cornerRadius": 10 },
+                  {
+                    "class": "DepictionScreenshotsView",
+                    "itemCornerRadius": 8,
+                    "screenshots": [
+          EOF
+          
           FIRST=true
           for i in {1..5}; do
-              if [ -f "depictions/images/${SAFE}${i}.png" ]; then
-                  [ "$FIRST" = true ] && FIRST=false || echo "," >> "$JSON_PATH"
-                  echo "            { \"url\": \"$IMG_BASE/${SAFE}${i}.png\" }" >> "$JSON_PATH"
-              fi
+            if [ -f "depictions/images/${SAFE}${i}.png" ]; then
+              [ "$FIRST" = true ] && FIRST=false || echo "," >> "$JSON_PATH"
+              echo "            { \"url\": \"$IMG_BASE/${SAFE}${i}.png\" }" >> "$JSON_PATH"
+            fi
           done
+          
           cat <<EOF >> "$JSON_PATH"
-          ]
-        },
-        { "class": "DepictionVideoView", "videoURL": "$IMG_BASE/${SAFE}.mp4", "cornerRadius": 8 },
-        { "class": "DepictionMarkdownView", "markdown": "$DESC_CONTENT", "useMargins": true }
-      ]
-    }
-  ]
-}
-EOF
-          # Đồng bộ ngược
+                    ]
+                  },
+                  { "class": "DepictionVideoView", "videoURL": "$IMG_BASE/${SAFE}.mp4", "cornerRadius": 8 },
+                  { "class": "DepictionMarkdownView", "markdown": "$DESC_CONTENT", "useMargins": true }
+                ]
+              }
+            ]
+          }
+          EOF
+          
           git add src/build-tweaks/ depictions/
           if [ "${{ github.event.inputs.publish }}" == "true" ]; then
-              mkdir -p debs && cp deb_output/*.deb debs/
-              dpkg-scanpackages -m debs /dev/null > Packages && bzip2 -fks Packages
-              git add debs/ Packages Packages.bz2
-              MSG="🌟 Release: $SAFE v${{ steps.metadata.outputs.proj_ver }}"
+            mkdir -p debs && cp deb_output/*.deb debs/
+            dpkg-scanpackages -m debs /dev/null > Packages && bzip2 -fks Packages
+            git add debs/ Packages Packages.bz2
+            MSG="🌟 Release: $SAFE v${{ steps.metadata.outputs.proj_ver }}"
           else
-              MSG="🛠️ Build: $SAFE v${{ steps.metadata.outputs.proj_ver }}"
+            MSG="🛠️ Build: $SAFE v${{ steps.metadata.outputs.proj_ver }}"
           fi
           git commit -m "$MSG" || exit 0
           git push origin main
