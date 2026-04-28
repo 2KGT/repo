@@ -63,77 +63,61 @@ jobs:
       - name: ⚡ Smart Dumping & Talent Scouting Logic
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
-          TEMP_DUMP="temp_headers"
-          
-          # 1. DỌN SÂN
-          if [ "${{ github.event.inputs.clear_all }}" == "true" ]; then
-              echo "🧨 Nuclear: Xoá sạch kho cũ để làm mới..."
-              rm -rf "$TARGET_DIR"
-          fi
-          mkdir -p "$TARGET_DIR" "$TEMP_DUMP"
+          ALL_DUMP_DIR="full_dump" # Thư mục chứa toàn bộ headers trên máy ảo
+          mkdir -p "$TARGET_DIR" "$ALL_DUMP_DIR"
 
-          # 2. XÁC ĐỊNH MỤC TIÊU (Lập bản đồ hang ổ)
-          echo "🔍 Đang rà soát toàn bộ Binary..."
-          # Tìm các file thực thi (không có đuôi mở rộng) trong .app và .framework
+          # 1. CÀN QUÉT TOÀN BỘ (Đổ hết về một mối để chuẩn bị nhặt)
+          echo "🔍 Đang lập bản đồ và càn quét toàn bộ hang ổ..."
           find app_extracted/Payload -type f ! -name "*.*" > bin_list.txt
+          
+          while read -r BIN; do
+              # Dump toàn bộ headers của từng Binary vào thư mục full_dump
+              # Cách này lách hoàn toàn lỗi --class vs --headers
+              echo "🌊 Đang bóc tách toàn bộ: $(basename "$BIN")"
+              ipsw class-dump "$BIN" --headers -o "$ALL_DUMP_DIR" || true
+          done < bin_list.txt
 
-          # 3. ĐỊNH NGHĨA DANH SÁCH ĐÒI NỢ (Fix lỗi trống biến)
+          # 2. ĐỊNH NGHĨA DANH SÁCH "CHỦ NỢ"
           CLASSES="${{ github.event.inputs.target_classes }}"
           CONFIG="${{ github.event.inputs.config_path }}"
-          
-          if [ -z "$CLASSES" ] && [ -n "$CONFIG" ] && [ -f "$CONFIG" ]; then
-              echo "📝 Đọc danh sách từ dự án: $CONFIG"
+          if [ -z "$CLASSES" ] && [ -f "$CONFIG" ]; then
               CLASSES=$(tr '\r\n' ' ' < "$CONFIG" | sed 's/\.h//g')
           fi
 
-          # 4. CHIẾN THUẬT HỐT CẢ Ổ
+          # 3. ĐI NHẶT HÀNG (Sàng lọc từ đống đổ nát)
+          echo "🧺 Bot đang đi nhặt hàng theo danh sách và tìm file con..."
+          
           if [ -n "$CLASSES" ]; then
-              echo "🎯 Bắt đầu chiến dịch săn lùng theo danh sách: $CLASSES"
               for CLS in $CLASSES; do
                   [ -z "$CLS" ] && continue
-                  echo "🎯 Đòi nợ Class: $CLS"
-                  while read -r BIN; do
-                      # Dump class và hốt luôn headers liên quan
-                      ipsw class-dump "$BIN" --class "$CLS" --headers -o "$TEMP_DUMP" || true
-                  done < bin_list.txt
+                  echo "🔎 Đang lùng sục Class: $CLS"
+                  # Nhặt file chính xác và các file có tên chứa Class đó (file con/phụ)
+                  find "$ALL_DUMP_DIR" -name "*$CLS*.h" -type f -exec mv -f {} "$TARGET_DIR/" \;
               done
           else
-              echo "🌊 Dump All: Càn quét toàn bộ hang ổ..."
-              while read -r BIN; do
-                  ipsw class-dump "$BIN" --headers -o "$TEMP_DUMP" || true
-              done < bin_list.txt
+              # Nếu không có danh sách, ta nhặt sạch sành sanh (Deep Scan Mode)
+              echo "🚜 Không có danh sách, tiến hành san phẳng toàn bộ kho..."
+              find "$ALL_DUMP_DIR" -name "*.h" -type f -exec mv -f {} "$TARGET_DIR/" \;
           fi
 
-          # 5. VÒNG LỌC TỐ CHẤT & NHẬP HỘ KHẨU
-          echo "🧐 Kiểm tra tố chất và ép chuyển nhà..."
-          if [ "${{ github.event.inputs.deep_scan }}" == "true" ]; then
-              # Deep Scan: Tìm mọi ngóc ngách
-              FIND_CMD="find $TEMP_DUMP -name *.h -type f"
-          else
-              # Standard Scan: Chỉ lấy tầng mặt
-              FIND_CMD="find $TEMP_DUMP -maxdepth 2 -name *.h -type f"
-          fi
-
-          $FIND_CMD | while read -r FILE; do
+          # 4. VÒNG LỌC TỐ CHẤT (Vòng cuối: Loại bỏ những thằng nhập cư lậu không có code)
+          echo "🧐 Kiểm tra tố chất cuối cùng trước khi cấp hộ khẩu..."
+          find "$TARGET_DIR" -name "*.h" -type f | while read -r FILE; do
               if [ -s "$FILE" ] && grep -qE "@interface|@protocol" "$FILE"; then
-                  mv -f "$FILE" "$TARGET_DIR/"
+                  # Giữ lại và tiến hành Vá lỗi (Patching) ngay tại đây
+                  if [ "${{ github.event.inputs.patch_headers }}" == "true" ]; then
+                      sed -i '' '1i\
+                      @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
+                      @protocol NSObject, NSCopying, NSCoding;
+                      ' "$FILE"
+                  fi
               else
                   rm -f "$FILE"
               fi
           done
 
-          # 6. DÁN GIÁP ĐỒNG LOẠT (Patching)
-          if [ "${{ github.event.inputs.patch_headers }}" == "true" ]; then
-              echo "🩹 Dán giáp Forward Declaration cho các tân binh..."
-              find "$TARGET_DIR" -name "*.h" -exec sed -i '' '1i\
-              @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
-              @protocol NSObject, NSCopying, NSCoding;
-              ' {} +
-          fi
-
-          # 7. SÀNG LỌC RÁC CUỐI (Smart Filter)
+          # 5. SÀNG LỌC RÁC HỆ THỐNG (Smart Filter)
           if [ "${{ github.event.inputs.smart_filter }}" == "true" ]; then
-              echo "✨ Đang lọc tinh rác Swift/Apple..."
               cd "$TARGET_DIR"
               rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h GPBMessage.h 2>/dev/null
               find . -name "_Ttc*" -exec rm -f {} \;
@@ -141,12 +125,5 @@ jobs:
               cd - > /dev/null
           fi
 
-          rm -rf "$TEMP_DUMP" app_extracted bin_list.txt
+          rm -rf "$ALL_DUMP_DIR" app_extracted bin_list.txt
           echo "📦 Kho hàng tinh nhuệ hiện có: $(ls -1 "$TARGET_DIR" | wc -l) file."
-
-      - name: 🚀 Commit & Push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "actions@github.com"
-          git add -f "headers/${{ github.event.inputs.app_name }}"
-          git diff --staged --quiet || (git commit -m "🪄 [Factory] v8.0 Managed Dump: ${{ github.event.inputs.app_name }}" && git push origin main)
