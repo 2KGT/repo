@@ -15,6 +15,7 @@ on:
         default: false
 
 env:
+  # Base URL chuẩn để lấy hàng Raw từ Repo
   BASE_URL: "https://raw.githubusercontent.com/2KGT/repo/main"
   TZ: "Asia/Ho_Chi_Minh"
   THEOS: ${{ github.workspace }}/theos
@@ -26,20 +27,20 @@ jobs:
       contents: write
     steps:
       # =========================================================
-      # CÔNG ĐOẠN 1: KHỞI TẠO HỆ THỐNG & DEPENDENCIES
+      # CÔNG ĐOẠN 1: KHỞI TẠO HỆ THỐNG
       # =========================================================
       - name: 📥 Checkout & Setup
         uses: actions/checkout@v4
 
-      - name: 🛠️ Cài đặt công cụ hỗ trợ
+      - name: 🛠️ Cài đặt công cụ
         run: |
           brew install make ldid dpkg
           echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
 
       # =========================================================
-      # CÔNG ĐOẠN 2: THIẾT LẬP MÔI TRƯỜNG THEOS
+      # CÔNG ĐOẠN 2: THIẾT LẬP THEOS
       # =========================================================
-      - name: 🧠 Quản lý Cache Theos
+      - name: 🧠 Cache & Setup Theos
         id: cache-theos
         uses: actions/cache@v4
         with:
@@ -48,7 +49,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-theos-
 
-      - name: 🏗️ Setup Theos Environment
+      - name: 🏗️ Setup Environment
         run: |
           if [ "${{ steps.cache-theos.outputs.cache-hit }}" != "true" ]; then
             rm -rf $THEOS
@@ -59,9 +60,9 @@ jobs:
           mkdir -p $THEOS/include
 
       # =========================================================
-      # CÔNG ĐOẠN 3: ĐỊNH VỊ DỰ ÁN & QUY HOẠCH METADATA
+      # CÔNG ĐOẠN 3: ĐỊNH VỊ & GÁN NHÃN ICON/DEPICTION (CỐ ĐỊNH)
       # =========================================================
-      - name: 🎯 Định vị mục tiêu
+      - name: 🎯 Gán nhãn Icon & Metadata
         id: metadata
         run: |
           PROJ_NAME="${{ github.event.inputs.project }}"
@@ -72,11 +73,16 @@ jobs:
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$(grep "^Version:" "$CTRL" | cut -d' ' -f2)" || echo "$(grep "^Version:" "$CTRL" | cut -d' ' -f2)-test$(date +%H%M)")
           
-          # Tự động gán link Ảnh/Mô tả Sileo theo tên SAFE
+          # --- GÁN NHÃN ICON & DEPICTION TỪ LINK RAW ---
+          sed -i '' "/^Icon:/d" "$CTRL"
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
+          
+          # Gán Icon từ thư mục icons/ (tên file trùng với SAFE name)
+          echo "Icon: ${{ env.BASE_URL }}/icons/${SAFE}.png" >> "$CTRL"
+          # Gán link JSON từ thư mục depictions/
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
           
-          # Cập nhật Version vào máy ảo
+          # Cập nhật Version mới
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
           
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
@@ -85,13 +91,13 @@ jobs:
           make -C "$DIR" clean
 
       # =========================================================
-      # CÔNG ĐOẠN 4: NGƯỜI VẬN CHUYỂN (CHỈ CHẠY THEO ĐƠN HÀNG)
+      # CÔNG ĐOẠN 4: VẬN CHUYỂN HEADERS (THEO ĐƠN HÀNG)
       # =========================================================
-      - name: 🚛 Nhập kho Headers Động
+      - name: 🚛 Nhập kho Headers
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           if [ ! -f "$DIR/headers.txt" ]; then
-              echo "🍃 Không có đơn hàng headers.txt. Bỏ qua."
+              echo "🍃 Không có headers.txt, bỏ qua."
               exit 0
           fi
           rm -rf $THEOS/include/*
@@ -110,9 +116,9 @@ jobs:
           done
 
       # =========================================================
-      # CÔNG ĐOẠN 5: THỰC THI BUILD & ĐÓNG GÓI (.DEB)
+      # CÔNG ĐOẠN 5: THỰC THI BUILD
       # =========================================================
-      - name: 🔨 Thực thi Build DEB
+      - name: 🔨 Build Package
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           DYNAMIC_INCLUDES=""
@@ -126,9 +132,9 @@ jobs:
           mkdir -p deb_output && cp "$DIR/packages/"*.deb deb_output/
 
       # =========================================================
-      # CÔNG ĐOẠN 6: ĐÚC NHÃN TỰ ĐỘNG & ĐỒNG BỘ NGƯỢC REPO
+      # CÔNG ĐOẠN 6: ĐÚC NHÃN JSON & ĐỒNG BỘ NGƯỢC
       # =========================================================
-      - name: 🚀 Đúc nhãn Sileo & Đồng bộ ngược Repo
+      - name: 🚀 Đúc nhãn & Đồng bộ Repo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
@@ -137,75 +143,53 @@ jobs:
           JSON_PATH="depictions/${SAFE}.json"
           IMG_BASE="${{ env.BASE_URL }}/depictions/images"
           
-          echo "📝 Đang đúc khuôn nhãn JSON cho $SAFE..."
+          echo "📝 Đúc khuôn nhãn Sileo cho $SAFE..."
           mkdir -p depictions
           
-          # --- BẮT ĐẦU ĐÚC FILE JSON (Hỗ trợ Banner + Icon + Screenshots) ---
+          # --- ĐÚC JSON: Banner + Screenshots + Video ---
           cat <<EOF > "$JSON_PATH"
 {
   "class": "DepictionTabView",
-  "minVersion": "0.1",
   "tabs": [
     {
       "tabname": "Details",
       "class": "DepictionStackView",
       "views": [
-        {
-          "class": "DepictionHeaderView",
-          "title": "$SAFE",
-          "useBoldText": true,
-          "useMargins":true
-        },
-        # --- 1. GÁN BANNER (Nếu có file tên [Project]-banner.png) ---
+        { "class": "DepictionHeaderView", "title": "$SAFE" },
         {
           "class": "DepictionImageView",
           "url": "$IMG_BASE/${SAFE}-banner.png",
-          "width": 1242,
-          "height": 500,
-          "cornerRadius": 10,
-          "useMargins": true
+          "width": 1242, "height": 500, "cornerRadius": 10
         },
-        # --- 2. GÁN SCREENSHOTS (Tự động quét file [Project]1.png, 2.png...) ---
         {
           "class": "DepictionScreenshotsView",
           "itemCornerRadius": 8,
-          "itemSize": "{160, 346}",
           "screenshots": [
 EOF
-
-          # --- VÒNG LẶP TỰ ĐỘNG QUÉT SCREENSHOTS ---
-          # Quét tối đa 5 ảnh screenshots có tên dạng AutoAC1.png, AutoAC2.png...
-          FIRST_SHOT=true
+          # Quét tối đa 5 ảnh screenshots
+          FIRST=true
           for i in {1..5}; do
               if [ -f "depictions/images/${SAFE}${i}.png" ]; then
-                  if [ "$FIRST_SHOT" = true ]; then
-                      FIRST_SHOT=false
-                  else
-                      echo "," >> "$JSON_PATH" # Thêm dấu phẩy ngăn cách các ảnh cũ
-                  fi
-                  # Chèn link ảnh raw vào JSON
-                  echo "            { \"url\": \"$IMG_BASE/${SAFE}${i}.png\", \"accessibilityText\": \"Screenshot $i\" }" >> "$JSON_PATH"
+                  [ "$FIRST" = true ] && FIRST=false || echo "," >> "$JSON_PATH"
+                  echo "            { \"url\": \"$IMG_BASE/${SAFE}${i}.png\" }" >> "$JSON_PATH"
               fi
           done
 
-          # --- ĐÓNG FILE JSON ---
+          # Đóng cụm Screenshots và thêm mục Video MP4
           cat <<EOF >> "$JSON_PATH"
           ]
         },
-        # --- 3. DÒNG MÔ TẢ CUỐI ---
         {
-          "class": "DepictionMarkdownView",
-          "markdown": "AutoAC - Tự động hóa trải nghiệm YouTube của bạn.",
-          "useMargins": true
+          "class": "DepictionVideoView",
+          "videoURL": "$IMG_BASE/${SAFE}.mp4",
+          "cornerRadius": 8
         }
       ]
     }
   ]
 }
 EOF
-          echo "✅ Đúc nhãn thành công: $JSON_PATH"
-
-          # --- HÀNH ĐỘNG ĐỒNG BỘ ---
+          # --- ĐỒNG BỘ NGƯỢC ---
           git add src/build-tweaks/ depictions/
           
           if [ "${{ github.event.inputs.publish }}" == "true" ]; then
@@ -214,16 +198,15 @@ EOF
               dpkg-scanpackages -m debs /dev/null > Packages
               bzip2 -fks Packages
               git add debs/ Packages Packages.bz2
-              COMMIT_MSG="🌟 Official Release: ${{ steps.metadata.outputs.safe_name }} v${{ steps.metadata.outputs.proj_ver }}"
+              MSG="🌟 Release: $SAFE v${{ steps.metadata.outputs.proj_ver }}"
           else
-              COMMIT_MSG="🛠️ Beta Build: ${{ steps.metadata.outputs.safe_name }} v${{ steps.metadata.outputs.proj_ver }}"
+              MSG="🛠️ Build: $SAFE v${{ steps.metadata.outputs.proj_ver }}"
           fi
           
-          git commit -m "$COMMIT_MSG" || exit 0
+          git commit -m "$MSG" || exit 0
           git push origin main
 
-
-      - name: 📦 Xuất Artifact để kiểm tra
+      - name: 📦 Xuất xưởng file .deb
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.metadata.outputs.safe_name }}_v${{ steps.metadata.outputs.proj_ver }}
