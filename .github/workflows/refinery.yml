@@ -1,4 +1,4 @@
-name: 🏭 Refinery - Lò Tinh Luyện Header
+name: 🏭 Refinery - Mổ Trùm Cuối YouTube
 
 on:
   workflow_dispatch:
@@ -6,7 +6,6 @@ on:
       ipa_url:
         description: 'Dán Link IPA vào đây'
         required: true
-        default: ''
 
 jobs:
   refine_process:
@@ -18,45 +17,36 @@ jobs:
       - name: 📥 Checkout Repo
         uses: actions/checkout@v4
 
-      - name: 🏗️ Setup Tools (Dao mổ)
+      - name: 🏗️ Setup Tools
         run: |
           brew install blacktop/tap/ipsw
           mkdir -p src/refinery/staging/headers
           mkdir -p headers-repo/YouTube
 
-      - name: 🚚 Bốc vác thẳng vào Lò (Direct Input)
+      - name: 🚚 Bốc vác Trùm Cuối
         run: |
-          # Tải IPA
           curl -L "${{ github.event.inputs.ipa_url }}" -o app.ipa
-          
-          # Đổ thẳng file cứng vào staging của Refinery
-          unzip -j app.ipa "*YouTubeCore.framework/YouTubeCore" -d src/refinery/staging/
-          
-      - name: 🔪 Mổ xẻ tại chỗ (In-place Dump)
+          # Tìm và gắp file thực thi chính 'YouTube' nhè vào staging
+          unzip -j app.ipa "Payload/*.app/YouTube" -d src/refinery/staging/
+          ls -l src/refinery/staging/
+
+      - name: 🔪 Mổ xẻ (Optimized Dump)
         run: |
-          # Ép ipsw chỉ làm việc trong khu vực lò để tránh tràn RAM (Exit code 11)
-          # Thêm --objc để nó chỉ tập trung vào phần "thịt" dễ tiêu hóa
-          ipsw class-dump src/refinery/staging/YouTubeCore -o src/refinery/staging/headers --headers --objc
+          # Dùng --objc để lọc bớt rác Swift/C++, giảm tải RAM
+          ipsw class-dump src/refinery/staging/YouTube -o src/refinery/staging/headers --headers --objc
 
-
-      - name: 🔪 Mổ xẻ (The Dump - Optimized)
-        run: |
-          # Dùng thêm tham số --objc để giảm tải cho ipsw
-          # Nếu vẫn lỗi, ta sẽ giới hạn chỉ lấy các Header quan trọng nhất
-          ipsw class-dump src/refinery/staging/YouTubeCore -o src/refinery/staging/headers --headers --objc
-
-
-      - name: 🥩 Lọc xương (The Refinery Logic)
+      - name: 🥩 Lọc xương (Refinery Logic)
         run: |
           RAW_DIR="src/refinery/staging/headers"
           OUT_DIR="headers-repo/YouTube"
           
-          find "$RAW_DIR" -type f -name "*.h" | while read -r file; do
+          # Chỉ lọc những file .h có nội dung (tránh file 0kb)
+          find "$RAW_DIR" -type f -name "*.h" -size +1c | while read -r file; do
             filename=$(basename "$file")
-            # Lọc xương dăm (#import nội bộ)
+            # Lọc xương dăm
             sed -i '' -E '/#import ".*"/d; /#include ".*"/d' "$file"
-            # Tiêm thuốc bắc cầu (@class)
-            echo -e "@class NSString, NSArray, NSDictionary, UIView, UIViewController, NSData;\n$(cat "$file")" > "$file"
+            # Tiêm forward declaration
+            echo -e "@class NSString, NSArray, NSDictionary, UIView, UIViewController, NSData, UIButton, UILabel;\n$(cat "$file")" > "$file"
             # Nhập kho
             mv "$file" "$OUT_DIR/$filename"
           done
@@ -66,7 +56,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add headers-repo/
-          git commit -m "🥩 Refinery: Đã lọc xong nạc cho YouTube ($(date +'%Y-%m-%d'))" || exit 0
+          git commit -m "🥩 Refinery: Đã mổ trùm cuối YouTube ($(date +'%Y-%m-%d'))" || exit 0
           git push
 
       - name: 🗑️ Dọn rác (-rf)
@@ -74,4 +64,4 @@ jobs:
         run: |
           rm -rf src/refinery/staging/
           rm -f app.ipa
-          echo "🧹 Xưởng sạch bong, nạc đã nằm trong kho!"
+          echo "🧹 Xưởng sạch sẽ, trùm cuối đã bị xẻ thịt!"
