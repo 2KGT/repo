@@ -85,45 +85,42 @@ jobs:
       - name: 🚛 Nhập kho Headers
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
-          
-          # KIỂM TRA ĐIỀU KIỆN: Nếu không có đơn hàng thì nghỉ sớm
           if [ ! -f "$DIR/headers.txt" ]; then
-            echo "🍃 Dự án không yêu cầu Headers riêng. Bỏ qua công đoạn này."
+            echo "🍃 Không có đơn hàng headers.txt. Bỏ qua."
             exit 0
           fi
           
-          echo "📦 Phát hiện headers.txt, bắt đầu nhập kho..."
-          
-          # Xoá sạch include cũ để tránh rác từ dự án trước (nếu cache)
+          # 1. Xoá sạch kho tạm
           rm -rf $THEOS/include/*
           
-          # Quét qua từng folder trong kho headers/ (YouTubeHeader, v.v.)
+          # 2. Chỉ thực hiện bốc linh kiện nếu thấy kho tương ứng
+          # Logic: Quét từng folder headers, nhưng chỉ nhặt nếu folder đó có file .h
           for KHO_APP in headers/*/; do
             [ -d "$KHO_APP" ] || continue
             APP_NAME=$(basename "$KHO_APP")
-            
-            # Tạo folder con tương ứng trong include của Theos
             DEST_DIR="$THEOS/include/$APP_NAME"
-            mkdir -p "$DEST_DIR"
             
-            echo "📜 Đang bốc linh kiện cho $APP_NAME..."
+            echo "🔍 Đang kiểm tra kho: $APP_NAME"
+            HAD_FILE=false
+            
             while IFS= read -r line || [ -n "$line" ]; do
               FILE=$(echo "$line" | tr -d '\r' | xargs)
               [ -z "$FILE" ] && continue
-              
-              # Tự thêm đuôi .h nếu ông giáo viết thiếu trong file txt
               [[ "$FILE" != *.h ]] && FILE="${FILE}.h"
               
-              # Chỉ copy nếu file thực sự tồn tại trong kho
+              # Chỉ copy nếu file thực sự tồn tại trong đúng kho này
               if [ -f "$KHO_APP/$FILE" ]; then
+                [ "$HAD_FILE" = false ] && mkdir -p "$DEST_DIR" && HAD_FILE=true
                 cp -f "$KHO_APP/$FILE" "$DEST_DIR/"
                 echo "  + Đã nhặt: $FILE"
-              else
-                echo "  - Cảnh báo: Thiếu file $FILE trong $KHO_APP"
               fi
             done < "$DIR/headers.txt"
+            
+            if [ "$HAD_FILE" = false ]; then
+              echo "  Skip: Kho $APP_NAME không chứa linh kiện trong đơn hàng."
+            fi
           done
-          fi
+fi
 
       # =========================================================
       # CÔNG ĐOẠN 5: THỰC THI BUILD
