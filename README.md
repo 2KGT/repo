@@ -42,10 +42,19 @@
 ---
 
 ## 📌 Hướng dẫn sử dụng
-1. Copy link repo: `https://2kgt.github.io/repo/` [![github/workflows](https://img.shields.io/badge/github-repo-blue?logo=github?style=for-the-badge)](https://2kgt.github.io/repo/)
+1. Copy link repo: `https://2kgt.github.io/repo/` 
 2. Mở trình quản lý gói (Sileo, Zebra, Cydia).
 3. Thêm nguồn và cài đặt tweak bạn yêu thích.
+
 
 <p align="center">
   Made with ❤️ by <b>Kyic</b>
 </p>
+
+
+<p align="center">
+  [![github/workflows](https://img.shields.io/badge/github-repo-blue?logo=github?style=for-the-badge)](https://2kgt.github.io/repo/)</b>
+</p>
+
+
+
