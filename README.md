@@ -52,9 +52,7 @@
 </p>
 
 
-<p align="center">
-  [![github/workflows](https://img.shields.io/badge/github-repo-blue?logo=github?style=for-the-badge)](https://2kgt.github.io/repo/)</b>
-</p>
+<p align="center">[![github/workflows](https://img.shields.io/badge/github-repo-blue?logo=github?style=for-the-badge)](https://2kgt.github.io/repo/)</b></p>
 
 
 
