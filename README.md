@@ -23,7 +23,7 @@
 
 [![Dump Factory](https://img.shields.io/badge/🚀_Run-Dump_Factory-blue?style=for-the-badge)](https://github.com/2KGT/repo/tree/main/.github/workflows)
 
-
+[![github/workflows](https://img.shields.io/badge/build-passing-brightgreen?style=for-the-badge)](https://github.com/2KGT/repo/tree/main/.github/workflows)
 ---
 
 ## 🛠️ Chi tiết các Tweak nổi bật
