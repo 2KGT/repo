@@ -64,38 +64,34 @@ jobs:
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           ALL_DUMP_DIR="full_dump_cache"
-          TEMP_DUMP="temp_headers"
           
-          # 1. KHỞI TẠO & DỌN SÂN
+          # 1. KHỞI TẠO
           [ "${{ github.event.inputs.clear_all }}" == "true" ] && rm -rf "$TARGET_DIR"
-          mkdir -p "$TARGET_DIR" "$ALL_DUMP_DIR" "$TEMP_DUMP"
+          mkdir -p "$TARGET_DIR" "$ALL_DUMP_DIR"
 
-          # 2. ĐỔ HÀNG VÀO KHO ĐỆM (Bắt buộc phải có bước này)
-          echo "🌊 Đang đổ toàn bộ Header vào kho đệm trên máy ảo..."
+          # 2. ĐỔ HÀNG VÀO KHO ĐỆM (San phẳng hang ổ)
+          echo "🌊 Đang bóc tách toàn bộ Binary vào kho đệm..."
           find app_extracted/Payload -type f ! -name "*.*" > bin_list.txt
           while read -r BIN; do
-              echo "🧬 Đang bóc tách: $(basename "$BIN")"
-              # Dump sạch sẽ vào ALL_DUMP_DIR
+              echo "🧬 Băm xác: $(basename "$BIN")"
               ipsw class-dump "$BIN" --headers -o "$ALL_DUMP_DIR" || true
           done < bin_list.txt
 
-          # 3. ĐỌC CHIẾU CHỈ
+          # 3. ĐỌC CHIẾU CHỈ (headers.txt)
           CLASSES="${{ github.event.inputs.target_classes }}"
           CONFIG="${{ github.event.inputs.config_path }}"
           if [ -z "$CLASSES" ] && [ -f "$CONFIG" ]; then
-              echo "📜 Đang đọc chiếu chỉ từ dự án: $CONFIG"
-              CLASSES=$(tr '\r\n' ' ' < "$CONFIG" | sed 's/\.h//g')
+              echo "📜 Đọc danh sách từ: $CONFIG"
+              # Lọc sạch khoảng trắng và đuôi .h nếu có
+              CLASSES=$(tr '\r\n' ' ' < "$CONFIG" | sed 's/\.h//g' | xargs)
           fi
 
           # 4. CHIẾN THUẬT NHẶT HÀNG (Mắt Thần)
-          echo "🧺 Bot đang đi lục soát kho đệm..."
-          CLEAN_CLASSES=$(echo $CLASSES | sed 's/\*/ /g')
-
-          if [ -n "$CLEAN_CLASSES" ]; then
-              for CLS in $CLEAN_CLASSES; do
+          echo "🧺 Bot đang đi lục soát và ân xá tinh anh..."
+          if [ -n "$CLASSES" ]; then
+              for CLS in $CLASSES; do
                   [ -z "$CLS" ] && continue
-                  echo "🔎 Truy quét mục tiêu: $CLS"
-                  # Tìm mọi file liên quan trong kho đệm
+                  # Nhặt cả họ hàng (Delegate, Cell, v.v.)
                   find "$ALL_DUMP_DIR" -type f -name "*$CLS*.h" | while read -r FILE; do
                       if [ -s "$FILE" ] && grep -qE "@interface|@protocol" "$FILE"; then
                           mv -f "$FILE" "$TARGET_DIR/"
@@ -104,7 +100,7 @@ jobs:
                   done
               done
           else
-              echo "🚜 Không có thánh chỉ, nhặt sạch tinh anh!"
+              echo "🚜 Không có thánh chỉ, hốt sạch hàng có tố chất!"
               find "$ALL_DUMP_DIR" -name "*.h" -type f | while read -r FILE; do
                   if [ -s "$FILE" ] && grep -qE "@interface|@protocol" "$FILE"; then
                       mv -f "$FILE" "$TARGET_DIR/"
@@ -112,20 +108,23 @@ jobs:
               done
           fi
 
-          # 5. VÁ LỖI & DỌN RÁC CUỐI
-          echo "🩹 Đang dán giáp và dọn dẹp hậu chiến..."
-          find "$TARGET_DIR" -name "*.h" -exec sed -i '' '1i\
-          @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
-          @protocol NSObject, NSCopying, NSCoding;
-          ' {} +
+          # 5. DÁN GIÁP & SMART FILTER (Giai đoạn hậu kiểm)
+          echo "🩹 Dán giáp và dọn rác cuối..."
+          if [ -d "$TARGET_DIR" ]; then
+              # Dán giáp Forward Declaration
+              find "$TARGET_DIR" -name "*.h" -exec sed -i '' '1i\
+              @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
+              @protocol NSObject, NSCopying, NSCoding;
+              ' {} +
 
-          if [ "${{ github.event.inputs.smart_filter }}" == "true" ]; then
-              cd "$TARGET_DIR"
-              rm -f NSObject-Protocol.h NSCopying-Protocol.h 2>/dev/null
-              find . -name "*.h" | awk 'length > 120' | xargs rm -f 2>/dev/null
-              cd - > /dev/null
+              if [ "${{ github.event.inputs.smart_filter }}" == "true" ]; then
+                  cd "$TARGET_DIR"
+                  # Trảm rác tên quá dài hoặc rác hệ thống trà trộn
+                  rm -f NSObject-Protocol.h NSCopying-Protocol.h 2>/dev/null
+                  find . -name "*.h" | awk 'length > 110' | xargs rm -f 2>/dev/null
+                  cd - > /dev/null
+              fi
           fi
 
-          rm -rf "$ALL_DUMP_DIR" "$TEMP_DUMP" app_extracted bin_list.txt
+          rm -rf "$ALL_DUMP_DIR" app_extracted bin_list.txt
           echo "📦 Kho hàng tinh nhuệ hiện có: $(ls -1 "$TARGET_DIR" | wc -l) file."
-
