@@ -8,12 +8,12 @@ on:
         required: true
         type: string
       app_name:
-        description: '📁 Thư mục lưu heards'
+        description: '📁 Thư mục lưu'
         required: true
         default: 'YouTubeHeader'
         type: string
       target_classes:
-        description: '🎯 Nhập tên class heards'
+        description: '🎯 Nhập Class (cách nhau dấu cách)'
         required: false
         type: string
       config_path:
@@ -51,14 +51,14 @@ jobs:
 
       - name: 📦 Download & Extract IPA
         run: |
-          curl -L -A "Mozilla/5.0" "${{ github.event.inputs.ipa_url }}" -o app.ipa
+          IPA_LINK="${{ github.event.inputs.ipa_url }}"
+          if [[ ! "$IPA_LINK" =~ ^http ]]; then
+            echo "❌ Link IPA không hợp lệ: $IPA_LINK"
+            exit 1
+          fi
+          echo "📥 Đang tải hàng từ: $IPA_LINK"
+          curl -L -A "Mozilla/5.0" "$IPA_LINK" -o app.ipa
           unzip -q app.ipa -d app_extracted
-
-      - name: 🔍 Locate Binary
-        id: locate
-        run: |
-          BIN=$(find app_extracted/Payload -name "*.app" | head -n 1)
-          echo "binary=$BIN/$(basename "$BIN" .app)" >> $GITHUB_OUTPUT
 
       - name: ⚡ Smart Dumping & Talent Scouting Logic
         run: |
@@ -72,40 +72,49 @@ jobs:
           fi
           mkdir -p "$TARGET_DIR" "$TEMP_DUMP"
 
-                    # 2. XÁC ĐỊNH MỤC TIÊU (Lấy danh sách Binary theo cách an toàn)
-          # Tìm các file thực thi chính và dylib trong Frameworks
-          echo "🔍 Đang lập bản đồ hang ổ..."
-          find app_extracted/Payload -name "*.app" -o -name "*.framework" -o -name "*.dylib" > bin_list.txt
+          # 2. XÁC ĐỊNH MỤC TIÊU (Lập bản đồ hang ổ)
+          echo "🔍 Đang rà soát toàn bộ Binary..."
+          # Tìm các file thực thi (không có đuôi mở rộng) trong .app và .framework
+          find app_extracted/Payload -type f ! -name "*.*" > bin_list.txt
 
-          # 3. CHIẾN THUẬT HỐT CẢ Ổ (Chạy vòng lặp từ file để tránh lỗi bộ nhớ shell)
+          # 3. ĐỊNH NGHĨA DANH SÁCH ĐÒI NỢ (Fix lỗi trống biến)
+          CLASSES="${{ github.event.inputs.target_classes }}"
+          CONFIG="${{ github.event.inputs.config_path }}"
+          
+          if [ -z "$CLASSES" ] && [ -n "$CONFIG" ] && [ -f "$CONFIG" ]; then
+              echo "📝 Đọc danh sách từ dự án: $CONFIG"
+              CLASSES=$(tr '\r\n' ' ' < "$CONFIG" | sed 's/\.h//g')
+          fi
+
+          # 4. CHIẾN THUẬT HỐT CẢ Ổ
           if [ -n "$CLASSES" ]; then
-              echo "🎯 Bắt đầu chiến dịch săn lùng theo danh sách..."
+              echo "🎯 Bắt đầu chiến dịch săn lùng theo danh sách: $CLASSES"
               for CLS in $CLASSES; do
                   [ -z "$CLS" ] && continue
-                  echo "🎯 Đang đòi nợ Class: $CLS"
+                  echo "🎯 Đòi nợ Class: $CLS"
                   while read -r BIN; do
-                      # Chỉ xử lý nếu là file thực thi thực sự (không có đuôi file lẻ)
-                      if [[ -f "$BIN" && ! "$BIN" == *.* ]]; then
-                          # Bỏ 2>/dev/null để nếu có lỗi ta còn thấy đường mà sửa
-                          ipsw class-dump "$BIN" --class "$CLS" --headers -o "$TEMP_DUMP" || true
-                      fi
+                      # Dump class và hốt luôn headers liên quan
+                      ipsw class-dump "$BIN" --class "$CLS" --headers -o "$TEMP_DUMP" || true
                   done < bin_list.txt
               done
           else
               echo "🌊 Dump All: Càn quét toàn bộ hang ổ..."
               while read -r BIN; do
-                  if [[ -f "$BIN" && ! "$BIN" == *.* ]]; then
-                      ipsw class-dump "$BIN" --headers -o "$TEMP_DUMP" || true
-                  fi
+                  ipsw class-dump "$BIN" --headers -o "$TEMP_DUMP" || true
               done < bin_list.txt
           fi
 
+          # 5. VÒNG LỌC TỐ CHẤT & NHẬP HỘ KHẨU
+          echo "🧐 Kiểm tra tố chất và ép chuyển nhà..."
+          if [ "${{ github.event.inputs.deep_scan }}" == "true" ]; then
+              # Deep Scan: Tìm mọi ngóc ngách
+              FIND_CMD="find $TEMP_DUMP -name *.h -type f"
+          else
+              # Standard Scan: Chỉ lấy tầng mặt
+              FIND_CMD="find $TEMP_DUMP -maxdepth 2 -name *.h -type f"
+          fi
 
-          # 4. VÒNG LỌC TỐ CHẤT & NHẬP HỘ KHẨU (Deep Scan + Filter)
-          echo "🧐 Đang kiểm tra tố chất từng file trước khi cho nhập tịch..."
-          # Quét sạch mọi xó xỉnh trong khu tạm trú
-          find "$TEMP_DUMP" -name "*.h" -type f | while read -r FILE; do
-              # Điều kiện: File có nội dung VÀ chứa cấu trúc ObjC (@interface/@protocol)
+          $FIND_CMD | while read -r FILE; do
               if [ -s "$FILE" ] && grep -qE "@interface|@protocol" "$FILE"; then
                   mv -f "$FILE" "$TARGET_DIR/"
               else
@@ -113,7 +122,7 @@ jobs:
               fi
           done
 
-          # 5. DÁN GIÁP ĐỒNG LOẠT (Patching)
+          # 6. DÁN GIÁP ĐỒNG LOẠT (Patching)
           if [ "${{ github.event.inputs.patch_headers }}" == "true" ]; then
               echo "🩹 Dán giáp Forward Declaration cho các tân binh..."
               find "$TARGET_DIR" -name "*.h" -exec sed -i '' '1i\
@@ -122,8 +131,9 @@ jobs:
               ' {} +
           fi
 
-          # 6. SÀNG LỌC RÁC CUỐI (Smart Filter)
+          # 7. SÀNG LỌC RÁC CUỐI (Smart Filter)
           if [ "${{ github.event.inputs.smart_filter }}" == "true" ]; then
+              echo "✨ Đang lọc tinh rác Swift/Apple..."
               cd "$TARGET_DIR"
               rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h GPBMessage.h 2>/dev/null
               find . -name "_Ttc*" -exec rm -f {} \;
@@ -131,5 +141,12 @@ jobs:
               cd - > /dev/null
           fi
 
-          rm -rf "$TEMP_DUMP" app_extracted
+          rm -rf "$TEMP_DUMP" app_extracted bin_list.txt
           echo "📦 Kho hàng tinh nhuệ hiện có: $(ls -1 "$TARGET_DIR" | wc -l) file."
+
+      - name: 🚀 Commit & Push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "actions@github.com"
+          git add -f "headers/${{ github.event.inputs.app_name }}"
+          git diff --staged --quiet || (git commit -m "🪄 [Factory] v8.0 Managed Dump: ${{ github.event.inputs.app_name }}" && git push origin main)
