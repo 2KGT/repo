@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       ipa_url:
-        description: 'Dán Link IPA vào đây (hoặc để trống nếu đã có file)'
-        required: false
+        description: 'Dán Link IPA vào đây'
+        required: true
         default: ''
 
 jobs:
@@ -21,43 +21,38 @@ jobs:
       - name: 🏗️ Setup Tools (Dao mổ)
         run: |
           brew install blacktop/tap/ipsw
-          # Tạo sẵn cấu trúc lò nếu chưa có
-          mkdir -p src/refinery/scripts
           mkdir -p src/refinery/staging/headers
           mkdir -p headers-repo/YouTube
 
-      - name: 🚚 Bốc vác anh Bin (Input)
+      - name: 🚚 Bốc vác anh Bin (Dùng unzip cho chắc)
         run: |
-          # Nếu có link IPA thì tải về, không thì báo lỗi
-          if [ "${{ github.event.inputs.ipa_url }}" != "" ]; then
-            curl -L "${{ github.event.inputs.ipa_url }}" -o app.ipa
-          fi
+          # 1. Tải IPA
+          curl -L "${{ github.event.inputs.ipa_url }}" -o app.ipa
           
-          # Trích xuất file cứng (Framework quan trọng nhất)
-          # Ông giáo có thể đổi tên Framework nếu muốn mổ nhánh khác
-          ipsw archive extract app.ipa -f "Frameworks/YouTubeCore.framework/YouTubeCore" -o src/refinery/staging/
+          # 2. Xé xác IPA để gắp YouTubeCore (Dùng wildcard * để tự tìm đường dẫn)
+          # Lệnh này sẽ tìm file YouTubeCore và nhè thẳng vào staging/
+          unzip -j app.ipa "*YouTubeCore.framework/YouTubeCore" -d src/refinery/staging/
           
+          # Kiểm tra xem anh Bin đã nằm trong lò chưa
+          ls -l src/refinery/staging/
+
       - name: 🔪 Mổ xẻ (The Dump)
         run: |
-          # Băm cứng đầu lấy Header thô
+          # Băm file vừa gắp được
           ipsw class-dump src/refinery/staging/YouTubeCore -o src/refinery/staging/headers --headers
 
       - name: 🥩 Lọc xương (The Refinery Logic)
         run: |
-          # Chạy script lọc xương trực tiếp tại đây cho tiện (Mobile đỡ phải tạo nhiều file)
           RAW_DIR="src/refinery/staging/headers"
           OUT_DIR="headers-repo/YouTube"
           
           find "$RAW_DIR" -type f -name "*.h" | while read -r file; do
             filename=$(basename "$file")
-            
-            # Xoá import nội bộ, giữ lại import hệ thống
+            # Lọc xương dăm (#import nội bộ)
             sed -i '' -E '/#import ".*"/d; /#include ".*"/d' "$file"
-            
-            # Tiêm forward declaration để "bắc cầu"
+            # Tiêm thuốc bắc cầu (@class)
             echo -e "@class NSString, NSArray, NSDictionary, UIView, UIViewController, NSData;\n$(cat "$file")" > "$file"
-            
-            # Đưa hàng sạch về kho ngoài Root
+            # Nhập kho
             mv "$file" "$OUT_DIR/$filename"
           done
 
@@ -74,4 +69,4 @@ jobs:
         run: |
           rm -rf src/refinery/staging/
           rm -f app.ipa
-          echo "🧹 Xưởng đã sạch sẽ, chỉ còn lại nạc trong kho!"
+          echo "🧹 Xưởng sạch bong, nạc đã nằm trong kho!"
