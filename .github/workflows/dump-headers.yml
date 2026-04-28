@@ -1,4 +1,4 @@
-name: Dump Header Factory
+name: Dump Header Super Factory
 
 on:
   workflow_dispatch:
@@ -13,27 +13,23 @@ on:
         default: 'YouTubeHeader'
         type: string
       target_classes:
-        description: '🎯 Nhập Class (cách nhau dấu cách)'
+        description: '🎯 Nhập Class lẻ (để trống nếu dump tất)'
         required: false
         type: string
       config_path:
-        description: '📄 Đường dẫn heards.txt'
+        description: '📄 Đường dẫn headers.txt'
         required: false
         type: string
       patch_headers:
         description: '🩹 Vá lỗi @class (Forward Declaration)'
         type: boolean
         default: true
-      deep_scan:
-        description: '📂 Deep Scan cả file con'
-        type: boolean
-        default: true
       smart_filter:
-        description: '✨ Sàng lọc rác Swift/Apple'
+        description: '✨ Tự động dọn rác (Siêu sạch)'
         type: boolean
         default: true
       clear_all:
-        description: '🧨 Xoá thư mục dump trước'
+        description: '🧨 Xoá sạch kho cũ trước khi đổ mới'
         type: boolean
         default: false
 
@@ -52,56 +48,79 @@ jobs:
       - name: 📦 Download & Extract IPA
         run: |
           IPA_LINK="${{ github.event.inputs.ipa_url }}"
-          if [[ ! "$IPA_LINK" =~ ^http ]]; then
-            echo "❌ Link IPA không hợp lệ: $IPA_LINK"
-            exit 1
-          fi
           echo "📥 Đang tải hàng từ: $IPA_LINK"
           curl -L -A "Mozilla/5.0" "$IPA_LINK" -o app.ipa
           unzip -q app.ipa -d app_extracted
 
-      - name: ⚡ Nhà Máy Cưỡng Chế (Dump All & Debug)
+      - name: ⚡ Nhà Máy San Phẳng (Dumping)
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           RAW_CACHE="raw_dump_cache"
           
-          # 1. DỌN SÂN & KHỞI TẠO
-          rm -rf "$RAW_CACHE"
+          # 1. KHỞI TẠO & DỌN SÂN
+          [ "${{ github.event.inputs.clear_all }}" == "true" ] && rm -rf "$TARGET_DIR"
           mkdir -p "$TARGET_DIR" "$RAW_CACHE"
 
-          # 2. TÌM BINARY (Kiểm tra xem IPA có gì)
-          echo "🔍 Đang rà soát danh sách Binary..."
-          find app_extracted/Payload -type f ! -name "*.*" > bin_list.txt
-          if [ ! -s bin_list.txt ]; then
-            echo "❌ LỖI: Không tìm thấy file thực thi nào trong IPA!"
-            exit 1
-          fi
-
-          # 3. DUMP TỔNG LỰC
+          # 2. LẬP BẢN ĐỒ & DUMP (Lọc bỏ file rác hệ thống ngay từ bước tìm Binary)
+          find app_extracted/Payload -type f ! -name "*.*" ! -name "CodeResources" ! -name "PkgInfo" > bin_list.txt
+          
           while read -r BIN; do
-              echo "🧬 Đang băm: $(basename "$BIN")"
-              # Thêm --objc để ép ipsw chỉ tập trung vào Obj-C cho nhanh
-              ipsw class-dump "$BIN" --headers --objc -o "$RAW_CACHE" || true
+              if file "$BIN" | grep -q "Mach-O"; then
+                  echo "🧬 Đang băm: $(basename "$BIN")"
+                  # Chỉ dùng cờ an toàn, đổ hết vào RAW_CACHE
+                  ipsw class-dump "$BIN" --headers -o "$RAW_CACHE" || true
+              fi
           done < bin_list.txt
 
-          # 4. KIỂM TRA KHO ĐỆM TRƯỚC KHI CHUYỂN
-          TEMP_COUNT=$(find "$RAW_CACHE" -name "*.h" | wc -l)
-          echo "📊 Máy ảo đã dump được: $TEMP_COUNT file .h"
-          
-          if [ "$TEMP_COUNT" -eq 0 ]; then
-            echo "❌ LỖI: ipsw không nhả ra file nào. Có thể IPA đã bị mã hóa hoặc sai kiến trúc!"
-            exit 1
+          # 3. NHẬN DIỆN CHIẾU CHỈ (Nếu có list thì chỉ nhặt theo list, không thì nhặt tất)
+          CLASSES="${{ github.event.inputs.target_classes }}"
+          [ -z "$CLASSES" ] && [ -f "${{ github.event.inputs.config_path }}" ] && CLASSES=$(tr '\r\n' ' ' < "${{ github.event.inputs.config_path }}" | sed 's/\.h//g')
+
+          if [ -n "$CLASSES" ]; then
+              echo "🧺 Nhặt hàng theo danh sách yêu cầu..."
+              for CLS in $CLASSES; do
+                  find "$RAW_CACHE" -name "*$CLS*.h" -exec mv -f {} "$TARGET_DIR/" \; 2>/dev/null || true
+              done
+          else
+              echo "🌊 Chế độ Dump All: Đổ toàn bộ kho đệm vào Repo..."
+              find "$RAW_CACHE" -name "*.h" -exec mv -f {} "$TARGET_DIR/" \;
           fi
 
-          # 5. ĐẨY VỀ KHO REPO (Ủi phẳng không điều kiện)
-          echo "🧺 Đang cưỡng chế nhập kho..."
-          find "$RAW_CACHE" -name "*.h" -type f -exec mv -f {} "$TARGET_DIR/" \;
-
-          # 6. CHỐT HẠ & XÁC NHẬN
-          FINAL_COUNT=$(ls -1 "$TARGET_DIR" | wc -l)
-          echo "📦 Tổng hàng chuẩn bị đẩy lên Repo: $FINAL_COUNT file."
+      - name: 🧼 Thanh Tẩy Tự Động (Smart Filter)
+        if: github.event.inputs.smart_filter == 'true'
+        run: |
+          TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
+          cd "$TARGET_DIR"
+          echo "🧹 Đang thanh lọc rác dựa trên quy hoạch tự động..."
           
-          # Tự động dán giáp nhanh cho toàn bộ
+          # A. Trảm file siêu nhỏ (vô giá trị) và file tên quá dài (rác Swift)
+          find . -name "*.h" -type f -size -150c -delete
+          find . -name "*.h" | awk 'length > 110' | xargs rm -f 2>/dev/null
+          
+          # B. Trảm rác ký tự lạ, metadata và framework con không cần thiết
+          find . -name "*\$*" -delete
+          rm -f _Ttc* GUL* GCK* GAI* *.metadata.h 2>/dev/null
+          
+          # C. Trảm Protocol hệ thống gây lỗi build
+          rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h 2>/dev/null
+          cd - > /dev/null
+
+      - name: 🩹 Vá Lỗi & Hoàn Tất (Patching)
+        if: github.event.inputs.patch_headers == 'true'
+        run: |
+          TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
+          echo "🩹 Đang dán giáp Forward Declaration cho toàn kho..."
           find "$TARGET_DIR" -name "*.h" -exec sed -i '' '1i\
           @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
+          @protocol NSObject, NSCopying, NSCoding;
           ' {} +
+          
+          echo "📦 Kho hàng tinh nhuệ: $(ls -1 "$TARGET_DIR" | wc -l) file."
+
+      - name: 🚀 Push Hàng Về Kho Repo
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add headers/
+          git commit -m "🚀 Factory Update: ${{ github.event.inputs.app_name }} [auto-clean]" || exit 0
+          git push
