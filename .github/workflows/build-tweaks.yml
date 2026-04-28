@@ -129,6 +129,14 @@ jobs:
           else
             echo "🏁 Đã nhặt đủ hàng. Đóng kho!"
           fi
+          # Tổng kết (Công đoạn 4)
+          if [ -s pending.txt ]; then
+            echo "❌ LỖI: Thiếu linh kiện quan trọng!"
+            cat pending.txt
+            exit 1  # <--- Dòng này sẽ bắt Workflow dừng hình ngay tại đây
+          else
+            echo "🏁 Đã nhặt đủ hàng. Sẵn sàng build!"
+          fi
 
       # =========================================================
       # CÔNG ĐOẠN 5: THỰC THI BUILD
