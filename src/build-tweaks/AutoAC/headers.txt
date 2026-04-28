@@ -8,3 +8,6 @@ YTICommand
 YTPageStyleController
 YTAppSettingsViewControllerDelegate
 YTFusedSettingsServiceSessionDelegate
+YTAdSlotContainerView.h
+YTAppSettingsPresentationData.h
+...
