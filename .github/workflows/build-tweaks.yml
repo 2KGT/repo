@@ -82,58 +82,53 @@ jobs:
       # =========================================================
       # CÔNG ĐOẠN 4: VẬN CHUYỂN HEADERS (CHỈ KHI CÓ ĐƠN)
       # =========================================================
-      - name: 🚛 Nhập kho Headers (Bản v40.0 - Siêu Nhặt)
+      - name: 🚛 Nhập kho Headers (Bản Siêu Cấp Xuyên Thấu)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
-          if [ ! -f "$DIR/headers.txt" ]; then
-            echo "🍃 Không có đơn hàng. Bỏ qua."
-            exit 0
-          fi
+          [ ! -f "$DIR/headers.txt" ] && echo "🍃 Không có đơn hàng. Bỏ qua." && exit 0
           
           rm -rf $THEOS/include/*
           
-          # Làm sạch danh sách: Bỏ đuôi .h (để tí nữa tự thêm), bỏ rác, bỏ dòng trống
-          sed -E 's/\.h//g; s/\r//g; /^\s*$/d; /^\.\.\./d' "$DIR/headers.txt" > pending.txt
+          # 1. Làm sạch danh sách: Gọt sạch đuôi, khoảng trắng, dòng trống
+          sed -E 's/\.h//g; s/\r//g; s/ //g; /^\s*$/d; /^\.\.\./d' "$DIR/headers.txt" | sort -u > pending.txt
           
-          echo "📦 Bắt đầu đi chợ theo danh sách..."
+          echo "📦 Bắt đầu đi chợ xuyên thấu..."
           
           for KHO_APP in headers/*/; do
             [ -d "$KHO_APP" ] || continue
-            [ ! -s pending.txt ] && break # Nhặt đủ rồi thì nghỉ (Chim cút sớm)
+            [ ! -s pending.txt ] && break
             
             APP_NAME=$(basename "$KHO_APP")
+            DEST_DIR="$THEOS/include/$APP_NAME"
             echo "🔍 Đang check kho: $APP_NAME"
             
-            # Tạo file tạm để đọc, tránh xung đột khi dùng sed xóa dòng
             cp pending.txt reading.txt
             
             while IFS= read -r NAME || [ -n "$NAME" ]; do
-              # Tìm file không phân biệt hoa thường (-iname)
+              # CHIÊU 1: Tìm khớp tuyệt đối (không phân biệt hoa thường)
               TARGET=$(find "$KHO_APP" -maxdepth 1 -iname "${NAME}.h" | head -n 1)
               
+              # CHIÊU 2: Nếu Chiêu 1 tịt, tìm theo từ khoá rộng (*NAME*.h)
+              if [ -z "$TARGET" ]; then
+                TARGET=$(find "$KHO_APP" -maxdepth 1 -iname "*${NAME}*.h" | head -n 1)
+              fi
+              
               if [ -n "$TARGET" ]; then
-                mkdir -p "$THEOS/include/$APP_NAME"
-                cp -f "$TARGET" "$THEOS/include/$APP_NAME/"
+                mkdir -p "$DEST_DIR"
+                cp -f "$TARGET" "$DEST_DIR/"
                 echo "  ✅ Đã khớp: $(basename "$TARGET")"
-                # Xóa khỏi danh sách chờ chính thức
-                sed -i '' "/^$NAME$/d" pending.txt
+                # Xoá khỏi danh sách chờ (Xoá chính xác cái dòng gốc trong file)
+                # Dùng grep để né lỗi sed với ký tự đặc biệt
+                grep -vi "^$NAME$" pending.txt > pending.tmp && mv pending.tmp pending.txt
               fi
             done < reading.txt
           done
 
-          # Tổng kết
+          # Tổng kết cuối buổi
           if [ -s pending.txt ]; then
-            echo "⚠️ CẢNH BÁO: Không tìm thấy các linh kiện sau trong bất kỳ kho nào:"
-            sed 's/$/.h/' pending.txt # Hiển thị lại đuôi .h cho dễ nhìn
-            # exit 1 # Nếu ông giáo muốn lỗi là dừng build luôn thì bỏ dấu # ở đầu dòng này
-          else
-            echo "🏁 Đã nhặt đủ hàng. Đóng kho!"
-          fi
-          # Tổng kết (Công đoạn 4)
-          if [ -s pending.txt ]; then
-            echo "❌ LỖI: Thiếu linh kiện quan trọng!"
-            cat pending.txt
-            exit 1  # <--- Dòng này sẽ bắt Workflow dừng hình ngay tại đây
+            echo "❌ LỖI: Vẫn thiếu các linh kiện sau:"
+            sed 's/$/.h/' pending.txt
+            exit 1
           else
             echo "🏁 Đã nhặt đủ hàng. Sẵn sàng build!"
           fi
