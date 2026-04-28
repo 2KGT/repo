@@ -21,7 +21,6 @@
 
 [![github/workflows](https://img.shields.io/badge/github-repo-blue?logo=github?style=for-the-badge)](https://2kgt.github.io/repo/)
 </p>
-
 <a href="https://github.com/2KGT/repo/actions">
         <img src="https://img.shields.io/github/actions/workflow/status/badges/shields/daily-tests.yml?label=daily%20tests"
             alt="Daily Tests Status"></a>
