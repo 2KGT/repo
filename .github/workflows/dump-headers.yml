@@ -71,23 +71,40 @@ jobs:
               fi
           done < bin_list.txt
 
-          # --- QUY TRÌNH PHÂN LOẠI HÀNG ---
-          CLASSES="${{ github.event.inputs.target_classes }}"
-          CONFIG="${{ github.event.inputs.config_path }}"
-          
-          # Ưu tiên đọc từ file headers.txt nếu input trống
-          if [ -z "$CLASSES" ] && [ -f "$CONFIG" ]; then
-              echo "📜 Đang giải mã thánh chỉ từ file: $CONFIG"
-              CLASSES=$(tr '\r\n' ' ' < "$CONFIG" | sed 's/\.h//g' | xargs)
+          # --- QUY TRÌNH PHÂN LUỒNG HÀNG HÓA (CHỐNG XUNG ĐỘT) ---
+          TARGET_CLASSES="${{ github.event.inputs.target_classes }}"
+          CONFIG_PATH="${{ github.event.inputs.config_path }}"
+          FINAL_LIST=""
+
+          # 1. ƯU TIÊN SỐ 1: Kiểm tra ô nhập Class trực tiếp
+          if [ -n "$TARGET_CLASSES" ]; then
+              echo "🎯 Nhận lệnh từ ô nhập tay: $TARGET_CLASSES"
+              FINAL_LIST="$TARGET_CLASSES"
+
+          # 2. ƯU TIÊN SỐ 2: Nếu ô nhập tay trống, kiểm tra file headers.txt
+          elif [ -n "$CONFIG_PATH" ] && [ -f "$CONFIG_PATH" ]; then
+              echo "📜 Ô nhập tay trống, đọc thánh chỉ từ file: $CONFIG_PATH"
+              # Xử lý file: lọc sạch rác, bỏ đuôi .h để lấy tên Class nguyên bản
+              FINAL_LIST=$(tr '\r\n' ' ' < "$CONFIG_PATH" | sed 's/\.h//g' | xargs)
+
+          # 3. TRƯỜNG HỢP CUỐI: Cả hai đều trống -> Xả lũ (Dump All)
+          else
+              echo "🌊 Cả hai nguồn lệnh đều trống -> Kích hoạt chế độ DUMP ALL!"
           fi
 
-          if [ -n "$CLASSES" ]; then
-              echo "🧺 Chế độ Lọc: Chỉ nhặt các Class theo yêu cầu..."
-              for CLS in $CLASSES; do
+          # --- THỰC THI NHẶT HÀNG ---
+          if [ -n "$FINAL_LIST" ]; then
+              echo "🧺 Đang nhặt hàng tinh nhuệ theo danh sách..."
+              for CLS in $FINAL_LIST; do
                   [ -z "$CLS" ] && continue
-                  # Nhặt mọi file liên quan đến Class đó (Delegate, Protocol con...)
+                  # Nhặt mọi file liên quan (Delegate, Cell, Protocol...)
                   find "$RAW_CACHE" -name "*$CLS*.h" -exec mv -f {} "$TARGET_DIR/" \; 2>/dev/null || true
               done
+          else
+              echo "🚜 Đang ủi phẳng toàn bộ kho đệm về Repo..."
+              find "$RAW_CACHE" -name "*.h" -exec mv -f {} "$TARGET_DIR/" \;
+          fi
+
           else
               echo "🌊 Chế độ Xả Lũ: Đổ toàn bộ 35k+ file về kho..."
               find "$RAW_CACHE" -name "*.h" -exec mv -f {} "$TARGET_DIR/" \;
