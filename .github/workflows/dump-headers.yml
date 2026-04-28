@@ -51,35 +51,45 @@ jobs:
           curl -L -A "Mozilla/5.0" "${{ github.event.inputs.ipa_url }}" -o app.ipa
           unzip -q app.ipa -d app_extracted
 
-      - name: ⚡ Khởi động Nhà Máy Dump
+      - name: ⚡ Khởi động Nhà Máy Dump (Full Force)
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           RAW_CACHE="raw_dump_cache"
           
+          # Dọn sân nhà trước khi làm việc
           [ "${{ github.event.inputs.clear_all }}" == "true" ] && rm -rf "$TARGET_DIR"
           mkdir -p "$TARGET_DIR" "$RAW_CACHE"
 
-          echo "🔍 Tìm kiếm Binary xịn..."
+          echo "🔍 Truy quét Binary thực thi..."
           find app_extracted/Payload -type f ! -name "*.*" ! -name "CodeResources" ! -name "PkgInfo" > bin_list.txt
           
           while read -r BIN; do
               if file "$BIN" | grep -q "Mach-O"; then
-                  echo "🧬 Đang bóc tách: $(basename "$BIN")"
+                  echo "🧬 Đang băm nát Binary: $(basename "$BIN")"
+                  # Đổ hết dầu thô vào RAW_CACHE
                   ipsw class-dump "$BIN" --headers -o "$RAW_CACHE" || true
               fi
           done < bin_list.txt
 
-          # Logic nhặt hàng
+          # --- QUY TRÌNH PHÂN LOẠI HÀNG ---
           CLASSES="${{ github.event.inputs.target_classes }}"
-          [ -z "$CLASSES" ] && [ -f "${{ github.event.inputs.config_path }}" ] && CLASSES=$(tr '\r\n' ' ' < "${{ github.event.inputs.config_path }}" | sed 's/\.h//g')
+          CONFIG="${{ github.event.inputs.config_path }}"
+          
+          # Ưu tiên đọc từ file headers.txt nếu input trống
+          if [ -z "$CLASSES" ] && [ -f "$CONFIG" ]; then
+              echo "📜 Đang giải mã thánh chỉ từ file: $CONFIG"
+              CLASSES=$(tr '\r\n' ' ' < "$CONFIG" | sed 's/\.h//g' | xargs)
+          fi
 
           if [ -n "$CLASSES" ]; then
-              echo "🧺 Đang nhặt hàng theo yêu cầu..."
+              echo "🧺 Chế độ Lọc: Chỉ nhặt các Class theo yêu cầu..."
               for CLS in $CLASSES; do
+                  [ -z "$CLS" ] && continue
+                  # Nhặt mọi file liên quan đến Class đó (Delegate, Protocol con...)
                   find "$RAW_CACHE" -name "*$CLS*.h" -exec mv -f {} "$TARGET_DIR/" \; 2>/dev/null || true
               done
           else
-              echo "🌊 Đang cưỡng chế đổ toàn bộ headers về kho..."
+              echo "🌊 Chế độ Xả Lũ: Đổ toàn bộ 35k+ file về kho..."
               find "$RAW_CACHE" -name "*.h" -exec mv -f {} "$TARGET_DIR/" \;
           fi
 
@@ -87,29 +97,33 @@ jobs:
         if: github.event.inputs.smart_filter == 'true'
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
-          cd "$TARGET_DIR"
-          echo "🧹 Đang dọn dẹp rác rưởi..."
-          find . -name "*.h" -type f -size -150c -delete
-          find . -name "*.h" | awk 'length > 110' | xargs rm -f 2>/dev/null
-          find . -name "*\$*" -delete
-          rm -f _Ttc* GUL* GCK* GAI* *.metadata.h 2>/dev/null
-          rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h 2>/dev/null
-          cd - > /dev/null
+          if [ -d "$TARGET_DIR" ]; then
+            cd "$TARGET_DIR"
+            echo "🧹 Đang thanh trừng rác rưởi để tối ưu bộ nhớ..."
+            find . -name "*.h" -type f -size -150c -delete
+            find . -name "*.h" | awk 'length > 110' | xargs rm -f 2>/dev/null
+            find . -name "*\$*" -delete
+            rm -f _Ttc* GUL* GCK* GAI* *.metadata.h 2>/dev/null
+            rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h 2>/dev/null
+            cd - > /dev/null
+          fi
 
       - name: 🩹 Vá lỗi Forward Declaration
         if: github.event.inputs.patch_headers == 'true'
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
-          echo "🩹 Đang dán giáp vá lỗi cho $(ls -1 "$TARGET_DIR" | wc -l) file..."
-          find "$TARGET_DIR" -name "*.h" -exec sed -i '' '1i\
-          @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
-          @protocol NSObject, NSCopying, NSCoding;
-          ' {} +
+          if [ -d "$TARGET_DIR" ]; then
+            echo "🩹 Đang dán giáp vá lỗi cho $(ls -1 "$TARGET_DIR" | wc -l) chiến binh..."
+            find "$TARGET_DIR" -name "*.h" -exec sed -i '' '1i\
+            @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
+            @protocol NSObject, NSCopying, NSCoding;
+            ' {} +
+          fi
 
-      - name: 🚀 Đẩy hàng về Repo
+      - name: 🚀 Đẩy hàng về Repo (Cưỡng chế)
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
           git add headers/
-          git commit -m "🚀 Factory: ${{ github.event.inputs.app_name }} updated" || exit 0
+          git commit -m "🚀 Factory Update: ${{ github.event.inputs.app_name }} [auto-process]" || exit 0
           git push
