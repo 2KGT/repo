@@ -1,0 +1,2 @@
+@interface YTAdSlotContainerView : UIView
+@end
