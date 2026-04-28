@@ -82,44 +82,90 @@ jobs:
       # =========================================================
       # CÔNG ĐOẠN 4: VẬN CHUYỂN HEADERS (CHỈ KHI CÓ ĐƠN)
       # =========================================================
-      - name: 🚛 Nhập kho Headers
+           - name: 🚛 Nhập kho Headers
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
-          if [ -f "$DIR/headers.txt" ]; then
-            rm -rf $THEOS/include/*
-            for KHO_APP in headers/*/; do
-              [ -d "$KHO_APP" ] || continue
-              APP_NAME=$(basename "$KHO_APP")
-              DEST_DIR="$THEOS/include/$APP_NAME"
-              mkdir -p "$DEST_DIR"
-              while IFS= read -r line || [ -n "$line" ]; do
-                FILE=$(echo "$line" | tr -d '\r' | xargs)
-                [ -z "$FILE" ] && continue
-                [[ "$FILE" != *.h ]] && FILE="${FILE}.h"
-                [ -f "$KHO_APP/$FILE" ] && cp -f "$KHO_APP/$FILE" "$DEST_DIR/"
-              done < "$DIR/headers.txt"
-              [ "$(ls -A "$DEST_DIR" 2>/dev/null)" ] || rm -rf "$DEST_DIR"
-            done
+          
+          # KIỂM TRA ĐIỀU KIỆN: Nếu không có đơn hàng thì nghỉ sớm
+          if [ ! -f "$DIR/headers.txt" ]; then
+            echo "🍃 Dự án không yêu cầu Headers riêng. Bỏ qua công đoạn này."
+            exit 0
+          fi
+          
+          echo "📦 Phát hiện headers.txt, bắt đầu nhập kho..."
+          
+          # Xoá sạch include cũ để tránh rác từ dự án trước (nếu cache)
+          rm -rf $THEOS/include/*
+          
+          # Quét qua từng folder trong kho headers/ (YouTubeHeader, v.v.)
+          for KHO_APP in headers/*/; do
+            [ -d "$KHO_APP" ] || continue
+            APP_NAME=$(basename "$KHO_APP")
+            
+            # Tạo folder con tương ứng trong include của Theos
+            DEST_DIR="$THEOS/include/$APP_NAME"
+            mkdir -p "$DEST_DIR"
+            
+            echo "📜 Đang bốc linh kiện cho $APP_NAME..."
+            while IFS= read -r line || [ -n "$line" ]; do
+              FILE=$(echo "$line" | tr -d '\r' | xargs)
+              [ -z "$FILE" ] && continue
+              
+              # Tự thêm đuôi .h nếu ông giáo viết thiếu trong file txt
+              [[ "$FILE" != *.h ]] && FILE="${FILE}.h"
+              
+              # Chỉ copy nếu file thực sự tồn tại trong kho
+              if [ -f "$KHO_APP/$FILE" ]; then
+                cp -f "$KHO_APP/$FILE" "$DEST_DIR/"
+                echo "  + Đã nhặt: $FILE"
+              else
+                echo "  - Cảnh báo: Thiếu file $FILE trong $KHO_APP"
+              fi
+            done < "$DIR/headers.txt"
+          done
           fi
 
       # =========================================================
       # CÔNG ĐOẠN 5: THỰC THI BUILD
       # =========================================================
-      - name: 🔨 Build Package
+           - name: 🔨 Thực thi Build DEB
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           DYNAMIC_INCLUDES=""
+
+          # ĐIỀU KIỆN: Chỉ thiết lập đường dẫn động khi dự án có yêu cầu headers
           if [ -f "$DIR/headers.txt" ]; then
-            for d in $THEOS/include/*/; do [ -d "$d" ] && DYNAMIC_INCLUDES="$DYNAMIC_INCLUDES -I$d"; done
+            echo "🎯 Dự án yêu cầu linh kiện ngoài, đang trỏ đường dẫn vào xưởng..."
+            # Trỏ vào gốc include để hỗ trợ cấu trúc #import "App/File.h"
+            DYNAMIC_INCLUDES="-I$THEOS/include"
+            
+            # Kiểm kê nhanh xem hàng đã nằm đúng chỗ chưa
+            echo "📦 Kiểm tra kho hàng thực tế tại include/:"
+            ls -R $THEOS/include | head -n 15
+          else
+            echo "🍃 Dự án build tự thân, không dùng linh kiện ngoài."
           fi
+
+          echo "🚀 Khởi động Compiler..."
+          
+          # Thực hiện lệnh build với các cờ tối ưu
           make -C "$DIR" package FINALPACKAGE=1 TARGET=iphone:clang:14.5:14.5 \
-            ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -DTHEOS_LEAN_AND_MEAN $DYNAMIC_INCLUDES -I$THEOS/include"
-          mkdir -p deb_output && cp "$DIR/packages/"*.deb deb_output/
+            ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -DTHEOS_LEAN_AND_MEAN $DYNAMIC_INCLUDES"
+          
+          # Gom hàng thành phẩm về một mối
+          mkdir -p deb_output
+          if ls "$DIR/packages/"*.deb 1> /dev/null 2>&1; then
+            cp "$DIR/packages/"*.deb deb_output/
+            echo "✅ Đã đóng gói xong file .deb"
+          else
+            echo "❌ Lỗi: Không tìm thấy file .deb sau khi build!"
+            exit 1
+          fi
 
       # =========================================================
       # CÔNG ĐOẠN 6: QUÉT DẤU # TRONG CODE -> ĐÚC JSON -> ĐỒNG BỘ
       # =========================================================
-      - name: 🚀 Quét # & Đồng bộ Repo
+     - name: 🚀 Quét # & Đồng bộ Repo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
@@ -129,6 +175,7 @@ jobs:
           JSON_PATH="depictions/${SAFE}.json"
           IMG_BASE="${{ env.BASE_URL }}/depictions/images"
           
+          # 1. Quét mô tả từ dấu # trong code
           SRC_FILE=$(find "$DIR" -name "*.x" -o -name "*.xm" | head -n 1)
           DESC_CONTENT="Phiên bản $SAFE từ 2KGT Repo."
           if [ -n "$SRC_FILE" ]; then
@@ -136,43 +183,46 @@ jobs:
             [ -n "$EXTRACTED" ] && DESC_CONTENT="$EXTRACTED"
           fi
 
+          # 2. Đúc JSON (Chia làm 3 phần để kiểm soát dấu phẩy Screenshots)
           mkdir -p depictions
-          cat <<EOF > "$JSON_PATH"
-          {
-            "class": "DepictionTabView",
-            "tabs": [
-              {
-                "tabname": "Details",
-                "class": "DepictionStackView",
-                "views": [
-                  { "class": "DepictionHeaderView", "title": "$SAFE" },
-                  { "class": "DepictionImageView", "url": "$IMG_BASE/${SAFE}-banner.png", "width": 1242, "height": 500, "cornerRadius": 10 },
-                  {
-                    "class": "DepictionScreenshotsView",
-                    "itemCornerRadius": 8,
-                    "screenshots": [
-          EOF
           
+          # --- Phần đầu JSON ---
+          echo '{
+  "class": "DepictionTabView",
+  "tabs": [
+    {
+      "tabname": "Details",
+      "class": "DepictionStackView",
+      "views": [
+        { "class": "DepictionHeaderView", "title": "'$SAFE'" },
+        { "class": "DepictionImageView", "url": "'$IMG_BASE/${SAFE}-banner.png'", "width": 1242, "height": 500, "cornerRadius": 10 },
+        {
+          "class": "DepictionScreenshotsView",
+          "itemCornerRadius": 8,
+          "screenshots": [' > "$JSON_PATH"
+
+          # --- Phần quét Screenshots ---
           FIRST=true
           for i in {1..5}; do
             if [ -f "depictions/images/${SAFE}${i}.png" ]; then
               [ "$FIRST" = true ] && FIRST=false || echo "," >> "$JSON_PATH"
-              echo "            { \"url\": \"$IMG_BASE/${SAFE}${i}.png\" }" >> "$JSON_PATH"
+              echo '            { "url": "'$IMG_BASE/${SAFE}${i}.png'" }' >> "$JSON_PATH"
             fi
           done
+
+          # --- Phần đuôi JSON (Chứa Video + Markdown) ---
+          echo '          ]
+        },
+        { "class": "DepictionVideoView", "videoURL": "'$IMG_BASE/${SAFE}.mp4'", "cornerRadius": 8 },
+        { "class": "DepictionMarkdownView", "markdown": "'$DESC_CONTENT'", "useMargins": true }
+      ]
+    }
+  ]
+}' >> "$JSON_PATH"
           
-          cat <<EOF >> "$JSON_PATH"
-                    ]
-                  },
-                  { "class": "DepictionVideoView", "videoURL": "$IMG_BASE/${SAFE}.mp4", "cornerRadius": 8 },
-                  { "class": "DepictionMarkdownView", "markdown": "$DESC_CONTENT", "useMargins": true }
-                ]
-              }
-            ]
-          }
-          EOF
-          
+          # 3. Đồng bộ ngược về Repo
           git add src/build-tweaks/ depictions/
+          
           if [ "${{ github.event.inputs.publish }}" == "true" ]; then
             mkdir -p debs && cp deb_output/*.deb debs/
             dpkg-scanpackages -m debs /dev/null > Packages && bzip2 -fks Packages
@@ -181,6 +231,7 @@ jobs:
           else
             MSG="🛠️ Build: $SAFE v${{ steps.metadata.outputs.proj_ver }}"
           fi
+          
           git commit -m "$MSG" || exit 0
           git push origin main
 
@@ -189,3 +240,4 @@ jobs:
         with:
           name: ${{ steps.metadata.outputs.safe_name }}_v${{ steps.metadata.outputs.proj_ver }}
           path: deb_output/*.deb
+
