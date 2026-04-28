@@ -1,0 +1,77 @@
+name: 🏭 Refinery - Lò Tinh Luyện Header
+
+on:
+  workflow_dispatch:
+    inputs:
+      ipa_url:
+        description: 'Dán Link IPA vào đây (hoặc để trống nếu đã có file)'
+        required: false
+        default: ''
+
+jobs:
+  refine_process:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: 📥 Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: 🏗️ Setup Tools (Dao mổ)
+        run: |
+          brew install blacktop/tap/ipsw
+          # Tạo sẵn cấu trúc lò nếu chưa có
+          mkdir -p src/refinery/scripts
+          mkdir -p src/refinery/staging/headers
+          mkdir -p headers-repo/YouTube
+
+      - name: 🚚 Bốc vác anh Bin (Input)
+        run: |
+          # Nếu có link IPA thì tải về, không thì báo lỗi
+          if [ "${{ github.event.inputs.ipa_url }}" != "" ]; then
+            curl -L "${{ github.event.inputs.ipa_url }}" -o app.ipa
+          fi
+          
+          # Trích xuất file cứng (Framework quan trọng nhất)
+          # Ông giáo có thể đổi tên Framework nếu muốn mổ nhánh khác
+          ipsw archive extract app.ipa -f "Frameworks/YouTubeCore.framework/YouTubeCore" -o src/refinery/staging/
+          
+      - name: 🔪 Mổ xẻ (The Dump)
+        run: |
+          # Băm cứng đầu lấy Header thô
+          ipsw class-dump src/refinery/staging/YouTubeCore -o src/refinery/staging/headers --headers
+
+      - name: 🥩 Lọc xương (The Refinery Logic)
+        run: |
+          # Chạy script lọc xương trực tiếp tại đây cho tiện (Mobile đỡ phải tạo nhiều file)
+          RAW_DIR="src/refinery/staging/headers"
+          OUT_DIR="headers-repo/YouTube"
+          
+          find "$RAW_DIR" -type f -name "*.h" | while read -r file; do
+            filename=$(basename "$file")
+            
+            # Xoá import nội bộ, giữ lại import hệ thống
+            sed -i '' -E '/#import ".*"/d; /#include ".*"/d' "$file"
+            
+            # Tiêm forward declaration để "bắc cầu"
+            echo -e "@class NSString, NSArray, NSDictionary, UIView, UIViewController, NSData;\n$(cat "$file")" > "$file"
+            
+            # Đưa hàng sạch về kho ngoài Root
+            mv "$file" "$OUT_DIR/$filename"
+          done
+
+      - name: 🎁 Nhập kho (Push to Repo)
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add headers-repo/
+          git commit -m "🥩 Refinery: Đã lọc xong nạc cho YouTube ($(date +'%Y-%m-%d'))" || exit 0
+          git push
+
+      - name: 🗑️ Dọn rác (-rf)
+        if: always()
+        run: |
+          rm -rf src/refinery/staging/
+          rm -f app.ipa
+          echo "🧹 Xưởng đã sạch sẽ, chỉ còn lại nạc trong kho!"
