@@ -60,79 +60,82 @@ jobs:
           curl -L -A "Mozilla/5.0" "$IPA_LINK" -o app.ipa
           unzip -q app.ipa -d app_extracted
 
-      - name: ⚡ Smart Dumping & Kinship Scouting Logic
+      - name: ⚡ Chiến Thuật Chu Di Tam Tộc (The Kinship Hunter)
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           TEMP_DUMP="temp_headers"
           mkdir -p "$TARGET_DIR" "$TEMP_DUMP"
 
-          # 1. LẬP BẢN ĐỒ BINARY (Tìm tất cả file thực thi)
-          echo "🔍 Đang rà soát hang ổ..."
+          # 1. LẬP BẢN ĐỒ BINARY (Dò tìm hang ổ phản tặc)
           find app_extracted/Payload -type f ! -name "*.*" > bin_list.txt
 
-          # 2. XỬ LÝ DANH SÁCH "ĐẦU NẬU"
+          # 2. ĐỌC CHIẾU CHỈ (Lấy danh sách từ headers.txt)
           CLASSES="${{ github.event.inputs.target_classes }}"
           CONFIG="${{ github.event.inputs.config_path }}"
           if [ -z "$CLASSES" ] && [ -f "$CONFIG" ]; then
+              echo "📜 Đang đọc chiếu chỉ từ dự án: $CONFIG"
               CLASSES=$(tr '\r\n' ' ' < "$CONFIG" | sed 's/\.h//g')
           fi
 
-                  # 3. CHIẾN THUẬT "HỐT CẢ HỌ HÀNG" (Dùng Regex để bắt trọn gia phả)
+          # 3. THỰC THI CHU DI (Săn lùng dòng họ)
           if [ -n "$CLASSES" ]; then
-              echo "🎯 Bắt đầu chiến dịch săn lùng theo dòng họ..."
               for CLS in $CLASSES; do
                   [ -z "$CLS" ] && continue
                   
-                  # Regex này sẽ khớp: Class, ClassDelegate, ClassManager, ClassCell...
-                  KINSHIP_REGEX="${CLS}.*"
-                  echo "🔎 Đang truy quét dòng họ: $KINSHIP_REGEX"
+                  # Nếu bật Deep Scan (Ân xá file con), dùng Regex bắt cả họ. 
+                  # Nếu tắt, chỉ bắt đúng thằng đầu sỏ.
+                  if [ "${{ github.event.inputs.deep_scan }}" == "true" ]; then
+                      KINSHIP_REGEX="${CLS}.*"
+                      echo "⚔️ Đang chu di dòng họ: $KINSHIP_REGEX"
+                  else
+                      KINSHIP_REGEX="^${CLS}$"
+                      echo "🎯 Chỉ trảm đầu sỏ: $CLS"
+                  fi
                   
                   while read -r BIN; do
-                      # Dùng objc dump để lấy nội dung - cách này lách lỗi Cache tốt nhất
-                      # Nó sẽ tuôn toàn bộ cấu trúc của những thằng cùng họ ra Terminal
+                      # Dùng objc dump để trích xuất cấu trúc Obj-C sạch sẽ
                       ipsw objc dump "$BIN" --class "$KINSHIP_REGEX" > "$TEMP_DUMP/${CLS}_family_raw.h" 2>/dev/null || true
                   done < bin_list.txt
               done
           else
-              echo "🌊 Dump All mode..."
+              echo "🌊 Lệnh tổng lực: Càn quét không chừa một ai..."
               while read -r BIN; do
                   ipsw class-dump "$BIN" --headers -o "$TEMP_DUMP" || true
               done < bin_list.txt
           fi
 
-          # 4. VÒNG LỌC TỐ CHẤT & "XẺ THỊT" GIA PHẢ
-          echo "🏘️ Đang xẻ nhỏ gia phả và kiểm tra tố chất..."
+          # 4. VÒNG LỌC ÂN XÁ (Lọc tố chất & Nhốt vào kho)
+          echo "🧐 Đang sàng lọc: Thằng nào ngoan thì cho về kho, rác thì trảm..."
           
-          # Vì lệnh objc dump có thể nhét nhiều class vào 1 file raw, 
-          # ta dùng chiêu này để tách chúng ra hoặc giữ nguyên nếu ông giáo thích "gộp"
-          find "$TEMP_DUMP" -name "*_family_raw.h" -type f | while read -r RAW_FILE; do
-              if [ -s "$RAW_FILE" ]; then
-                  # Kiểm tra xem có ruột gan gì không
-                  if grep -qE "@interface|@protocol" "$RAW_FILE"; then
-                      # Chuyển về kho chính với tên sạch sẽ
-                      FINAL_NAME=$(basename "$RAW_FILE" _raw.h).h
-                      mv -f "$RAW_FILE" "$TARGET_DIR/$FINAL_NAME"
-                      echo "✅ Đã xích được dòng họ: $FINAL_NAME"
-                  else
-                      rm -f "$RAW_FILE"
-                  fi
+          find "$TEMP_DUMP" -name "*.h" -type f | while read -r FILE; do
+              # Điều kiện ân xá: File không rỗng và có chứa code Obj-C thực thụ
+              if [ -s "$FILE" ] && grep -qE "@interface|@protocol" "$FILE"; then
+                  # Chỉnh sửa tên file cho ngay ngắn trước khi nhốt vào kho
+                  FINAL_NAME=$(basename "$FILE" _raw.h).h
+                  mv -f "$FILE" "$TARGET_DIR/$FINAL_NAME"
+                  echo "✅ Ân xá nhập tịch: $FINAL_NAME"
               else
-                  rm -f "$RAW_FILE"
+                  # Rác rưởi hoặc file trắng thì trảm ngay
+                  rm -f "$FILE"
               fi
           done
 
+          # 5. DÁN GIÁP & SMART FILTER (Bước dọn dẹp cuối cùng)
+          if [ "${{ github.event.inputs.patch_headers }}" == "true" ]; then
+              find "$TARGET_DIR" -name "*.h" -exec sed -i '' '1i\
+              @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
+              @protocol NSObject, NSCopying, NSCoding;
+              ' {} +
+          fi
 
-          # 5. DÁN GIÁP & SMART FILTER (Giữ nguyên logic cũ nhưng gắt hơn)
-          find "$TARGET_DIR" -name "*.h" -exec sed -i '' '1i\
-          @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
-          @protocol NSObject, NSCopying, NSCoding;
-          ' {} +
-
-          # Xóa rác hệ thống phát sinh do dump cụm
-          cd "$TARGET_DIR"
-          rm -f NSObject-Protocol.h NSCopying-Protocol.h 2>/dev/null
-          find . -name "*.h" | awk 'length > 120' | xargs rm -f 2>/dev/null
-          cd - > /dev/null
+          # Sàng lọc rác hệ thống (Trảm nốt những thằng trà trộn)
+          if [ "${{ github.event.inputs.smart_filter }}" == "true" ]; then
+              cd "$TARGET_DIR"
+              rm -f NSObject-Protocol.h NSCopying-Protocol.h 2>/dev/null
+              # Loại những file tên quá dài (thường là lỗi dump của Swift)
+              find . -name "*.h" | awk 'length > 120' | xargs rm -f 2>/dev/null
+              cd - > /dev/null
+          fi
 
           rm -rf "$TEMP_DUMP" app_extracted bin_list.txt
-          echo "📦 Kho hàng tinh nhuệ: $(ls -1 "$TARGET_DIR" | wc -l) file."
+          echo "📦 Kho hàng chu di hiện có: $(ls -1 "$TARGET_DIR" | wc -l) file tinh nhuệ."
