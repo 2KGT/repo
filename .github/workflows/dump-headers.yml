@@ -81,22 +81,22 @@ jobs:
               fi
           fi
 
-                          # 3. THỰC THI DUMP (Bản chính quy: Dùng Regex để lách mọi biến số)
+                      # 3. THỰC THI DUMP (Bản thực chiến: Gắp từng Class vào file lẻ)
           if [ -n "$CLASSES" ]; then
-              # Biến danh sách "A B C" thành "A|B|C" để ipsw hiểu là Regex
-              CLASS_REGEX=$(echo "$CLASSES" | sed 's/ /|/g')
-              echo "🎯 Đang băm nhóm Class: $CLASS_REGEX"
+              # Tìm đúng file thực thi của App
+              APP_BIN=$(find app_extracted/Payload -name "*.app" -exec find {} -maxdepth 1 -type f -executable \; | head -n 1)
+              echo "🎯 Đang băm Class từ: $APP_BIN"
               
-              # Dùng cờ --class đi kèm --headers và -o (Cú pháp chuẩn nhất của ipsw)
-              ipsw class-dump "app_extracted/Payload/${{ github.event.inputs.app_name }}.app/$(basename "app_extracted/Payload/"*.app .app)" \
-                --headers \
-                --class "$CLASS_REGEX" \
-                -o "$TEMP_DUMP"
+              for CLS in $CLASSES; do
+                  [ -z "$CLS" ] && continue
+                  echo "🎯 Gắp Class: $CLS"
+                  # class-dump không có --headers sẽ in ra stdout, ta hứng nó vào file
+                  ipsw class-dump "$APP_BIN" --class "$CLS" > "$TEMP_DUMP/$CLS.h"
+              done
           else
               echo "🌊 Dump All: Đang bóc toàn bộ Header..."
-              ipsw class-dump "app_extracted/Payload/${{ github.event.inputs.app_name }}.app/$(basename "app_extracted/Payload/"*.app .app)" \
-                --headers \
-                -o "$TEMP_DUMP"
+              APP_BIN=$(find app_extracted/Payload -name "*.app" -exec find {} -maxdepth 1 -type f -executable \; | head -n 1)
+              ipsw class-dump "$APP_BIN" --headers -o "$TEMP_DUMP"
           fi
 
 
