@@ -46,10 +46,20 @@ jobs:
           curl -L -A "Mozilla/5.0" "${{ github.event.inputs.ipa_url }}" -o app.ipa
           unzip -q app.ipa -d app_extracted
 
-      - name: ⚡ Vận hành dây chuyền Dump
+      - name: ⚡ Vận hành dây chuyền Dump (Bản vá lỗi mất hàng)
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
           RAW_CACHE="raw_dump_cache"
+          mkdir -p "$TARGET_DIR" "$RAW_CACHE"
+
+          # ... (Đoạn chạy ipsw giữ nguyên) ...
+
+          echo "🚜 Đang quét sâu và hốt hàng từ mọi ngõ ngách..."
+          # Dùng lệnh find để tìm tất cả file .h bất kể nó nằm sâu đến đâu trong cache
+          find "$RAW_CACHE" -type f -name "*.h" -exec cp -f {} "$TARGET_DIR/" \;
+          
+          echo "📊 Kiểm kê nhanh: Kho hiện có $(ls "$TARGET_DIR" | wc -l) linh kiện."
+
           
           # 🧨 Xử lý công tắc Dọn kho
           [ "${{ github.event.inputs.clean_warehouse }}" == "true" ] && rm -rf "$TARGET_DIR"
