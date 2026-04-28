@@ -32,9 +32,12 @@ jobs:
 
       - name: 🔪 Mổ xẻ mục tiêu (Sniper Dump)
         run: |
-          # Thay vì --headers (lấy tất), ta dùng --class để chỉ lấy những thằng có tên chứa "YT"
-          # Cách này nhẹ hơn 90%, không bao giờ bị dính lỗi 9 hay 11
+          # 1. Chỉ mổ những Class có tiền tố "YT" để tránh tràn RAM
+          # 2. Dùng --objc để bỏ qua các thành phần Swift/C++ nặng nề
           ipsw class-dump src/refinery/staging/YouTube -o src/refinery/staging/headers --headers --objc --class "YT"
+          
+          # 3. Kiểm tra xem đã có nạc chưa
+          ls -R src/refinery/staging/headers | head -n 20
 
 
       - name: 🥩 Lọc xương (Refinery Logic)
