@@ -3,7 +3,25 @@
 // =============================================================
 // PHẦN 1: KHAI BÁO GIAO DIỆN (INTERFACE)
 // Ta tự định nghĩa vỏ Class để Compiler không bắt bẻ khi thiếu file .h
-// =============================================================
+// ============================================================
+
+// 1. Khai báo danh tính (Forward Declaration)
+// Cứ khai báo thế này, Compiler sẽ không đi tìm file .h nữa
+@class YTMEThumbnailPickerViewController;
+
+// 2. Nếu ông giáo muốn hook vào nó
+%hook YTMEThumbnailPickerViewController
+
+- (void)viewDidLoad {
+    %orig;
+    NSLog(@"🎯 Đã tóm được em Thumbnail Picker!");
+    
+    // Nếu muốn đổi màu hay ẩn hiện thì ép kiểu UIView cho nhanh
+    UIView *selfView = (UIView *)self.view;
+    [selfView setBackgroundColor:[UIColor redColor]];
+}
+
+%end
 
 @interface YTAdSlotContainerView : UIView
 @end
