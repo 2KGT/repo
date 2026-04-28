@@ -26,19 +26,16 @@ jobs:
       contents: write
     steps:
       # =========================================================
-      # CÔNG ĐOẠN 1: KHỞI TẠO HỆ THỐNG
+      # CÔNG ĐOẠN 1-2: KHỞI TẠO HỆ THỐNG & THEOS
       # =========================================================
       - name: 📥 Checkout & Setup
         uses: actions/checkout@v4
 
-      - name: 🛠️ Cài đặt công cụ
+      - name: 🛠️ Setup Tools
         run: |
           brew install make ldid dpkg
           echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
 
-      # =========================================================
-      # CÔNG ĐOẠN 2: THIẾT LẬP THEOS
-      # =========================================================
       - name: 🧠 Cache & Setup Theos
         id: cache-theos
         uses: actions/cache@v4
@@ -59,25 +56,23 @@ jobs:
           mkdir -p $THEOS/include
 
       # =========================================================
-      # CÔNG ĐOẠN 3: ĐỊNH VỊ & GÁN NHÃN ICON/DEPICTION
+      # CÔNG ĐOẠN 3: ĐỊNH VỊ & DÁN NHÃN ĐỘNG (CONTROL)
       # =========================================================
       - name: 🎯 Gán nhãn Icon & Metadata
         id: metadata
         run: |
           PROJ_NAME="${{ github.event.inputs.project }}"
           [ "$PROJ_NAME" = "(none)" ] && exit 1
-          
           CTRL=$(grep -lE "^Name:.*$PROJ_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$(grep "^Version:" "$CTRL" | cut -d' ' -f2)" || echo "$(grep "^Version:" "$CTRL" | cut -d' ' -f2)-test$(date +%H%M)")
           
+          # Gán cứng link Raw cho Icon và Depiction
           sed -i '' "/^Icon:/d" "$CTRL"
           sed -i '' "/^SileoDepiction:/d" "$CTRL"
-          
           echo "Icon: ${{ env.BASE_URL }}/icons/${SAFE}.png" >> "$CTRL"
           echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
-          
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
           
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
@@ -91,24 +86,22 @@ jobs:
       - name: 🚛 Nhập kho Headers
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
-          if [ ! -f "$DIR/headers.txt" ]; then
-              echo "🍃 Không có đơn hàng headers.txt. Bỏ qua."
-              exit 0
+          if [ -f "$DIR/headers.txt" ]; then
+              rm -rf $THEOS/include/*
+              for KHO_APP in headers/*/; do
+                  [ -d "$KHO_APP" ] || continue
+                  APP_NAME=$(basename "$KHO_APP")
+                  DEST_DIR="$THEOS/include/$APP_NAME"
+                  mkdir -p "$DEST_DIR"
+                  while IFS= read -r line || [ -n "$line" ]; do
+                      FILE=$(echo "$line" | tr -d '\r' | xargs)
+                      [ -z "$FILE" ] && continue
+                      [[ "$FILE" != *.h ]] && FILE="${FILE}.h"
+                      [ -f "$KHO_APP/$FILE" ] && cp -f "$KHO_APP/$FILE" "$DEST_DIR/"
+                  done < "$DIR/headers.txt"
+                  [ "$(ls -A "$DEST_DIR" 2>/dev/null)" ] || rm -rf "$DEST_DIR"
+              done
           fi
-          rm -rf $THEOS/include/*
-          for KHO_APP in headers/*/; do
-              [ -d "$KHO_APP" ] || continue
-              APP_NAME=$(basename "$KHO_APP")
-              DEST_DIR="$THEOS/include/$APP_NAME"
-              mkdir -p "$DEST_DIR"
-              while IFS= read -r line || [ -n "$line" ]; do
-                  FILE=$(echo "$line" | tr -d '\r' | xargs)
-                  [ -z "$FILE" ] && continue
-                  [[ "$FILE" != *.h ]] && FILE="${FILE}.h"
-                  [ -f "$KHO_APP/$FILE" ] && cp -f "$KHO_APP/$FILE" "$DEST_DIR/"
-              done < "$DIR/headers.txt"
-              [ "$(ls -A "$DEST_DIR" 2>/dev/null)" ] || rm -rf "$DEST_DIR"
-          done
 
       # =========================================================
       # CÔNG ĐOẠN 5: THỰC THI BUILD
@@ -118,26 +111,37 @@ jobs:
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           DYNAMIC_INCLUDES=""
           if [ -f "$DIR/headers.txt" ]; then
-              for d in $THEOS/include/*/; do
-                  [ -d "$d" ] && DYNAMIC_INCLUDES="$DYNAMIC_INCLUDES -I$d"
-              done
+              for d in $THEOS/include/*/; do [ -d "$d" ] && DYNAMIC_INCLUDES="$DYNAMIC_INCLUDES -I$d"; done
           fi
           make -C "$DIR" package FINALPACKAGE=1 TARGET=iphone:clang:14.5:14.5 \
             ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -DTHEOS_LEAN_AND_MEAN $DYNAMIC_INCLUDES -I$THEOS/include"
           mkdir -p deb_output && cp "$DIR/packages/"*.deb deb_output/
 
       # =========================================================
-      # CÔNG ĐOẠN 6: ĐÚC NHÃN JSON & ĐỒNG BỘ NGƯỢC
+      # CÔNG ĐOẠN 6: QUÉT DẤU # TRONG CODE -> ĐÚC JSON -> ĐỒNG BỘ
       # =========================================================
-      - name: 🚀 Đúc nhãn & Đồng bộ Repo
+      - name: 🚀 Quét # & Đồng bộ Repo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           
+          DIR="${{ steps.metadata.outputs.proj_dir }}"
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           JSON_PATH="depictions/${SAFE}.json"
           IMG_BASE="${{ env.BASE_URL }}/depictions/images"
           
+          # --- ⚡ LOGIC QUÉT MỌI DÒNG BẮT ĐẦU BẰNG DẤU # ---
+          echo "🔍 Đang tự động thu thập chú thích # từ code..."
+          # Tìm file nguồn .x hoặc .xm
+          SRC_FILE=$(find "$DIR" -name "*.x" -o -name "*.xm" | head -n 1)
+          
+          DESC_CONTENT="Phiên bản $SAFE từ 2KGT Repo."
+          if [ -n "$SRC_FILE" ]; then
+              # Lấy tất cả các dòng bắt đầu bằng #, xóa dấu # và khoảng trắng thừa
+              EXTRACTED=$(grep "^#" "$SRC_FILE" | sed 's/^#//;s/^ //' | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
+              [ -n "$EXTRACTED" ] && DESC_CONTENT="$EXTRACTED"
+          fi
+
           mkdir -p depictions
           cat <<EOF > "$JSON_PATH"
 {
@@ -148,11 +152,7 @@ jobs:
       "class": "DepictionStackView",
       "views": [
         { "class": "DepictionHeaderView", "title": "$SAFE" },
-        {
-          "class": "DepictionImageView",
-          "url": "$IMG_BASE/${SAFE}-banner.png",
-          "width": 1242, "height": 500, "cornerRadius": 10
-        },
+        { "class": "DepictionImageView", "url": "$IMG_BASE/${SAFE}-banner.png", "width": 1242, "height": 500, "cornerRadius": 10 },
         {
           "class": "DepictionScreenshotsView",
           "itemCornerRadius": 8,
@@ -168,22 +168,18 @@ EOF
           cat <<EOF >> "$JSON_PATH"
           ]
         },
-        {
-          "class": "DepictionVideoView",
-          "videoURL": "$IMG_BASE/${SAFE}.mp4",
-          "cornerRadius": 8
-        }
+        { "class": "DepictionVideoView", "videoURL": "$IMG_BASE/${SAFE}.mp4", "cornerRadius": 8 },
+        { "class": "DepictionMarkdownView", "markdown": "$DESC_CONTENT", "useMargins": true }
       ]
     }
   ]
 }
 EOF
+          # Đồng bộ ngược
           git add src/build-tweaks/ depictions/
           if [ "${{ github.event.inputs.publish }}" == "true" ]; then
-              mkdir -p debs
-              cp deb_output/*.deb debs/
-              dpkg-scanpackages -m debs /dev/null > Packages
-              bzip2 -fks Packages
+              mkdir -p debs && cp deb_output/*.deb debs/
+              dpkg-scanpackages -m debs /dev/null > Packages && bzip2 -fks Packages
               git add debs/ Packages Packages.bz2
               MSG="🌟 Release: $SAFE v${{ steps.metadata.outputs.proj_ver }}"
           else
@@ -192,7 +188,7 @@ EOF
           git commit -m "$MSG" || exit 0
           git push origin main
 
-      - name: 📦 Xuất xưởng file .deb
+      - name: 📦 Xuất xưởng
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.metadata.outputs.safe_name }}_v${{ steps.metadata.outputs.proj_ver }}
