@@ -23,7 +23,7 @@
         <img src="https://img.shields.io/github/actions/workflow/status/badges/shields/daily-tests.yml?label=daily%20tests"
 
 alt="workflows"></a>
-[![workflows](https://github.com/2KGT/repo/actions/workflows/build-tweaks.yml/badge.svg)(https://github.com/2KGT/repo/tree/main/.github/workflows)
+[![workflows](https://github.com/2KGT/repo/tree/main/.github/workflows/badge.svg)(
 ---
 
 ## 🛠️ Chi tiết các Tweak nổi bật
