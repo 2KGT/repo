@@ -8,12 +8,12 @@ on:
         required: true
         type: string
       app_name:
-        description: '📁 Thư mục lưu'
+        description: '📁 Thư mục lưu heards'
         required: true
         default: 'YouTubeHeader'
         type: string
       target_classes:
-        description: '🎯 Nhập Class thêm cách'
+        description: '🎯 Nhập tên class heards'
         required: false
         type: string
       config_path:
@@ -25,7 +25,7 @@ on:
         type: boolean
         default: true
       deep_scan:
-        description: '📂 Deep Scan: Vét sạch file trong thư mục con'
+        description: '📂 Deep Scan cả file con'
         type: boolean
         default: true
       smart_filter:
