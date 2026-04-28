@@ -60,16 +60,26 @@ jobs:
           curl -L -A "Mozilla/5.0" "$IPA_LINK" -o app.ipa
           unzip -q app.ipa -d app_extracted
 
-      - name: ⚡ Chiến Thuật Chu Di Tam Tộc (The Kinship Hunter)
+      - name: ⚡ Smart Dumping & Master Filtering
         run: |
           TARGET_DIR="headers/${{ github.event.inputs.app_name }}"
+          ALL_DUMP_DIR="full_dump_cache"
           TEMP_DUMP="temp_headers"
-          mkdir -p "$TARGET_DIR" "$TEMP_DUMP"
+          
+          # 1. KHỞI TẠO & DỌN SÂN
+          [ "${{ github.event.inputs.clear_all }}" == "true" ] && rm -rf "$TARGET_DIR"
+          mkdir -p "$TARGET_DIR" "$ALL_DUMP_DIR" "$TEMP_DUMP"
 
-          # 1. LẬP BẢN ĐỒ BINARY (Dò tìm hang ổ phản tặc)
+          # 2. ĐỔ HÀNG VÀO KHO ĐỆM (Bắt buộc phải có bước này)
+          echo "🌊 Đang đổ toàn bộ Header vào kho đệm trên máy ảo..."
           find app_extracted/Payload -type f ! -name "*.*" > bin_list.txt
+          while read -r BIN; do
+              echo "🧬 Đang bóc tách: $(basename "$BIN")"
+              # Dump sạch sẽ vào ALL_DUMP_DIR
+              ipsw class-dump "$BIN" --headers -o "$ALL_DUMP_DIR" || true
+          done < bin_list.txt
 
-          # 2. ĐỌC CHIẾU CHỈ (Lấy danh sách từ headers.txt)
+          # 3. ĐỌC CHIẾU CHỈ
           CLASSES="${{ github.event.inputs.target_classes }}"
           CONFIG="${{ github.event.inputs.config_path }}"
           if [ -z "$CLASSES" ] && [ -f "$CONFIG" ]; then
@@ -77,38 +87,23 @@ jobs:
               CLASSES=$(tr '\r\n' ' ' < "$CONFIG" | sed 's/\.h//g')
           fi
 
-                    # 3. GIAI ĐOẠN "NHẶT VÀ LỌC" (Bản Fix Mắt Thần)
+          # 4. CHIẾN THUẬT NHẶT HÀNG (Mắt Thần)
           echo "🧺 Bot đang đi lục soát kho đệm..."
-          
-          # Đảm bảo CLASSES không bị dính ký tự lạ
-          CLEAN_CLASSES=$(echo $CLASSES | sed 's/\*/ /g') # Xử lý nếu ông giáo nhập dấu *
+          CLEAN_CLASSES=$(echo $CLASSES | sed 's/\*/ /g')
 
           if [ -n "$CLEAN_CLASSES" ]; then
               for CLS in $CLEAN_CLASSES; do
                   [ -z "$CLS" ] && continue
                   echo "🔎 Truy quét mục tiêu: $CLS"
-                  
-                  # CHƯƠNG TRÌNH NHẶT HÀNG ĐA TẦNG:
-                  # Tìm tất cả file .h bắt đầu bằng tên Class hoặc có chứa tên Class
-                  # Dùng -ipath để lục tung cả thư mục con
-                  FOUND_FILES=$(find "$ALL_DUMP_DIR" -type f -name "*$CLS*.h")
-                  
-                  if [ -z "$FOUND_FILES" ]; then
-                      echo "⚠️ Không tìm thấy họ hàng nhà: $CLS (Bỏ qua)"
-                      continue
-                  fi
-
-                  echo "$FOUND_FILES" | while read -r FILE; do
-                      # Vòng lọc tố chất: Chỉ lấy file có nội dung thực thụ
+                  # Tìm mọi file liên quan trong kho đệm
+                  find "$ALL_DUMP_DIR" -type f -name "*$CLS*.h" | while read -r FILE; do
                       if [ -s "$FILE" ] && grep -qE "@interface|@protocol" "$FILE"; then
-                          FILENAME=$(basename "$FILE")
                           mv -f "$FILE" "$TARGET_DIR/"
-                          echo "✅ Đã thu nạp tân binh: $FILENAME"
+                          echo "✅ Thu nạp: $(basename "$FILE")"
                       fi
                   done
               done
           else
-              # Nếu không có danh sách, ân xá tất cả thằng có tố chất
               echo "🚜 Không có thánh chỉ, nhặt sạch tinh anh!"
               find "$ALL_DUMP_DIR" -name "*.h" -type f | while read -r FILE; do
                   if [ -s "$FILE" ] && grep -qE "@interface|@protocol" "$FILE"; then
@@ -117,22 +112,20 @@ jobs:
               done
           fi
 
-          # 5. DÁN GIÁP & SMART FILTER (Bước dọn dẹp cuối cùng)
-          if [ "${{ github.event.inputs.patch_headers }}" == "true" ]; then
-              find "$TARGET_DIR" -name "*.h" -exec sed -i '' '1i\
-              @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
-              @protocol NSObject, NSCopying, NSCoding;
-              ' {} +
-          fi
+          # 5. VÁ LỖI & DỌN RÁC CUỐI
+          echo "🩹 Đang dán giáp và dọn dẹp hậu chiến..."
+          find "$TARGET_DIR" -name "*.h" -exec sed -i '' '1i\
+          @class NSObject, NSString, NSArray, NSDictionary, UIView, UIViewController; \
+          @protocol NSObject, NSCopying, NSCoding;
+          ' {} +
 
-          # Sàng lọc rác hệ thống (Trảm nốt những thằng trà trộn)
           if [ "${{ github.event.inputs.smart_filter }}" == "true" ]; then
               cd "$TARGET_DIR"
               rm -f NSObject-Protocol.h NSCopying-Protocol.h 2>/dev/null
-              # Loại những file tên quá dài (thường là lỗi dump của Swift)
               find . -name "*.h" | awk 'length > 120' | xargs rm -f 2>/dev/null
               cd - > /dev/null
           fi
 
-          rm -rf "$TEMP_DUMP" app_extracted bin_list.txt
-          echo "📦 Kho hàng chu di hiện có: $(ls -1 "$TARGET_DIR" | wc -l) file tinh nhuệ."
+          rm -rf "$ALL_DUMP_DIR" "$TEMP_DUMP" app_extracted bin_list.txt
+          echo "📦 Kho hàng tinh nhuệ hiện có: $(ls -1 "$TARGET_DIR" | wc -l) file."
+
