@@ -25,148 +25,206 @@ jobs:
     permissions:
       contents: write
     steps:
-      # ==========================================
-      # BƯỚC 1: KHỞI TẠO HỆ THỐNG
-      # ==========================================
+      # =========================================================
+      # CÔNG ĐOẠN 1: KHỞI TẠO HỆ THỐNG & DEPENDENCIES
+      # =========================================================
       - name: 📥 Checkout & Setup
         uses: actions/checkout@v4
 
-      - name: 🛠️ Install Dependencies
+      - name: 🛠️ Cài đặt công cụ hỗ trợ
         run: |
           brew install make ldid dpkg
           echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
 
-            # ==========================================
-      # BƯỚC 2: QUẢN LÝ THEOS (SỬA LỖI EXIT CODE 128)
-      # ==========================================
-      - name: 🧠 Cache Theos & SDKs
+      # =========================================================
+      # CÔNG ĐOẠN 2: THIẾT LẬP MÔI TRƯỜNG THEOS
+      # =========================================================
+      - name: 🧠 Quản lý Cache Theos
         id: cache-theos
         uses: actions/cache@v4
         with:
           path: theos
-          key: ${{ runner.os }}-theos-v2 # Dùng v2 cho sạch
+          key: ${{ runner.os }}-theos-v2
           restore-keys: |
             ${{ runner.os }}-theos-
 
       - name: 🏗️ Setup Theos Environment
         run: |
           if [ "${{ steps.cache-theos.outputs.cache-hit }}" != "true" ]; then
-            echo "📥 Cache trống hoặc lỗi, đang dọn dẹp và tải mới..."
-            # LỆNH QUAN TRỌNG: Xoá bỏ thư mục lỗi nếu nó tồn tại trước khi clone
             rm -rf $THEOS
             git clone --recursive https://github.com/theos/theos.git $THEOS
-            
             mkdir -p $THEOS/sdks
             curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
-          else
-            echo "💎 Đã nhận hàng từ Cache, xưởng đã sẵn sàng!"
           fi
-          # Luôn đảm bảo include tồn tại cho khâu nhặt hàng
           mkdir -p $THEOS/include
 
-      # ==========================================
-      # BƯỚC 3: NGƯỜI VẬN CHUYỂN (BỐC THEO ĐƠN TXT)
-      # ==========================================
-      - name: 🎯 Dynamic Header Picker
-        id: picker
+      # =========================================================
+      # CÔNG ĐOẠN 3: ĐỊNH VỊ DỰ ÁN & QUY HOẠCH METADATA
+      # =========================================================
+      - name: 🎯 Định vị mục tiêu
+        id: metadata
         run: |
-          DP_NAME="${{ github.event.inputs.project }}"
-          CTRL=$(grep -lE "^Name:.*$DP_NAME" src/build-tweaks/*/control | head -n 1)
+          PROJ_NAME="${{ github.event.inputs.project }}"
+          [ "$PROJ_NAME" = "(none)" ] && exit 1
+          
+          CTRL=$(grep -lE "^Name:.*$PROJ_NAME" src/build-tweaks/*/control | head -n 1)
           DIR=$(dirname "$CTRL")
+          SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
+          NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$(grep "^Version:" "$CTRL" | cut -d' ' -f2)" || echo "$(grep "^Version:" "$CTRL" | cut -d' ' -f2)-test$(date +%H%M)")
+          
+          # Tự động gán link Ảnh/Mô tả Sileo theo tên SAFE
+          sed -i '' "/^SileoDepiction:/d" "$CTRL"
+          echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
+          
+          # Cập nhật Version vào máy ảo
+          sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
+          
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
+          echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
+          echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
+          make -C "$DIR" clean
 
+      # =========================================================
+      # CÔNG ĐOẠN 4: NGƯỜI VẬN CHUYỂN (CHỈ CHẠY THEO ĐƠN HÀNG)
+      # =========================================================
+      - name: 🚛 Nhập kho Headers Động
+        run: |
+          DIR="${{ steps.metadata.outputs.proj_dir }}"
           if [ ! -f "$DIR/headers.txt" ]; then
-              echo "🍃 Không có headers.txt, bỏ qua khâu bốc hàng."
+              echo "🍃 Không có đơn hàng headers.txt. Bỏ qua."
               exit 0
           fi
-
-          # Dọn dẹp folder cũ trong include trước khi nhặt mới
-          find $THEOS/include -maxdepth 1 -type d ! -path $THEOS/include -exec rm -rf {} +
-
-          echo "🚀 Đang nhặt hàng từ root/headers vào xưởng..."
+          rm -rf $THEOS/include/*
           for KHO_APP in headers/*/; do
               [ -d "$KHO_APP" ] || continue
               APP_NAME=$(basename "$KHO_APP")
               DEST_DIR="$THEOS/include/$APP_NAME"
               mkdir -p "$DEST_DIR"
-
               while IFS= read -r line || [ -n "$line" ]; do
-                  FILE_NEED=$(echo "$line" | tr -d '\r' | xargs)
-                  [ -z "$FILE_NEED" ] && continue
-                  # Móc file tận gốc và làm phẳng
-                  find "$KHO_APP" -type f -name "$FILE_NEED" -exec cp -fL {} "$DEST_DIR/" \;
+                  FILE=$(echo "$line" | tr -d '\r' | xargs)
+                  [ -z "$FILE" ] && continue
+                  [[ "$FILE" != *.h ]] && FILE="${FILE}.h"
+                  [ -f "$KHO_APP/$FILE" ] && cp -f "$KHO_APP/$FILE" "$DEST_DIR/"
               done < "$DIR/headers.txt"
+              [ "$(ls -A "$DEST_DIR" 2>/dev/null)" ] || rm -rf "$DEST_DIR"
+          done
 
-              # Thanh tẩy rác Apple để build mượt
-              if [ "$(ls -A "$DEST_DIR")" ]; then
-                  cd "$DEST_DIR"
-                  rm -f NSObject-Protocol.h NSCopying-Protocol.h NSCoding-Protocol.h \
-                        NSSecureCoding-Protocol.h CGRect.h CGPoint.h UIEdgeInsets.h \
-                        UIAppearanceContainer-Protocol.h UIGestureRecognizerDelegate-Protocol.h \
-                        OS_dispatch_object-Protocol.h OS_dispatch_queue-Protocol.h \
-                        OS_dispatch_source-Protocol.h GPBMessage.h NSObject.h NSString.h
-                  cd - > /dev/null
-              else
-                  rm -rf "$DEST_DIR"
+      # =========================================================
+      # CÔNG ĐOẠN 5: THỰC THI BUILD & ĐÓNG GÓI (.DEB)
+      # =========================================================
+      - name: 🔨 Thực thi Build DEB
+        run: |
+          DIR="${{ steps.metadata.outputs.proj_dir }}"
+          DYNAMIC_INCLUDES=""
+          if [ -f "$DIR/headers.txt" ]; then
+              for d in $THEOS/include/*/; do
+                  [ -d "$d" ] && DYNAMIC_INCLUDES="$DYNAMIC_INCLUDES -I$d"
+              done
+          fi
+          make -C "$DIR" package FINALPACKAGE=1 TARGET=iphone:clang:14.5:14.5 \
+            ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -DTHEOS_LEAN_AND_MEAN $DYNAMIC_INCLUDES -I$THEOS/include"
+          mkdir -p deb_output && cp "$DIR/packages/"*.deb deb_output/
+
+      # =========================================================
+      # CÔNG ĐOẠN 6: ĐÚC NHÃN TỰ ĐỘNG & ĐỒNG BỘ NGƯỢC REPO
+      # =========================================================
+      - name: 🚀 Đúc nhãn Sileo & Đồng bộ ngược Repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "actions@github.com"
+          
+          SAFE="${{ steps.metadata.outputs.safe_name }}"
+          JSON_PATH="depictions/${SAFE}.json"
+          IMG_BASE="${{ env.BASE_URL }}/depictions/images"
+          
+          echo "📝 Đang đúc khuôn nhãn JSON cho $SAFE..."
+          mkdir -p depictions
+          
+          # --- BẮT ĐẦU ĐÚC FILE JSON (Hỗ trợ Banner + Icon + Screenshots) ---
+          cat <<EOF > "$JSON_PATH"
+{
+  "class": "DepictionTabView",
+  "minVersion": "0.1",
+  "tabs": [
+    {
+      "tabname": "Details",
+      "class": "DepictionStackView",
+      "views": [
+        {
+          "class": "DepictionHeaderView",
+          "title": "$SAFE",
+          "useBoldText": true,
+          "useMargins":true
+        },
+        # --- 1. GÁN BANNER (Nếu có file tên [Project]-banner.png) ---
+        {
+          "class": "DepictionImageView",
+          "url": "$IMG_BASE/${SAFE}-banner.png",
+          "width": 1242,
+          "height": 500,
+          "cornerRadius": 10,
+          "useMargins": true
+        },
+        # --- 2. GÁN SCREENSHOTS (Tự động quét file [Project]1.png, 2.png...) ---
+        {
+          "class": "DepictionScreenshotsView",
+          "itemCornerRadius": 8,
+          "itemSize": "{160, 346}",
+          "screenshots": [
+EOF
+
+          # --- VÒNG LẶP TỰ ĐỘNG QUÉT SCREENSHOTS ---
+          # Quét tối đa 5 ảnh screenshots có tên dạng AutoAC1.png, AutoAC2.png...
+          FIRST_SHOT=true
+          for i in {1..5}; do
+              if [ -f "depictions/images/${SAFE}${i}.png" ]; then
+                  if [ "$FIRST_SHOT" = true ]; then
+                      FIRST_SHOT=false
+                  else
+                      echo "," >> "$JSON_PATH" # Thêm dấu phẩy ngăn cách các ảnh cũ
+                  fi
+                  # Chèn link ảnh raw vào JSON
+                  echo "            { \"url\": \"$IMG_BASE/${SAFE}${i}.png\", \"accessibilityText\": \"Screenshot $i\" }" >> "$JSON_PATH"
               fi
           done
 
-      # ==========================================
-      # BƯỚC 4: CHIẾN THUẬT NHẶT THẲNG (SAU KHI ĐÃ FILTER)
-      # ==========================================
-      - name: ⚙️ Build & Clean Up
-        id: metadata
-        run: |
-          DIR="${{ steps.picker.outputs.proj_dir }}"
-          CTRL="$DIR/control"
-          SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
-          NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$(grep "^Version:" "$CTRL" | cut -d' ' -f2)" || echo "$(grep "^Version:" "$CTRL" | cut -d' ' -f2)-test$(date +%H%M)")
+          # --- ĐÓNG FILE JSON ---
+          cat <<EOF >> "$JSON_PATH"
+          ]
+        },
+        # --- 3. DÒNG MÔ TẢ CUỐI ---
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "AutoAC - Tự động hóa trải nghiệm YouTube của bạn.",
+          "useMargins": true
+        }
+      ]
+    }
+  ]
+}
+EOF
+          echo "✅ Đúc nhãn thành công: $JSON_PATH"
 
-          # 1. DỌN SÂN & GHI NHÃN
-          make -C "$DIR" clean
-          sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
-
-          # 2. DÁN HÀNG GIỮA TRẬN (Chỉ lấy .h)
-          if [ -f "$DIR/headers.txt" ]; then
-              DEST_DIR="$THEOS/include/YouTubeHeader"
-              mkdir -p "$DEST_DIR"
-              while IFS= read -r f || [ -n "$f" ]; do
-                  FILE=$(echo "$f" | tr -d '\r' | xargs)
-                  [[ "$FILE" == *.h ]] && find "$(pwd)/headers/YouTubeHeader" -type f -name "$FILE" -exec cp -fL {} "$DEST_DIR/" \;
-              done < "$DIR/headers.txt"
+          # --- HÀNH ĐỘNG ĐỒNG BỘ ---
+          git add src/build-tweaks/ depictions/
+          
+          if [ "${{ github.event.inputs.publish }}" == "true" ]; then
+              mkdir -p debs
+              cp deb_output/*.deb debs/
+              dpkg-scanpackages -m debs /dev/null > Packages
+              bzip2 -fks Packages
+              git add debs/ Packages Packages.bz2
+              COMMIT_MSG="🌟 Official Release: ${{ steps.metadata.outputs.safe_name }} v${{ steps.metadata.outputs.proj_ver }}"
+          else
+              COMMIT_MSG="🛠️ Beta Build: ${{ steps.metadata.outputs.safe_name }} v${{ steps.metadata.outputs.proj_ver }}"
           fi
-
-          # 3. BUILD KHÔNG KHOAN NHƯỢNG
-          make -C "$DIR" package FINALPACKAGE=1 TARGET=iphone:clang:14.5:14.5 \
-            ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -DTHEOS_LEAN_AND_MEAN -I$THEOS/include"
           
-          # 4. CẤT BIẾN & DỌN RÁC CUỐI
-          mkdir -p deb_output && cp "$DIR/packages/"*.deb deb_output/
-          echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
-          echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
-          
-          # QUÉT SẠCH XƯỞNG
-          find $THEOS/include -maxdepth 1 -type d ! -path $THEOS/include -exec rm -rf {} +
-          rm -rf "$DIR/.theos"
+          git commit -m "$COMMIT_MSG" || exit 0
+          git push origin main
 
-      # ==========================================
-      # BƯỚC 5: LƯU TRỮ & PHÁT HÀNH
-      # ==========================================
-      - name: 📦 Xuất xưởng file .deb
+
+      - name: 📦 Xuất Artifact để kiểm tra
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.metadata.outputs.safe_name }}_v${{ steps.metadata.outputs.proj_ver }}
           path: deb_output/*.deb
-
-      - name: 🚀 Lên Kệ Sileo
-        if: github.event.inputs.publish == 'true'
-        run: |
-          mkdir -p debs
-          cp deb_output/*.deb debs/
-          dpkg-scanpackages -m debs /dev/null > Packages
-          bzip2 -fks Packages
-          git config user.name "github-actions[bot]"
-          git config user.email "actions@github.com"
-          git add .
-          git commit -m "🌟 [Auto] Release ${{ steps.metadata.outputs.safe_name }} v${{ steps.metadata.outputs.proj_ver }}"
-          git push origin main
