@@ -235,9 +235,9 @@ jobs:
           git commit -m "$MSG" || exit 0
           git push origin main
 
-     - name: 📦 Xuất xưởng
-        uses: actions/upload-artifact@v4
+        - name: 📦 Xuất xưởng
+          uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.metadata.outputs.safe_name }}_v${{ steps.metadata.outputs.proj_ver }}
+        name: ${{ steps.metadata.outputs.safe_name }}_v${{ steps.metadata.outputs.proj_ver }}
           path: deb_output/*.deb
 
