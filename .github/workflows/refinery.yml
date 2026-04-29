@@ -1,11 +1,15 @@
-name: 🏭 Refinery - Lò Tinh Luyện Linh Hồn
+name: 🏭 Refinery - Lò Tinh Luyện (Tùy chỉnh kho)
 
 on:
   workflow_dispatch:
     inputs:
       ipa_url:
-        description: 'Dán Link IPA YouTube (Decrypted) vào đây'
+        description: 'Dán Link IPA YouTube'
         required: true
+      output_path:
+        description: 'Thư mục đổ hàng (Vd: headers/YouTubeHeader)'
+        required: true
+        default: 'headers/YouTubeHeader'
 
 jobs:
   refine_process:
@@ -17,53 +21,41 @@ jobs:
       - name: 📥 Checkout Repo
         uses: actions/checkout@v4
 
-      - name: 🏗️ Setup Tools (Dọn xưởng)
+      - name: 🚚 Bốc vác & Xẻ thịt
         run: |
-          # Không cần ipsw nữa, dùng công cụ chính chủ Apple
+          # 1. Tạo folder làm việc
           mkdir -p src/refinery/staging
-          mkdir -p headers-repo/YouTube
-
-      - name: 🚚 Bốc vác Trùm Cuối (Input)
-        run: |
-          # 1. Tải IPA
+          OUT_DIR="${{ github.event.inputs.output_path }}"
+          mkdir -p "$OUT_DIR"
+          
+          # 2. Tải và gắp Trùm Cuối
           curl -L "${{ github.event.inputs.ipa_url }}" -o app.ipa
-          
-          # 2. Xẻ xác IPA gắp file thực thi chính 'YouTube'
           unzip -j app.ipa "Payload/*.app/YouTube" -d src/refinery/staging/
-          
-          # Kiểm tra xem Trùm đã vào lò chưa
-          ls -l src/refinery/staging/YouTube
-      - name: 💎 Chế tác Linh hồn (.tbd) & Cầu nối (Bridge)
+
+      - name: 💎 Chế tác Linh hồn & Cầu nối
         run: |
           TARGET_BIN="src/refinery/staging/YouTube"
-          OUT_DIR="headers-repo/YouTube"
+          OUT_DIR="${{ github.event.inputs.output_path }}"
           
-          echo "🔨 Đang luyện file .tbd (Linh hồn)..."
-          # Sửa --out-file thành -o (Cú pháp mới của Apple)
-          # Thêm -v để soi lỗi nếu nó còn dở quẻ
+          echo "🔨 Luyện .tbd vào $OUT_DIR..."
           xcrun tapi stubify "$TARGET_BIN" -o "$OUT_DIR/YouTube.tbd"
           
-          echo "🌉 Đang bắc cầu (Bridge.h)..."
+          echo "🌉 Luyện Bridge.h vào $OUT_DIR..."
           echo "// Refinery Auto-Generated Bridge Header" > "$OUT_DIR/YouTube-Bridge.h"
           echo "@import Foundation;" >> "$OUT_DIR/YouTube-Bridge.h"
           echo "@import UIKit;" >> "$OUT_DIR/YouTube-Bridge.h"
           
-          # Dùng nm bốc danh sách Class (vẫn giữ nguyên vì nm rất lành)
+          # Quét Class và tiêm vào Bridge
           nm -gU "$TARGET_BIN" | grep "OBJC_CLASS_$_" | sed 's/.*OBJC_CLASS_$_\(.*\)/@class \1;/' >> "$OUT_DIR/YouTube-Bridge.h"
-          
-          echo "✅ Đã chế tác xong tại: $OUT_DIR"
 
-      - name: 🎁 Nhập kho (Push to Repo)
+      - name: 🎁 Nhập kho (Push)
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add headers-repo/
-          git commit -m "💎 Refinery: Luyện xong Linh hồn YouTube (.tbd & Bridge.h)" || exit 0
+          git add .
+          git commit -m "💎 Refinery: Nhập kho vào ${{ github.event.inputs.output_path }}" || exit 0
           git push
 
-      - name: 🗑️ Dọn rác (-rf)
+      - name: 🗑️ Dọn rác
         if: always()
-        run: |
-          rm -rf src/refinery/staging/
-          rm -f app.ipa
-          echo "🧹 Xưởng sạch bong, nạc đã nằm trong kho!"
+        run: rm -rf src/refinery/staging/ app.ipa
