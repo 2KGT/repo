@@ -82,81 +82,69 @@ jobs:
       # =========================================================
       # CÔNG ĐOẠN 4: VẬN CHUYỂN HEADERS (CHỈ KHI CÓ ĐƠN)
       # =========================================================
-      - name: 🚛 Nhập kho Headers (Bản Phong Thần Hợp Nhất)
+      - name: 🚛 Nhập kho Headers (Bản Đại Xá Thiên Hạ)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
-          # Nếu không có đơn hàng thì nghỉ khỏe
-          [ ! -f "$DIR/headers.txt" ] && echo "🍃 Không có đơn hàng. Nghỉ!" && exit 0
-          
-          # Dọn dẹp kho tạm của nhà máy
+          [ ! -f "$DIR/headers.txt" ] && echo "🍃 Không có đơn hàng." && exit 0
           rm -rf $THEOS/include/*
           
-          # 1. Làm sạch danh sách chờ (Xóa .h, khoảng trắng, dòng trống)
+          # 1. Làm sạch danh sách: Đuổi hết rác, khoảng trắng, ký tự Windows (\r)
           sed -E 's/\.h//g; s/\r//g; s/ //g; /^\s*$/d' "$DIR/headers.txt" | sort -u > pending.txt
           
           echo "🔎 GIAI ĐOẠN 1: Càn quét hàng Chính Đạo (File .h xịn)..."
-          # Duyệt qua tất cả các thư mục kho để tìm file .h vật lý
           for KHO_APP in headers/*/; do
             [ -d "$KHO_APP" ] || continue
-            [ ! -s pending.txt ] && break # Đủ hàng thì cút sớm
+            [ ! -s pending.txt ] && break
             
             APP_NAME=$(basename "$KHO_APP")
             DEST_DIR="$THEOS/include/$APP_NAME"
             
-            cp pending.txt reading.txt
+            # Quét từng file trong danh sách hiện tại
             while IFS= read -r NAME || [ -n "$NAME" ]; do
-              # Tìm chính xác file .h (không phân biệt hoa thường)
               TARGET=$(find "$KHO_APP" -maxdepth 1 -iname "${NAME}.h" | head -n 1)
-              
               if [ -n "$TARGET" ]; then
                 mkdir -p "$DEST_DIR"
                 cp -f "$TARGET" "$DEST_DIR/"
-                echo "  ✅ Nhặt hàng xịn: $NAME.h (từ kho $APP_NAME)"
-                # Xóa khỏi danh sách chờ
-                grep -vi "^$NAME$" pending.txt > pending.tmp && mv pending.tmp pending.txt
+                echo "  ✅ Nhặt hàng xịn: $NAME.h"
+                # CHIÊU MỚI: Ghi đè file pending, chỉ giữ lại những thằng KHÔNG PHẢI tên này
+                grep -vix "$NAME" pending.txt > temp.txt || true
+                mv temp.txt pending.txt
               fi
-            done < reading.txt
+            done < pending.txt
           done
 
           echo "💎 GIAI ĐOẠN 2: Triệu hồi từ Phong Thần Bảng (Tà Đạo)..."
-          # Chỉ chạy nếu vẫn còn thiếu hàng
           if [ -s pending.txt ]; then
             for KHO_APP in headers/*/; do
               [ -d "$KHO_APP" ] || continue
               [ ! -s pending.txt ] && break
-              
               BRIDGE_FILE="${KHO_APP}Bridge.h"
               [ ! -f "$BRIDGE_FILE" ] && continue
               
               APP_NAME=$(basename "$KHO_APP")
               DEST_DIR="$THEOS/include/$APP_NAME"
               
-              cp pending.txt reading.txt
               while IFS= read -r NAME || [ -n "$NAME" ]; do
-                # CHIÊU VÉT CẠN: Tìm tên trong Phong Thần Bảng (không phân biệt hoa thường)
-                # Dùng Regex để đảm bảo tìm đúng từ, không dính chữ rác
+                # Tìm mờ trong Phong Thần Bảng
                 if grep -qiE "(^|[^a-zA-Z0-9_])$NAME($|[^a-zA-Z0-9_])" "$BRIDGE_FILE"; then
                   mkdir -p "$DEST_DIR"
-                  # Tự đúc phôi .h để đánh lừa Compiler
                   echo -e "@interface $NAME : NSObject\n@end" > "$DEST_DIR/$NAME.h"
-                  echo "  ✨ [Phong Thần] Đã triệu hồi: $NAME.h (từ Bảng $APP_NAME)"
-                  # Xóa khỏi danh sách chờ
-                  grep -vi "^$NAME$" pending.txt > pending.tmp && mv pending.tmp pending.txt
+                  echo "  ✨ [Phong Thần] Đã triệu hồi: $NAME.h"
+                  # Ghi đè file pending, loại bỏ tên đã triệu hồi
+                  grep -vix "$NAME" pending.txt > temp.txt || true
+                  mv temp.txt pending.txt
                 fi
-              done < reading.txt
+              done < pending.txt
             done
           fi
 
-          # 📊 TỔNG KẾT CUỐI BUỔI
+          # 📊 TỔNG KẾT
           if [ -s pending.txt ]; then
             echo "❌ LỖI: Vẫn mất tích các linh kiện sau:"
             cat pending.txt
             exit 1
-          else
-            echo "🏁 Đã bốc đủ hàng. Nhà máy lên đèn, khai hỏa!"
           fi
-
-
+          echo "🏁 Đã bốc đủ hàng. Khai hỏa!"
 
       # =========================================================
       # CÔNG ĐOẠN 5: THỰC THI BUILD
