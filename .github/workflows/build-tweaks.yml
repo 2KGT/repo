@@ -10,7 +10,7 @@ on:
         default: '(none)'
         options: [ (none), AutoAC, AutoDL ]
       header_folder:
-        description: 'Tên thư mục nhốt xác (vd: YouTubeHeader)'
+        description: 'Đặt tên golder nhốt xác (vd: YouTubeHeader)'
         required: false
         default: 'YouTubeHeader'
       publish:
