@@ -25,9 +25,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      # =========================================================
+      # =============================================
       # CÔNG ĐOẠN 1-2: KHỞI TẠO HỆ THỐNG & THEOS
-      # =========================================================
+      # =============================================
       - name: 📥 Checkout & Setup
         uses: actions/checkout@v4
 
@@ -55,9 +55,9 @@ jobs:
           fi
           mkdir -p $THEOS/include
 
-      # =========================================================
+      # ===============================================
       # CÔNG ĐOẠN 3: ĐỊNH VỊ & GÁN NHÃN ĐỘNG (CONTROL)
-      # =========================================================
+      # ===============================================
       - name: 🎯 Gán nhãn Icon & Metadata
         id: metadata
         run: |
@@ -79,23 +79,23 @@ jobs:
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
           make -C "$DIR" clean
 
-      # =========================================================
+      # ===============================================
       # CÔNG ĐOẠN 4: VẬN CHUYỂN HEADERS (CHỈ KHI CÓ ĐƠN)
-      # =========================================================
-      - name: 🚀 Nhập kho Headers (Vạn Tiên Trận - Đệ Quy 100%)
+      # ===============================================
+      - name: 🚀 Nhập kho Headers (Vạn Tiên Trận - Đệ Quy Vét Cạn)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           [ ! -f "$DIR/headers.txt" ] && echo "🍃 Không có đơn hàng." && exit 0
           rm -rf $THEOS/include/*
           
-          # 1. Khởi tạo danh sách chờ: Gọt sạch rác Windows (\r) và khoảng trắng
+          # 1. Khởi tạo danh sách từ headers.txt
           sed -E 's/\.h//g; s/\r//g; s/ //g; /^\s*$/d' "$DIR/headers.txt" | sort -u > pending.txt
           touch processed.txt
 
-          echo "🔥 KHỞI ĐỘNG VẠN TIÊN TRẬN: Truy quét đệ quy không giới hạn..."
+          echo "🔥 THÁO PHANH: Truy quét đệ quy tông ti họ hàng..."
           
           while [ -s pending.txt ]; do
-            echo "📊 Còn $(( $(wc -l < pending.txt) )) linh kiện cần truy vết. Đang xử lý..."
+            echo "📊 Còn $(( $(wc -l < pending.txt) )) linh kiện cần xử lý..."
             cp pending.txt round.txt
             > pending.txt 
 
@@ -105,17 +105,14 @@ jobs:
               grep -qix "$CLEAN_NAME" processed.txt && continue
 
               FOUND=false
-              # --- LỚP 1 & 2: CHÍNH ĐẠO (Folder & Zip) ---
+              # --- LỚP 1 & 2: CHÍNH ĐẠO (.h & .zip) ---
               for KHO_APP in headers/*/; do
                 [ -d "$KHO_APP" ] || continue
                 APP_NAME=$(basename "$KHO_APP")
                 DEST_DIR="$THEOS/include/$APP_NAME"
                 mkdir -p "$DEST_DIR"
 
-                # Tìm file lẻ
                 TARGET=$(find "$KHO_APP" -maxdepth 1 -iname "${CLEAN_NAME}.h" | head -n 1)
-                
-                # Không thấy thì lục trong Zip
                 if [ -z "$TARGET" ]; then
                   for ZIP in "$KHO_APP"*.zip; do
                     [ -f "$ZIP" ] || continue
@@ -130,9 +127,9 @@ jobs:
                   cp -f "$TARGET" "$DEST_DIR/"
                 fi
 
-                # Nếu bốc được hàng xịn, SOI RUỘT tìm "con/cháu" (#import hoặc #include)
                 if [ -f "$DEST_DIR/$CLEAN_NAME.h" ]; then
-                  echo "  ✅ Nhặt xịn: $CLEAN_NAME (Kho $APP_NAME)"
+                  echo "  ✅ Nhặt xịn: $CLEAN_NAME (từ $APP_NAME)"
+                  # 🕵️‍♂️ SOI RUỘT: Tìm file con để vòng sau đi tìm tiếp
                   grep -E '^[[:space:]]*#(import|include)[[:space:]]*["<]([^">/ ]+/)?([^"> ]+)\.h[">]' "$DEST_DIR/$CLEAN_NAME.h" | \
                   sed -E 's/.*["<]([^">/ ]+/)?([^"> ]+)\.h[">]/\2/' >> pending.txt || true
                   FOUND=true; break
@@ -165,16 +162,16 @@ jobs:
               echo "$CLEAN_NAME" >> processed.txt
             done < round.txt
 
-            # Dọn dẹp pending cho vòng sau
+            # Dọn dẹp danh sách để lặp vòng tiếp theo
             [ -s pending.txt ] && sort -u pending.txt -o pending.txt
             [ -s pending.txt ] && comm -23 pending.txt <(sort -u processed.txt) > next.txt
             [ -f next.txt ] && mv next.txt pending.txt || > pending.txt
           done
-          echo "🏁 MA TRẬN ĐÃ GIẢI. KHAI HỎA!"
+          echo "🏁 TRẬN PHÁP HOÀN TẤT!"
 
-      # =========================================================
+      # ===============================================
       # CÔNG ĐOẠN 5: THỰC THI BUILD
-      # =========================================================
+      # ===============================================
       - name: 🔨 Thực thi Build DEB
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
@@ -199,9 +196,9 @@ jobs:
           mkdir -p deb_output
           cp "$DIR/packages/"*.deb deb_output/
 
-      # =========================================================
+      # ===============================================
       # CÔNG ĐOẠN 6: QUÉT DẤU # TRONG CODE -> ĐÚC JSON -> ĐỒNG BỘ
-      # =========================================================
+      # ===============================================
       - name: 🚀 Quét # & Đồng bộ Repo
         run: |
           git config user.name "github-actions[bot]"
