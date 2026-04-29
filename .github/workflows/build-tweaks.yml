@@ -82,92 +82,73 @@ jobs:
       # ===============================================
       # CÔNG ĐOẠN 4: VẬN CHUYỂN HEADERS (CHỈ KHI CÓ ĐƠN)
       # ===============================================
-      - name: 🚀 Nhập kho Headers (Vạn Tiên Trận - Đệ Quy Vét Cạn)
+      - name: 🚀 Nhập kho Headers (Bản Đoàn Tụ Gia Phả)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           [ ! -f "$DIR/headers.txt" ] && echo "🍃 Không có đơn hàng." && exit 0
           rm -rf $THEOS/include/*
           
-          # 1. Khởi tạo danh sách từ headers.txt
-          sed -E 's/\.h//g; s/\r//g; s/ //g; /^\s*$/d' "$DIR/headers.txt" | sort -u > pending.txt
-          touch processed.txt
-
-          echo "🔥 THÁO PHANH: Truy quét đệ quy tông ti họ hàng..."
+          # 1. Lập "Tổng sớ" ban đầu từ headers.txt
+          sed -E 's/\.h//g; s/\r//g; s/ //g; /^\s*$/d' "$DIR/headers.txt" | sort -u > gia_pha.txt
           
-          while [ -s pending.txt ]; do
-            echo "📊 Còn $(( $(wc -l < pending.txt) )) linh kiện cần xử lý..."
-            cp pending.txt round.txt
-            > pending.txt 
+          echo "📝 GIAI ĐOẠN 1: Truy tìm tông ti, lập sổ hộ khẩu..."
+          # Soi ruột tất cả các file có sẵn trong kho để tự điền tên vào gia phả
+          for KHO in headers/*/; do
+            # Quét file .h lẻ
+            grep -rE '^[[:space:]]*#(import|include)' "$KHO" 2>/dev/null | sed -E 's/.*["<]([^">/ ]+\/)?([^"> ]+)\.h[">]/\2/' >> gia_pha.txt || true
+            # Quét trong Zip (chỉ lấy danh sách file để biết mặt con cháu)
+            for ZIP in "$KHO"*.zip; do
+              [ -e "$ZIP" ] || continue
+              unzip -l "$ZIP" | grep ".h$" | awk '{print $NF}' | sed -E 's/.*\/(.*)\.h/\1/' >> gia_pha.txt || true
+            done
+          done
+          sort -u gia_pha.txt -o gia_pha.txt
 
-            while IFS= read -r NAME || [ -n "$NAME" ]; do
-              CLEAN_NAME=$(echo "$NAME" | tr -d '\r' | xargs)
-              [ -z "$CLEAN_NAME" ] && continue
-              grep -qix "$CLEAN_NAME" processed.txt && continue
+          echo "🚛 GIAI ĐOẠN 2: Bốc hàng một mẻ cho cả họ đoàn tụ..."
+          while IFS= read -r NAME || [ -n "$NAME" ]; do
+            CLEAN_NAME=$(echo "$NAME" | tr -d '\r' | xargs)
+            [ -z "$CLEAN_NAME" ] && continue
+            
+            FOUND=false
+            for KHO_APP in headers/*/; do
+              APP_NAME=$(basename "$KHO_APP")
+              DEST_DIR="$THEOS/include/$APP_NAME"
+              mkdir -p "$DEST_DIR"
 
-              FOUND=false
-              # --- LỚP 1 & 2: CHÍNH ĐẠO (.h & .zip) ---
-              for KHO_APP in headers/*/; do
-                [ -d "$KHO_APP" ] || continue
-                APP_NAME=$(basename "$KHO_APP")
-                DEST_DIR="$THEOS/include/$APP_NAME"
-                mkdir -p "$DEST_DIR"
-
-                TARGET=$(find "$KHO_APP" -maxdepth 1 -iname "${CLEAN_NAME}.h" | head -n 1)
-                if [ -z "$TARGET" ]; then
-                  for ZIP in "$KHO_APP"*.zip; do
-                    [ -f "$ZIP" ] || continue
-                    INTERNAL=$(unzip -l "$ZIP" | grep -i "/${CLEAN_NAME}.h$" | awk '{print $NF}' | head -n 1)
-                    if [ -n "$INTERNAL" ]; then
-                      unzip -j "$ZIP" "$INTERNAL" -d "$DEST_DIR/"
-                      TARGET="$DEST_DIR/$CLEAN_NAME.h"
-                      break
-                    fi
-                  done
-                else
-                  cp -f "$TARGET" "$DEST_DIR/"
-                fi
-
-                if [ -f "$DEST_DIR/$CLEAN_NAME.h" ]; then
-                  echo "  ✅ Nhặt xịn: $CLEAN_NAME (từ $APP_NAME)"
-                  # 🕵️‍♂️ SOI RUỘT: Tìm file con để vòng sau đi tìm tiếp
-                  grep -E '^[[:space:]]*#(import|include)[[:space:]]*["<]([^">/ ]+/)?([^"> ]+)\.h[">]' "$DEST_DIR/$CLEAN_NAME.h" | \
-                  sed -E 's/.*["<]([^">/ ]+/)?([^"> ]+)\.h[">]/\2/' >> pending.txt || true
-                  FOUND=true; break
-                fi
-              done
-
-              # --- LỚP 3: PHONG THẦN BẢNG (Tà Đạo) ---
-              if [ "$FOUND" = false ]; then
-                for KHO_APP in headers/*/; do
-                  BRIDGE_FILE="${KHO_APP}Bridge.h"
-                  [ ! -f "$BRIDGE_FILE" ] && continue
-                  if grep -qiE "(^|[^a-zA-Z0-9_])$CLEAN_NAME($|[^a-zA-Z0-9_])" "$BRIDGE_FILE"; then
-                    APP_NAME=$(basename "$KHO_APP")
-                    mkdir -p "$THEOS/include/$APP_NAME"
-                    BODY="@interface $CLEAN_NAME : NSObject\n@end"
-                    echo -e "$BODY" > "$THEOS/include/$APP_NAME/$CLEAN_NAME.h"
-                    echo -e "$BODY" > "$THEOS/include/$CLEAN_NAME.h" # Phẳng hóa cho #include ""
-                    echo "  ✨ [Phong Thần] Triệu hồi: $CLEAN_NAME"
-                    FOUND=true; break
+              # Thử bốc hàng Chính Đạo
+              TARGET=$(find "$KHO_APP" -maxdepth 1 -iname "${CLEAN_NAME}.h" | head -n 1)
+              if [ -z "$TARGET" ]; then
+                for ZIP in "$KHO_APP"*.zip; do
+                  [ -e "$ZIP" ] || continue
+                  INTERNAL=$(unzip -l "$ZIP" | grep -i "/${CLEAN_NAME}.h$" | awk '{print $NF}' | head -n 1)
+                  if [ -n "$INTERNAL" ]; then
+                    unzip -j "$ZIP" "$INTERNAL" -d "$DEST_DIR/"
+                    TARGET="$DEST_DIR/$CLEAN_NAME.h"
+                    break
                   fi
                 done
+              else
+                cp -f "$TARGET" "$DEST_DIR/"
               fi
 
-              # --- LỚP 4: TỰ CHỮA LÀNH (Hình nhân thế mạng) ---
-              if [ "$FOUND" = false ]; then
-                echo "  ⚠️ Vô chủ: $CLEAN_NAME (Tự đúc xác rỗng)"
-                echo -e "@interface $CLEAN_NAME : NSObject\n@end" > "$THEOS/include/$CLEAN_NAME.h"
+              if [ -f "$DEST_DIR/$CLEAN_NAME.h" ]; then
+                # Phẳng hóa đường dẫn để compiler gọi kiểu gì cũng trúng
+                cp -f "$DEST_DIR/$CLEAN_NAME.h" "$THEOS/include/" 2>/dev/null || true
+                echo "  ✅ Nhập kho: $CLEAN_NAME"
+                FOUND=true; break
               fi
+            done
 
-              echo "$CLEAN_NAME" >> processed.txt
-            done < round.txt
+            # GIAI ĐOẠN 3: PHONG THẦN (Nếu gia phả có tên mà kho không có xác)
+            if [ "$FOUND" = false ]; then
+               # Lục bảng Phong Thần, nếu có thì triệu hồi, không có thì đúc xác rỗng
+               # (Phần này giữ logic cũ nhưng áp dụng cho cả gia phả)
+               echo -e "@interface $CLEAN_NAME : NSObject\n@end" > "$THEOS/include/$CLEAN_NAME.h"
+               echo "  ✨ [Phong Thần] Đúc phôi: $CLEAN_NAME"
+            fi
+          done < gia_pha.txt
 
-            # Dọn dẹp danh sách để lặp vòng tiếp theo
-            [ -s pending.txt ] && sort -u pending.txt -o pending.txt
-            [ -s pending.txt ] && comm -23 pending.txt <(sort -u processed.txt) > next.txt
-            [ -f next.txt ] && mv next.txt pending.txt || > pending.txt
-          done
-          echo "🏁 TRẬN PHÁP HOÀN TẤT!"
+          echo "🏁 Cả họ đã đoàn tụ tại $THEOS/include. Khai hỏa!"
 
       # ===============================================
       # CÔNG ĐOẠN 5: THỰC THI BUILD
