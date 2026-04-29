@@ -9,6 +9,10 @@ on:
         type: choice
         default: '(none)'
         options: [ (none), AutoAC, AutoDL ]
+      header_folder:
+        description: 'Tên thư mục nhốt xác (vd: YouTubeHeader)'
+        required: false
+        default: 'YouTubeHeader'
       publish:
         description: 'Release Official (Tích để lên Sileo)'
         type: boolean
@@ -25,18 +29,21 @@ jobs:
     permissions:
       contents: write
     steps:
-      # =============================================
-      # CÔNG ĐOẠN 1-2: KHỞI TẠO HỆ THỐNG & THEOS
-      # =============================================
-      - name: 📥 Checkout & Setup
+      # =============================================================
+      # CÔNG ĐOẠN 1: TIẾP NHẬN HỆ THỐNG & CÔNG CỤ
+      # =============================================================
+      - name: 📥 1.1 Checkout Source
         uses: actions/checkout@v4
 
-      - name: 🛠️ Setup Tools
+      - name: 🛠️ 1.2 Setup Build Tools
         run: |
           brew install make ldid dpkg
           echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
 
-      - name: 🧠 Cache & Setup Theos
+      # =============================================================
+      # CÔNG ĐOẠN 2: TRIỂN KHAI HẬU CẦN THEOS
+      # =============================================================
+      - name: 🧠 2.1 Kiểm tra & Kích hoạt Cache Theos
         id: cache-theos
         uses: actions/cache@v4
         with:
@@ -45,7 +52,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-theos-
 
-      - name: 🏗️ Setup Environment
+      - name: 🏗️ 2.2 Thiết lập Môi trường Theos
         run: |
           if [ "${{ steps.cache-theos.outputs.cache-hit }}" != "true" ]; then
             rm -rf $THEOS
@@ -55,10 +62,10 @@ jobs:
           fi
           mkdir -p $THEOS/include
 
-      # ===============================================
-      # CÔNG ĐOẠN 3: ĐỊNH VỊ & GÁN NHÃN ĐỘNG (CONTROL)
-      # ===============================================
-      - name: 🎯 Gán nhãn Icon & Metadata
+      # =============================================================
+      # CÔNG ĐOẠN 3: ĐỊNH VỊ DỰ ÁN & CẤP NHÃN CONTROL
+      # =============================================================
+      - name: 🎯 3.1 Gán nhãn Metadata & Phiên bản
         id: metadata
         run: |
           PROJ_NAME="${{ github.event.inputs.project }}"
@@ -68,75 +75,82 @@ jobs:
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | sed 's/^ *//;s/ *$//' | tr -d '()' | tr -d ' ')
           NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$(grep "^Version:" "$CTRL" | cut -d' ' -f2)" || echo "$(grep "^Version:" "$CTRL" | cut -d' ' -f2)-test$(date +%H%M)")
           
-          sed -i '' "/^Icon:/d" "$CTRL"
-          sed -i '' "/^SileoDepiction:/d" "$CTRL"
-          echo "Icon: ${{ env.BASE_URL }}/icons/${SAFE}.png" >> "$CTRL"
-          echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
-          
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
-          make -C "$DIR" clean
+          echo "✅ Đang làm việc tại dự án: $DIR"
 
-      # ===============================================
-      # CÔNG ĐOẠN 4: VẬN CHUYỂN HEADERS (CHỈ KHI CÓ ĐƠN)
-      # ===============================================
-      - name: 🚀 Nhập kho (Hệ Pháp Sư Toàn Năng)
-        run: |
-          # 1. Dọn dẹp chiến trường
-          rm -rf $THEOS/include/YouTubeHeader
-          mkdir -p $THEOS/include/YouTubeHeader
-          
-          # 2. Yểm bùa: Đúc đúng 3 cái xác rỗng cho 3 Class đang dùng
-          # Việc đúc vào đây giúp Makefile trỏ -I$(THEOS)/include/YouTubeHeader vẫn chạy chuẩn
-          
-          echo "@interface YTAdSlotContainerView : UIView @end" > $THEOS/include/YouTubeHeader/YTAdSlotContainerView.h
-          echo "@interface YTAdsInnerTubeContext : NSObject @end" > $THEOS/include/YouTubeHeader/YTAdsInnerTubeContext.h
-          echo "@interface YTAdLayout : NSObject @end" > $THEOS/include/YouTubeHeader/YTAdLayout.h
-          
-          # 3. Tạo một file Header tổng hợp để Tweak.x có chỗ mà bấu víu
-          cat <<EOF > $THEOS/include/YouTubeHeader/YouTubeHeader.h
-          #import <Foundation/Foundation.h>
-          #import <UIKit/UIKit.h>
-          #import "YTAdSlotContainerView.h"
-          #import "YTAdsInnerTubeContext.h"
-          #import "YTAdLayout.h"
-          EOF
-          
-          echo "✨ [Bùa Chú] Đã đúc xong 3 hình nhân thế mạng. Nhẹ tênh!"
-
-      # ===============================================
-      # CÔNG ĐOẠN 5: THỰC THI BUILD
-      # ===============================================
-      - name: 🔨 Thực thi Build DEB
+      # =============================================================
+      # CÔNG ĐOẠN 4: CỖ MÁY XAY XÁC PHÁP SƯ (NHÁNH VÔ ẢNH)
+      # =============================================================
+      - name: 🪄 4.1 Kiểm tra & Xử lý Nguyên liệu
+        id: process_headers
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
-          DYNAMIC_INCLUDES=""
-
-          # 1. KIỂM TRA ĐIỀU KIỆN TRƯỚC KHI BUILD
+          FOLDER="${{ github.event.inputs.header_folder }}"
+          DEST="$THEOS/include/$FOLDER"
+          
           if [ -f "$DIR/headers.txt" ]; then
-            echo "🎯 Dự án yêu cầu linh kiện ngoài, đang trỏ đường dẫn vào xưởng..."
-            DYNAMIC_INCLUDES="-I$THEOS/include"
+            echo "🏭 Có đơn hàng! Bắt đầu mở xưởng tại: $FOLDER"
+            mkdir -p "$DEST"
             
-            # Kiểm kê nhanh để đảm bảo hàng đã nằm đúng chỗ
-            ls -R $THEOS/include | head -n 10
+            # Xay nguyên liệu từ file txt
+            while IFS= read -r CLASS || [ -n "$CLASS" ]; do
+              CLEAN=$(echo "$CLASS" | tr -d '\r' | xargs)
+              [ -z "$CLEAN" ] && continue
+              echo "@interface $CLEAN : NSObject @end" > "$DEST/$CLEAN.h"
+              echo "  🔹 Đúc xác: $CLEAN"
+            done < "$DIR/headers.txt"
+
+            # Đúc Chìa Khóa Tổng (Index Header)
+            INDEX="$DEST/$FOLDER.h"
+            echo "#import <Foundation/Foundation.h>" > "$INDEX"
+            echo "#import <UIKit/UIKit.h>" >> "$INDEX"
+            for h in "$DEST"/*.h; do
+              FILE=$(basename "$h")
+              if [ "$FILE" != "$FOLDER.h" ]; then
+                echo "#import \"$FILE\"" >> "$INDEX"
+              fi
+            done
+            echo "has_headers=true" >> $GITHUB_OUTPUT
+            echo "🏁 XÁC ĐÃ ĐÚC XONG TẠI: $FOLDER"
+          else
+            echo "🍃 Không có nguyên liệu (headers.txt). Giải tán xưởng đúc, không tạo phòng."
+            echo "has_headers=false" >> $GITHUB_OUTPUT
           fi
 
-          # 2. KHỞI ĐỘNG COMPILER
-          echo "🚀 Khởi động Compiler với cờ: $DYNAMIC_INCLUDES"
+      # =============================================================
+      # CÔNG ĐOẠN 5: THỰC THI BUILD & KIỂM ĐỊNH DEB
+      # =============================================================
+      - name: 🔨 5.1 Khởi động Compiler & Đóng gói
+        run: |
+          DIR="${{ steps.metadata.outputs.proj_dir }}"
+          HAS_HEADERS="${{ steps.process_headers.outputs.has_headers }}"
           
-          make -C "$DIR" package FINALPACKAGE=1 TARGET=iphone:clang:14.5:14.5 \
-            ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -DTHEOS_LEAN_AND_MEAN $DYNAMIC_INCLUDES"
+          # Cấu hình cờ mặc định (Hệ chính đạo)
+          DYNAMIC_CFLAGS="-fobjc-arc -Wno-error"
+          
+          # Nếu nhánh Pháp sư có hàng thì mới thêm vách ngăn
+          if [ "$HAS_HEADERS" = "true" ]; then
+            FOLDER="${{ github.event.inputs.header_folder }}"
+            echo "🎯 Trỏ Compiler vào xưởng xác: $FOLDER"
+            DYNAMIC_CFLAGS="$DYNAMIC_CFLAGS -I$THEOS/include/$FOLDER"
+          else
+            echo "🚀 Build sạch (Pure Build) - Không dùng linh kiện ngoài."
+          fi
+          
+          make -C "$DIR" clean package FINALPACKAGE=1 TARGET=iphone:clang:14.5:14.5 \
+            ADDITIONAL_CFLAGS="$DYNAMIC_CFLAGS"
 
-          # 3. GOM HÀNG THÀNH PHẨM
           mkdir -p deb_output
           cp "$DIR/packages/"*.deb deb_output/
+          echo "📦 Thành phẩm đã sẵn sàng xuất xưởng!"
 
-      # ===============================================
-      # CÔNG ĐOẠN 6: QUÉT DẤU # TRONG CODE -> ĐÚC JSON -> ĐỒNG BỘ
-      # ===============================================
-      - name: 🚀 Quét # & Đồng bộ Repo
+      # =============================================================
+      # CÔNG ĐOẠN 6: QUÉT DẤU # TRONG CODE & ĐỒNG BỘ REPO
+      # =============================================================
+      - name: 🚀 6.1 Cập nhật Depictions & Đồng bộ Repo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
@@ -145,11 +159,13 @@ jobs:
           JSON_PATH="depictions/${SAFE}.json"
           IMG_BASE="${{ env.BASE_URL }}/depictions/images"
           SRC_FILE=$(find "$DIR" -name "*.x" -o -name "*.xm" | head -n 1)
+          
           DESC_CONTENT="Phiên bản $SAFE từ 2KGT Repo."
           if [ -n "$SRC_FILE" ]; then
             EXTRACTED=$(grep "^#" "$SRC_FILE" | sed 's/^#//;s/^ //' | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
             [ -n "$EXTRACTED" ] && DESC_CONTENT="$EXTRACTED"
           fi
+          
           mkdir -p depictions
           echo '{"class":"DepictionTabView","tabs":[{"tabname":"Details","class":"DepictionStackView","views":[{"class":"DepictionHeaderView","title":"'$SAFE'"},{"class":"DepictionImageView","url":"'$IMG_BASE/${SAFE}-banner.png'","width":1242,"height":500,"cornerRadius":10},{"class":"DepictionScreenshotsView","itemCornerRadius":8,"screenshots":[' > "$JSON_PATH"
           FIRST=true
@@ -160,6 +176,7 @@ jobs:
             fi
           done
           echo ']},{"class":"DepictionVideoView","videoURL":"'$IMG_BASE/${SAFE}.mp4'","cornerRadius":8},{"class":"DepictionMarkdownView","markdown":"'$DESC_CONTENT'","useMargins":true}]}]}' >> "$JSON_PATH"
+          
           git add src/build-tweaks/ depictions/
           if [ "${{ github.event.inputs.publish }}" == "true" ]; then
             mkdir -p debs && cp deb_output/*.deb debs/
@@ -172,7 +189,11 @@ jobs:
           git commit -m "$MSG" || exit 0
           git push origin main
 
-      - name: 📦 Xuất xưởng
+      # =============================================================
+      # CÔNG ĐOẠN 7: HOÀN TẤT & XUẤT XƯỞNG
+      # =============================================================
+      - name: 📦 7.1 Lưu trữ Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.metadata.outputs.safe_name }}_v${{ steps.metadata.outputs.proj_ver }}
+          path: deb_output/
