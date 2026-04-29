@@ -1,4 +1,4 @@
-name: 🏮 vô ảnh phong thần
+name: 🏮 VÔ ẢNH PHONG THẦN
 
 on:
   workflow_dispatch:
@@ -33,14 +33,16 @@ jobs:
           git clone --recursive https://github.com/theos/theos.git $THEOS
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: 🎯 3. Metadata & Tự động Nhãn Xác
+      - name: 🎯 3. Metadata & Đồng bộ Nhãn Xác
         id: metadata
         run: |
           PROJ="${{ github.event.inputs.project }}"
           CTRL=$(find src/build-tweaks/$PROJ -name "control")
           DIR=$(dirname "$CTRL")
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | xargs | tr -d '() ')
-          H_NAME="${PROJ}Header"
+          
+          # ĐỒNG BỘ: TênDựÁn + headers (ví dụ: AutoACheaders)
+          H_NAME="${PROJ}headers"
           
           # Xử lý Version
           OLD_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
@@ -55,16 +57,20 @@ jobs:
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "h_name=$H_NAME" >> $GITHUB_OUTPUT
 
-      - name: 🪄 4. Đúc Xác Vô Ảnh (Tự động theo tên App)
+      - name: 🪄 4. Đúc Xác Vô Ảnh (Đồng bộ Tên Dự Án)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           H_NAME="${{ steps.metadata.outputs.h_name }}"
           DEST="$THEOS/include/$H_NAME"
           mkdir -p "$DEST"
           
+          # 1. Ưu tiên bốc file headers.h thủ công nếu có
           if [ -f "$DIR/headers.h" ]; then
+            echo "🔮 Dùng Xác Chính Tông (.h)"
             cp "$DIR/headers.h" "$DEST/$H_NAME.h"
+          # 2. Hoặc xay từ headers.txt
           elif [ -f "$DIR/headers.txt" ]; then
+            echo "🧪 Đang luyện xác từ .txt"
             while IFS= read -r line || [ -n "$line" ]; do
               CLASS=$(echo "$line" | cut -d':' -f1 | xargs)
               BASE=$(echo "$line" | grep ":" | cut -d':' -f2 | xargs || echo "NSObject")
@@ -82,8 +88,9 @@ jobs:
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           H_NAME="${{ steps.metadata.outputs.h_name }}"
-          # Tối ưu LDFLAGS cho cả Jailbreak và Non-Jailbreak
-          DYNAMIC_FLAGS="-fobjc-arc -Wno-error -I$THEOS/include/$H_NAME"
+          
+          # Tối ưu FLAGS: Nhìn cả tại chỗ (-I.) và trong kho xác (-I$THEOS...)
+          DYNAMIC_FLAGS="-fobjc-arc -Wno-error -I. -I$THEOS/include/$H_NAME"
           
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.5 \
@@ -96,7 +103,7 @@ jobs:
         run: |
           git config user.name "PhapSuAction"
           git config user.email "action@github.com"
-          git add . && git commit -m "🏮 Build: ${{ steps.metadata.outputs.safe_name }} v${{ steps.metadata.outputs.proj_ver }}" || exit 0
+          git add . && git commit -m "🏮 Phong Thần: ${{ steps.metadata.outputs.safe_name }} v${{ steps.metadata.outputs.proj_ver }}" || exit 0
           git push origin main
 
       - name: 📦 7. Xuất xưởng
