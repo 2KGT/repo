@@ -82,77 +82,29 @@ jobs:
       # ===============================================
       # CÔNG ĐOẠN 4: VẬN CHUYỂN HEADERS (CHỈ KHI CÓ ĐƠN)
       # ===============================================
-      - name: 🚀 Nhập kho Headers (Bản Sát Thủ Diệt Zip - Chuẩn hóa)
+      - name: 🚀 Nhập kho (Hệ Pháp Sư Toàn Năng)
         run: |
-          DIR="${{ steps.metadata.outputs.proj_dir }}"
-          [ ! -f "$DIR/headers.txt" ] && echo "🍃 Không có đơn hàng." && exit 0
-          rm -rf $THEOS/include/*
+          # 1. Dọn dẹp chiến trường
+          rm -rf $THEOS/include/YouTubeHeader
+          mkdir -p $THEOS/include/YouTubeHeader
           
-          # 1. Lập "Tổng sớ" ban đầu
-          sed -E 's/\.h//g; s/\r//g; s/ //g; /^\s*$/d' "$DIR/headers.txt" | sort -u > gia_pha.txt
+          # 2. Yểm bùa: Đúc đúng 3 cái xác rỗng cho 3 Class đang dùng
+          # Việc đúc vào đây giúp Makefile trỏ -I$(THEOS)/include/YouTubeHeader vẫn chạy chuẩn
           
-          echo "📝 GIAI ĐOẠN 1: Truy tìm tông ti (Chỉ soi file văn bản)..."
-          for KHO in headers/*/; do
-            [ -d "$KHO" ] || continue
-            # CHỐT CHẶN: Chỉ grep trên file .h, bỏ qua hoàn toàn file nhị phân
-            grep -rhE '^[[:space:]]*#(import|include)' "$KHO" --include="*.h" 2>/dev/null | \
-            sed -E 's/.*["<]([^">/ ]+\/)?([^"> ]+)\.h[">]/\2/' >> gia_pha.txt || true
-            
-            # LỤC ZIP: Dùng lệnh chuyên dụng để liệt kê, không dùng grep bừa bãi
-            for ZIP in "$KHO"*.zip; do
-              [ -e "$ZIP" ] || continue
-              unzip -l "$ZIP" | grep ".h$" | awk '{print $NF}' | sed -E 's/.*\/(.*)\.h/\1/' >> gia_pha.txt || true
-            done
-          done
+          echo "@interface YTAdSlotContainerView : UIView @end" > $THEOS/include/YouTubeHeader/YTAdSlotContainerView.h
+          echo "@interface YTAdsInnerTubeContext : NSObject @end" > $THEOS/include/YouTubeHeader/YTAdsInnerTubeContext.h
+          echo "@interface YTAdLayout : NSObject @end" > $THEOS/include/YouTubeHeader/YTAdLayout.h
           
-          # Làm sạch gia phả: Xóa ký tự lạ, xóa dòng trống, xóa trùng
-          sed -i 's/\r//g' gia_pha.txt 2>/dev/null || true
-          sort -u gia_pha.txt -o gia_pha.txt
-
-          echo "🚛 GIAI ĐOẠN 2: Bốc hàng một mẻ - Phẳng hóa đường dẫn..."
-          while IFS= read -r NAME || [ -n "$NAME" ]; do
-            CLEAN_NAME=$(echo "$NAME" | tr -d '\r' | xargs)
-            [ -z "$CLEAN_NAME" ] || [[ "$CLEAN_NAME" == *" "* ]] && continue # Bỏ qua tên có dấu cách (lỗi binary)
-            
-            FOUND=false
-            for KHO_APP in headers/*/; do
-              [ -d "$KHO_APP" ] || continue
-              APP_NAME=$(basename "$KHO_APP")
-              DEST_DIR="$THEOS/include/$APP_NAME"
-              mkdir -p "$DEST_DIR"
-
-              # Bốc hàng Chính Đạo
-              TARGET=$(find "$KHO_APP" -maxdepth 1 -iname "${CLEAN_NAME}.h" | head -n 1)
-              if [ -z "$TARGET" ]; then
-                for ZIP in "$KHO_APP"*.zip; do
-                  [ -e "$ZIP" ] || continue
-                  INTERNAL=$(unzip -l "$ZIP" | grep -i "/${CLEAN_NAME}.h$" | awk '{print $NF}' | head -n 1)
-                  if [ -n "$INTERNAL" ]; then
-                    unzip -j "$ZIP" "$INTERNAL" -d "$DEST_DIR/"
-                    TARGET="$DEST_DIR/$CLEAN_NAME.h"
-                    break
-                  fi
-                done
-              else
-                cp -f "$TARGET" "$DEST_DIR/"
-              fi
-
-              if [ -f "$DEST_DIR/$CLEAN_NAME.h" ]; then
-                # PHẲNG HÓA: Nhân bản ra gốc để compiler gọi kiểu gì cũng trúng
-                cp -f "$DEST_DIR/$CLEAN_NAME.h" "$THEOS/include/" 2>/dev/null || true
-                echo "  ✅ Nhập kho: $CLEAN_NAME"
-                FOUND=true; break
-              fi
-            done
-
-            # GIAI ĐOẠN 3: PHONG THẦN (Đúc xác rỗng nếu mất tích)
-            if [ "$FOUND" = false ]; then
-               echo -e "@interface $CLEAN_NAME : NSObject\n@end" > "$THEOS/include/$CLEAN_NAME.h"
-               echo "  ✨ [Phong Thần] Đúc phôi: $CLEAN_NAME"
-            fi
-          done < gia_pha.txt
-
-          echo "🏁 Toàn gia quy tụ. Khai hỏa thôi ông giáo!"
+          # 3. Tạo một file Header tổng hợp để Tweak.x có chỗ mà bấu víu
+          cat <<EOF > $THEOS/include/YouTubeHeader/YouTubeHeader.h
+          #import <Foundation/Foundation.h>
+          #import <UIKit/UIKit.h>
+          #import "YTAdSlotContainerView.h"
+          #import "YTAdsInnerTubeContext.h"
+          #import "YTAdLayout.h"
+          EOF
+          
+          echo "✨ [Bùa Chú] Đã đúc xong 3 hình nhân thế mạng. Nhẹ tênh!"
 
       # ===============================================
       # CÔNG ĐOẠN 5: THỰC THI BUILD
