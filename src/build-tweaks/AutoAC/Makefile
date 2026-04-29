@@ -6,20 +6,17 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = AutoAC
 
-# --- PHẦN CẬP NHẬT ĐỂ ĂN KHỚP VỚI NHÀ MÁY ---
-# Không dùng đường dẫn ../../../ nữa. 
-# Script Nhập kho sẽ đúc hàng vào $(THEOS)/include/YouTubeHeader
+# --- PHẦN CẬP NHẬT: HỆ PHÁP SƯ TOÀN NĂNG ---
+# Không mượn đồ của Google nữa, ta tự đúc xác ngay trong project
 AutoAC_CFLAGS = -fobjc-arc \
-                -I$(THEOS)/include/YouTubeHeader \
+                -I. \
                 -Wno-deprecated-declarations \
                 -Wno-unused-variable \
-                -Wno-error \
-                -Wno-module-import-in-extern-c
+                -Wno-error
 # -------------------------------------------
 
 AutoAC_FILES = Tweak.x Settings.x
-AutoAC_FRAMEWORKS = UIKit Foundation CoreGraphics QuartzCore AVFoundation CoreImage
-AutoAC_PRIVATE_FRAMEWORKS = MediaRemote 
+AutoAC_FRAMEWORKS = UIKit Foundation CoreGraphics QuartzCore AVFoundation
 AutoAC_LIBRARIES = substrate
 
 include $(THEOS_MAKE_PATH)/tweak.mk
