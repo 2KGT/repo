@@ -37,25 +37,23 @@ jobs:
           echo "TARGET_NAME=$TARGET_BIN" >> $GITHUB_ENV
           mv "src/refinery/staging/$TARGET_BIN" src/refinery/staging/main_bin
 
-      - name: 💎 Chế tác Cầu nối (Bridge Header)
+      - name: 💎 Chế tác Cầu nối (Bản vá lưới Siêu cấp)
         run: |
           TARGET_BIN="src/refinery/staging/main_bin"
           OUT_DIR="headers/${{ github.event.inputs.folder_name }}"
-          APP_NAME="${{ env.TARGET_NAME }}"
           
-          echo "🌉 Đang luyện Bridge.h cho $APP_NAME..."
-          echo "// Refinery Bridge Header: $APP_NAME" > "$OUT_DIR/Bridge.h"
+          echo "// Refinery Bridge Header (Fixed)" > "$OUT_DIR/Bridge.h"
           echo "@import Foundation; @import UIKit;" >> "$OUT_DIR/Bridge.h"
           
-          # 1. Quét danh sách Class và tiêm vào Bridge
-          # Lệnh nm này cực kỳ lành, cân được cả Executable lẫn Dylib
-          nm -gU "$TARGET_BIN" | grep "OBJC_CLASS_$_" | sed 's/.*OBJC_CLASS_$_\(.*\)/@class \1;/' >> "$OUT_DIR/Bridge.h"
+          # Dùng lệnh nm với các cờ mạnh hơn để quét cả những Symbol bị ẩn
+          # Sau đó lọc lấy những chuỗi bắt đầu bằng YT, ML, hoặc các tiền tố quen thuộc
+          nm -gU "$TARGET_BIN" 2>/dev/null | grep -E "OBJC_CLASS_\$_(YT|ML|AS|G|YTI)" | sed 's/.*OBJC_CLASS_\$_\(.*\)/@class \1;/' | sort -u >> "$OUT_DIR/Bridge.h"
           
-          # 2. Tạo một file ký hiệu giả để Theos không bắt bẻ (Tùy chọn)
-          echo "Đây là danh mục Class của $APP_NAME, dùng Bridge.h để hook." > "$OUT_DIR/ReadMe.txt"
-          
-          echo "✅ Đã chế tác xong Bridge.h tại: $OUT_DIR"
-
+          # Nếu vẫn ít quá, dùng chiêu cuối: Quét chuỗi (strings)
+          if [ $(wc -l < "$OUT_DIR/Bridge.h") -lt 10 ]; then
+            echo "⚠️ nm tịt ngòi, chuyển sang quét chuỗi (strings)..."
+            strings "$TARGET_BIN" | grep -E "^(YT|ML|AS)[A-Z][A-Za-z0-9_]{5,64}$" | sort -u | sed 's/.*/@class &;/' >> "$OUT_DIR/Bridge.h"
+          fi
 
       - name: 🎁 Nhập kho (Push)
         run: |
