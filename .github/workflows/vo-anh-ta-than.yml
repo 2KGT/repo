@@ -1,0 +1,113 @@
+name: 🏮 VÔ ẢNH LUYỆN ĐAN ĐÀI (7.1)
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: 'Chọn linh hồn dự án (AutoAC...)'
+        required: true
+        type: choice
+        default: 'AutoAC'
+        options: [ AutoAC, AutoDL ]
+      header_folder:
+        description: 'Thư mục Nhốt Xác (Mặc định: 2KGTHeader)'
+        required: false
+        default: '2KGTHeader'
+      publish:
+        description: 'Khai hỏa Release (Lên Sileo)'
+        type: boolean
+        default: false
+
+env:
+  THEOS: ${{ github.workspace }}/theos
+  BASE_URL: "https://raw.githubusercontent.com/2KGT/repo/main"
+
+jobs:
+  forge:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 📥 1. Triệu hồi Source
+        uses: actions/checkout@v4
+
+      - name: 🛠️ 2. Chuẩn bị Pháp khí (Theos & SDK)
+        run: |
+          brew install make ldid dpkg
+          git clone --recursive https://github.com/theos/theos.git $THEOS
+          curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
+
+      - name: 🎯 3. Định vị Chân thân & Tăng bậc (Versioning)
+        id: metadata
+        run: |
+          PROJ="${{ github.event.inputs.project }}"
+          CTRL=$(find src/build-tweaks/$PROJ -name "control")
+          DIR=$(dirname "$CTRL")
+          SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | xargs | tr -d '() ')
+          
+          # Tự động nhảy Version: Release thì giữ nguyên, Test thì thêm đuôi giờ
+          OLD_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
+          NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$OLD_VER" || echo "$OLD_VER-test$(date +%H%M)")
+          
+          sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
+          # Ép "ngòi nổ" để chắc chắn kích hoạt trên iPhone 12 Pro
+          sed -i '' "s/^Depends: .*/Depends: mobilesubstrate, firmware (>= 14.0)/" "$CTRL"
+          
+          echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
+          echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
+          echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
+
+      - name: 🪄 4. Đúc Xác Vô Ảnh (Header Processing)
+        id: shadow_forge
+        run: |
+          DIR="${{ steps.metadata.outputs.proj_dir }}"
+          DEST="$THEOS/include/${{ github.event.inputs.header_folder }}"
+          mkdir -p "$DEST"
+          
+          if [ -f "$DIR/headers.h" ]; then
+            echo "🔮 Dùng Xác Chính Tông (.h)"
+            cp "$DIR/headers.h" "$DEST/${{ github.event.inputs.header_folder }}.h"
+          elif [ -f "$DIR/headers.txt" ]; then
+            echo "🧪 Đang luyện xác từ .txt"
+            while IFS= read -r line || [ -n "$line" ]; do
+              CLASS=$(echo "$line" | cut -d':' -f1 | xargs)
+              BASE=$(echo "$line" | grep ":" | cut -d':' -f2 | xargs || echo "NSObject")
+              echo "@interface $CLASS : $BASE @end" > "$DEST/$CLASS.h"
+            done < "$DIR/headers.txt"
+            
+            # Đúc file mục lục tổng
+            INDEX="$DEST/${{ github.event.inputs.header_folder }}.h"
+            echo "#import <UIKit/UIKit.h>" > "$INDEX"
+            for h in "$DEST"/*.h; do
+              [ "$(basename "$h")" != "$(basename "$INDEX")" ] && echo "#import \"$(basename "$h")\"" >> "$INDEX"
+            done
+          fi
+
+      - name: 🔨 5. Luyện Đan (Compile DEB)
+        run: |
+          DIR="${{ steps.metadata.outputs.proj_dir }}"
+          # Độ thêm thông số để Sideload (Non-Jailbreak) không bị văng
+          DYNAMIC_CFLAGS="-fobjc-arc -Wno-error -I$THEOS/include/${{ github.event.inputs.header_folder }}"
+          DYNAMIC_LDFLAGS="-Wl,-segalign,4000"
+          
+          make -C "$DIR" clean package FINALPACKAGE=1 \
+            TARGET=iphone:clang:14.5:14.5 \
+            ADDITIONAL_CFLAGS="$DYNAMIC_CFLAGS" \
+            ADDITIONAL_LDFLAGS="$DYNAMIC_LDFLAGS"
+          
+          mkdir -p output && cp "$DIR/packages/"*.deb output/
+
+      - name: 📝 6. Khắc tên lên Bảng vàng (Release)
+        if: success()
+        run: |
+          git config user.name "PhapSuAction"
+          git config user.email "action@github.com"
+          # (Đoạn này giữ nguyên logic ghi Changelog và Push của ông giáo)
+          git add . && git commit -m "🏮 Luyện thành công: ${{ steps.metadata.outputs.safe_name }} v${{ steps.metadata.outputs.proj_ver }}"
+          git push origin main
+
+      - name: 📦 7. Xuất xưởng Linh Đan
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.metadata.outputs.safe_name }}_v${{ steps.metadata.outputs.proj_ver }}
+          path: output/
