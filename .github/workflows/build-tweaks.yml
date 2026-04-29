@@ -10,7 +10,7 @@ on:
         default: '(none)'
         options: [ (none), AutoAC, AutoDL ]
       header_folder:
-        description: 'Đặt tên folder nhốt xác (vd: YouTubeHeader)'
+        description: 'Tên thư mục nhốt xác (vd: YouTubeHeader)'
         required: false
         default: 'YouTubeHeader'
       publish:
@@ -30,42 +30,27 @@ jobs:
       contents: write
     steps:
       # =============================================================
-      # CÔNG ĐOẠN 1: TIẾP NHẬN HỆ THỐNG & CÔNG CỤ
+      # CÔNG ĐOẠN 1-2: KHỞI TẠO HỆ THỐNG & THEOS
       # =============================================================
       - name: 📥 1.1 Checkout Source
         uses: actions/checkout@v4
 
-      - name: 🛠️ 1.2 Setup Build Tools
+      - name: 🛠️ 1.2 Setup Tools
         run: |
           brew install make ldid dpkg
           echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
 
-      # =============================================================
-      # CÔNG ĐOẠN 2: TRIỂN KHAI HẬU CẦN THEOS
-      # =============================================================
-      - name: 🧠 2.1 Kiểm tra & Kích hoạt Cache Theos
-        id: cache-theos
-        uses: actions/cache@v4
-        with:
-          path: theos
-          key: ${{ runner.os }}-theos-v2
-          restore-keys: |
-            ${{ runner.os }}-theos-
-
-      - name: 🏗️ 2.2 Thiết lập Môi trường Theos
+      - name: 🏗️ 2.1 Setup Environment (Theos)
         run: |
-          if [ "${{ steps.cache-theos.outputs.cache-hit }}" != "true" ]; then
-            rm -rf $THEOS
-            git clone --recursive https://github.com/theos/theos.git $THEOS
-            mkdir -p $THEOS/sdks
-            curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
-          fi
+          git clone --recursive https://github.com/theos/theos.git $THEOS
+          mkdir -p $THEOS/sdks
+          curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
           mkdir -p $THEOS/include
 
       # =============================================================
-      # CÔNG ĐOẠN 3: ĐỊNH VỊ DỰ ÁN & CẤP NHÃN CONTROL
+      # CÔNG ĐOẠN 3: ĐỊNH VỊ DỰ ÁN & CẤP NHÃN
       # =============================================================
-      - name: 🎯 3.1 Gán nhãn Metadata & Phiên bản
+      - name: 🎯 3.1 Metadata & Versioning
         id: metadata
         run: |
           PROJ_NAME="${{ github.event.inputs.project }}"
@@ -79,12 +64,11 @@ jobs:
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
-          echo "✅ Đang làm việc tại dự án: $DIR"
 
       # =============================================================
       # CÔNG ĐOẠN 4: CỖ MÁY XAY XÁC PHÁP SƯ (NHÁNH VÔ ẢNH)
       # =============================================================
-      - name: 🪄 4.1 Kiểm tra & Xử lý Nguyên liệu
+      - name: 🪄 4.1 Xử lý Headers tự động
         id: process_headers
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
@@ -92,107 +76,80 @@ jobs:
           DEST="$THEOS/include/$FOLDER"
           
           if [ -f "$DIR/headers.txt" ]; then
-            echo "🏭 Có đơn hàng! Bắt đầu mở xưởng tại: $FOLDER"
             mkdir -p "$DEST"
-            
-            # Xay nguyên liệu từ file txt
             while IFS= read -r CLASS || [ -n "$CLASS" ]; do
               CLEAN=$(echo "$CLASS" | tr -d '\r' | xargs)
               [ -z "$CLEAN" ] && continue
               echo "@interface $CLEAN : NSObject @end" > "$DEST/$CLEAN.h"
-              echo "  🔹 Đúc xác: $CLEAN"
             done < "$DIR/headers.txt"
-
-            # Đúc Chìa Khóa Tổng (Index Header)
+            
             INDEX="$DEST/$FOLDER.h"
             echo "#import <Foundation/Foundation.h>" > "$INDEX"
             echo "#import <UIKit/UIKit.h>" >> "$INDEX"
             for h in "$DEST"/*.h; do
-              FILE=$(basename "$h")
-              if [ "$FILE" != "$FOLDER.h" ]; then
-                echo "#import \"$FILE\"" >> "$INDEX"
-              fi
+              [ "$(basename "$h")" != "$FOLDER.h" ] && echo "#import \"$(basename "$h")\"" >> "$INDEX"
             done
             echo "has_headers=true" >> $GITHUB_OUTPUT
-            echo "🏁 XÁC ĐÃ ĐÚC XONG TẠI: $FOLDER"
           else
-            echo "🍃 Không có nguyên liệu (headers.txt). Giải tán xưởng đúc, không tạo phòng."
             echo "has_headers=false" >> $GITHUB_OUTPUT
           fi
 
       # =============================================================
-      # CÔNG ĐOẠN 5: THỰC THI BUILD & KIỂM ĐỊNH DEB
+      # CÔNG ĐOẠN 5: BIÊN DỊCH DỰ ÁN
       # =============================================================
-      - name: 🔨 5.1 Khởi động Compiler & Đóng gói
+      - name: 🔨 5.1 Build DEB
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
-          HAS_HEADERS="${{ steps.process_headers.outputs.has_headers }}"
-          
-          # Cấu hình cờ mặc định (Hệ chính đạo)
           DYNAMIC_CFLAGS="-fobjc-arc -Wno-error"
-          
-          # Nếu nhánh Pháp sư có hàng thì mới thêm vách ngăn
-          if [ "$HAS_HEADERS" = "true" ]; then
-            FOLDER="${{ github.event.inputs.header_folder }}"
-            echo "🎯 Trỏ Compiler vào xưởng xác: $FOLDER"
-            DYNAMIC_CFLAGS="$DYNAMIC_CFLAGS -I$THEOS/include/$FOLDER"
-          else
-            echo "🚀 Build sạch (Pure Build) - Không dùng linh kiện ngoài."
+          if [ "${{ steps.process_headers.outputs.has_headers }}" = "true" ]; then
+            DYNAMIC_CFLAGS="$DYNAMIC_CFLAGS -I$THEOS/include/${{ github.event.inputs.header_folder }}"
           fi
-          
-          make -C "$DIR" clean package FINALPACKAGE=1 TARGET=iphone:clang:14.5:14.5 \
-            ADDITIONAL_CFLAGS="$DYNAMIC_CFLAGS"
-
-          mkdir -p deb_output
-          cp "$DIR/packages/"*.deb deb_output/
-          echo "📦 Thành phẩm đã sẵn sàng xuất xưởng!"
+          make -C "$DIR" clean package FINALPACKAGE=1 TARGET=iphone:clang:14.5:14.5 ADDITIONAL_CFLAGS="$DYNAMIC_CFLAGS"
+          mkdir -p deb_output && cp "$DIR/packages/"*.deb deb_output/
 
       # =============================================================
-      # CÔNG ĐOẠN 6: QUÉT DẤU # TRONG CODE & ĐỒNG BỘ REPO
+      # CÔNG ĐOẠN 6: TỰ ĐỘNG VIẾT NHẬT KÝ (CHANGELOG) & DÁN NHÃN
       # =============================================================
-      - name: 🚀 6.1 Cập nhật Depictions & Đồng bộ Repo
+      - name: 📝 6.1 Auto-Changelog & Sync
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           SAFE="${{ steps.metadata.outputs.safe_name }}"
+          VER="${{ steps.metadata.outputs.proj_ver }}"
+          CLOG_PATH="$DIR/CHANGELOG.md"
           JSON_PATH="depictions/${SAFE}.json"
-          IMG_BASE="${{ env.BASE_URL }}/depictions/images"
           SRC_FILE=$(find "$DIR" -name "*.x" -o -name "*.xm" | head -n 1)
-          
-          DESC_CONTENT="Phiên bản $SAFE từ 2KGT Repo."
-          if [ -n "$SRC_FILE" ]; then
-            EXTRACTED=$(grep "^#" "$SRC_FILE" | sed 's/^#//;s/^ //' | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
-            [ -n "$EXTRACTED" ] && DESC_CONTENT="$EXTRACTED"
-          fi
-          
+
+          # 1. Quét nội dung từ code (Dấu - và +)
+          FEAT=$(grep "^-" "$SRC_FILE" | sed 's/^- //' | sed ':a;N;$!ba;s/\n/\\n- /g' || echo "Cập nhật định kỳ")
+          FIX=$(grep "^+" "$SRC_FILE" | sed 's/^+ //' | sed ':a;N;$!ba;s/\n/\\n+ /g' || echo "Cải thiện ổn định")
+
+          # 2. Tự động đúc file Changelog (Nối đầu phiên bản mới)
+          TIMESTAMP=$(date "+%d/%m/%Y %H:%M")
+          OLD_CONTENT=$(cat "$CLOG_PATH" 2>/dev/null || echo "---")
+          echo -e "### 🚀 v$VER ($TIMESTAMP)\n#### ✨ Tính năng mới\n- $FEAT\n#### 🐛 Sửa lỗi\n- $FIX\n\n---\n$OLD_CONTENT" > "$CLOG_PATH"
+
+          # 3. Tạo bản tin Sileo
+          DESC="### ✨ Mới nhất (v$VER)\n- $FEAT\n\n### 🐛 Sửa lỗi\n- $FIX\n\n---\n### 📜 Nhật ký đầy đủ\nXem tại CHANGELOG.md\n\n---\n### ⚠️ Lưu ý\n- iOS 14.0+\n- Xoá bản cũ trước khi cài."
           mkdir -p depictions
-          echo '{"class":"DepictionTabView","tabs":[{"tabname":"Details","class":"DepictionStackView","views":[{"class":"DepictionHeaderView","title":"'$SAFE'"},{"class":"DepictionImageView","url":"'$IMG_BASE/${SAFE}-banner.png'","width":1242,"height":500,"cornerRadius":10},{"class":"DepictionScreenshotsView","itemCornerRadius":8,"screenshots":[' > "$JSON_PATH"
-          FIRST=true
-          for i in {1..5}; do
-            if [ -f "depictions/images/${SAFE}${i}.png" ]; then
-              [ "$FIRST" = true ] && FIRST=false || echo "," >> "$JSON_PATH"
-              echo '{"url":"'$IMG_BASE/${SAFE}${i}.png'"}' >> "$JSON_PATH"
-            fi
-          done
-          echo ']},{"class":"DepictionVideoView","videoURL":"'$IMG_BASE/${SAFE}.mp4'","cornerRadius":8},{"class":"DepictionMarkdownView","markdown":"'$DESC_CONTENT'","useMargins":true}]}]}' >> "$JSON_PATH"
-          
-          git add src/build-tweaks/ depictions/
+          IMG_BASE="${{ env.BASE_URL }}/depictions/images"
+          echo '{"class":"DepictionTabView","tabs":[{"tabname":"Details","class":"DepictionStackView","views":[{"class":"DepictionHeaderView","title":"'$SAFE'"},{"class":"DepictionImageView","url":"'$IMG_BASE/${SAFE}-banner.png'","width":1242,"height":500,"cornerRadius":10},{"class":"DepictionScreenshotsView","itemCornerRadius":8,"screenshots":[]},{"class":"DepictionMarkdownView","markdown":"'$DESC'","useMargins":true}]}]}' > "$JSON_PATH"
+
+          # 4. Đẩy ngược về Repo
+          git add "$CLOG_PATH" depictions/
           if [ "${{ github.event.inputs.publish }}" == "true" ]; then
             mkdir -p debs && cp deb_output/*.deb debs/
             dpkg-scanpackages -m debs /dev/null > Packages && bzip2 -fks Packages
             git add debs/ Packages Packages.bz2
-            MSG="🌟 Release: $SAFE v${{ steps.metadata.outputs.proj_ver }}"
+            MSG="🌟 Release: $SAFE v$VER"
           else
-            MSG="🛠️ Build: $SAFE v${{ steps.metadata.outputs.proj_ver }}"
+            MSG="🛠️ Build: $SAFE v$VER"
           fi
           git commit -m "$MSG" || exit 0
           git push origin main
 
-      # =============================================================
-      # CÔNG ĐOẠN 7: HOÀN TẤT & XUẤT XƯỞNG
-      # =============================================================
-      - name: 📦 7.1 Lưu trữ Artifacts
+      - name: 📦 7.1 Xuất xưởng Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.metadata.outputs.safe_name }}_v${{ steps.metadata.outputs.proj_ver }}
