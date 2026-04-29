@@ -1,15 +1,20 @@
 #import <UIKit/UIKit.h>
 
-// Khai báo để Compiler nhận diện
+@interface YTSettingsSectionItem : NSObject
++ (id)switchItemWithTitle:(id)title titleDescription:(id)desc accessibilityIdentifier:(id)acc switchOn:(BOOL)on switchBlock:(id)block settingItemId:(int)id;
+@end
+
 @interface YTSettingsSectionItemManager : NSObject @end
 @interface YTAppSettingsPresentationData : NSObject @end
+
 static const NSInteger AutoACSection = 2026;
+#define kPrefs [NSUserDefaults standardUserDefaults]
 
 %hook YTAppSettingsPresentationData
 + (NSArray *)settingsCategoryOrder {
     NSMutableArray *order = [%orig mutableCopy];
     if (![order containsObject:@(AutoACSection)]) {
-        [order insertObject:@(AutoACSection) atIndex:1]; 
+        [order insertObject:@(AutoACSection) atIndex:1]; // Nằm ngay dưới mục General
     }
     return [order copy];
 }
@@ -19,21 +24,24 @@ static const NSInteger AutoACSection = 2026;
 - (void)updateSectionForCategory:(NSUInteger)category withEntry:(id)entry {
     if (category == AutoACSection) {
         NSMutableArray *items = [NSMutableArray array];
-        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 
-        // Công tắc Xoá Cache
+        // 1. Công tắc Xoá Cache
         [items addObject:[%c(YTSettingsSectionItem) switchItemWithTitle:@"Xoá cache tự động" 
-            switchOn:[defaults boolForKey:@"kAutoClearCache"] 
+            titleDescription:@"Tự dọn dẹp khi mở App" 
+            accessibilityIdentifier:nil 
+            switchOn:[kPrefs boolForKey:@"kAutoClearCache"] 
             switchBlock:^BOOL (id cell, BOOL enabled) {
-                [defaults setBool:enabled forKey:@"kAutoClearCache"];
+                [kPrefs setBool:enabled forKey:@"kAutoClearCache"];
                 return YES;
             } settingItemId:0]];
 
-        // Công tắc Chặn Ads/Tags
+        // 2. Công tắc Chặn Ads & Tag
         [items addObject:[%c(YTSettingsSectionItem) switchItemWithTitle:@"Chặn quảng cáo & Tag" 
-            switchOn:[defaults boolForKey:@"kHideAds"] 
+            titleDescription:@"Loại bỏ Ads và Tag sản phẩm" 
+            accessibilityIdentifier:nil 
+            switchOn:[kPrefs boolForKey:@"kHideEverything"] 
             switchBlock:^BOOL (id cell, BOOL enabled) {
-                [defaults setBool:enabled forKey:@"kHideAds"];
+                [kPrefs setBool:enabled forKey:@"kHideEverything"];
                 return YES;
             } settingItemId:0]];
 
