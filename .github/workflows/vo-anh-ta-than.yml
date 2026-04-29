@@ -7,7 +7,7 @@ on:
         description: 'Linh hồn dự án'
         required: true
         type: choice
-        default: 'AutoAC'
+        default: '(none)'
         options: [ AutoAC, AutoDL ]
       publish:
         description: 'Release Official (Lên Sileo)'
