@@ -1,101 +1,48 @@
 #import <UIKit/UIKit.h>
 
 // =============================================================
-// PHẦN 1: KHAI BÁO GIAO DIỆN (INTERFACE)
-// Ta tự định nghĩa vỏ Class để Compiler không bắt bẻ khi thiếu file .h
-// ============================================================
+// CÁCH GỌI LẺ TỪ KHO (Sau khi đã chạy Nhà máy)
+// =============================================================
 
-// 1. Khai báo danh tính (Forward Declaration)
-// Cứ khai báo thế này, Compiler sẽ không đi tìm file .h nữa
-@class YTMEThumbnailPickerViewController;
+// Ông giáo chỉ cần import những thứ đã liệt kê trong headers.txt
+#import <YouTubeHeader/YTMEThumbnailPickerViewController.h>
+#import <YouTubeHeader/YTAdSlotContainerView.h>
+#import <YouTubeHeader/YTAdsInnerTubeContext.h>
+#import <YouTubeHeader/YTAdLayout.h>
 
-// 2. Nếu ông giáo muốn hook vào nó
-%hook YTMEThumbnailPickerViewController
-
-- (void)viewDidLoad {
-    %orig;
-    NSLog(@"🎯 Đã tóm được em Thumbnail Picker!");
-    
-    // Nếu muốn đổi màu hay ẩn hiện thì ép kiểu UIView cho nhanh
-    UIView *selfView = (UIView *)self.view;
-    [selfView setBackgroundColor:[UIColor redColor]];
-}
-
-%end
-
-@interface YTAdSlotContainerView : UIView
-@end
-
-@interface YTAdsInnerTubeContext : NSObject
-- (BOOL)isAdInterrupting;
-@end
-
-@interface YTAdLayout : NSObject
-- (id)init;
-@end
+// Bây giờ không cần @interface ... @end nữa vì Nhà máy đã đúc sẵn cho ông giáo rồi!
 
 // =============================================================
-// PHẦN 2: LOGIC TWEAK (CHẶN QUẢNG CÁO)
+// PHẦN 2: LOGIC TWEAK (VẪN GIỮ NGUYÊN)
 // =============================================================
 
 static BOOL kRemoveAds = YES;
 
-// Hàm đọc cài đặt từ Prefs
-static void loadPrefs() {
-    NSDictionary *defaults = @{@"kRemoveAds": @YES};
-    [[NSUserDefaults standardUserDefaults] registerDefaults:defaults];
-    
-    NSNumber *val = [[NSUserDefaults standardUserDefaults] objectForKey:@"kRemoveAds"];
-    kRemoveAds = val ? [val boolValue] : YES;
-}
+// ... (Giữ nguyên hàm loadPrefs) ...
 
-// 1. Chặn hiển thị View quảng cáo
 %hook YTAdSlotContainerView
 - (void)layoutSubviews {
     if (kRemoveAds) {
-        // Ép kiểu (UIView *) để dùng các hàm hệ thống mà không cần header xịn
-        UIView *selfView = (UIView *)self;
-        [selfView setHidden:YES];
-        [selfView setFrame:CGRectZero]; 
-        return; // Biến mất luôn, không chạy %orig
+        // Nhờ có Header đã đúc, ông giáo có thể gọi [self setHidden:] thoải mái 
+        // mà không cần phải ép kiểu (UIView *)self nữa (vì Header đã định nghĩa nó là UIView rồi)
+        [self setHidden:YES];
+        [self setFrame:CGRectZero]; 
+        return;
     }
     %orig;
 }
 %end
 
-// 2. Chặn Logic báo hiệu đang có quảng cáo
 %hook YTAdsInnerTubeContext
 - (BOOL)isAdInterrupting {
     return kRemoveAds ? NO : %orig;
 }
 %end
 
-// 3. Chặn khởi tạo Layout quảng cáo (Triệt hạ từ trứng nước)
 %hook YTAdLayout
 - (id)init {
-    if (kRemoveAds) {
-        return nil; 
-    }
-    return %orig;
+    return kRemoveAds ? nil : %orig;
 }
 %end
 
-// =============================================================
-// PHẦN 3: KHỞI TẠO TWEAK (CONSTRUCTOR)
-// =============================================================
-
-%ctor {
-    @autoreleasepool {
-        loadPrefs();
-        
-        // Lắng nghe thay đổi nếu ông giáo có làm Settings Panel
-        [[NSNotificationCenter defaultCenter] addObserverForName:NSUserDefaultsDidChangeNotification 
-                                                          object:nil 
-                                                           queue:[NSOperationQueue mainQueue] 
-                                                      usingBlock:^(NSNotification *note) {
-            loadPrefs();
-        }];
-        
-        %init;
-    }
-}
+// ... (Giữ nguyên %ctor) ...
