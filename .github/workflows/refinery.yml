@@ -1,4 +1,4 @@
-name: 🏭 Refinery - Lò Tinh Luyện (Phân loại kho)
+name: 🏭 Phong thần Bảng
 
 on:
   workflow_dispatch:
@@ -38,18 +38,17 @@ jobs:
           mv "src/refinery/staging/$TARGET_BIN" src/refinery/staging/main_bin
 
 
-      - name: 💎 Chế tác Cầu nối (Bản Phá Giới)
+      - name: 💎 Chế tác Cầu nối (Lối thoát hiểm)
         run: |
           TARGET_BIN="src/refinery/staging/main_bin"
           OUT_DIR="headers/${{ github.event.inputs.folder_name }}"
           
-          echo "// Refinery Bridge Header (Phá Giới)" > "$OUT_DIR/Bridge.h"
+          echo "// Refinery Bridge Header: Toàn tập" > "$OUT_DIR/Bridge.h"
           echo "@import Foundation; @import UIKit;" >> "$OUT_DIR/Bridge.h"
           
-          # Quét sạch mọi chuỗi ký tự có khả năng là tên Class (viết liền, không dấu cách)
-          strings "$TARGET_BIN" | grep -E "^[A-Z][A-Za-z0-9_]{10,50}$" | sort -u | sed 's/.*/@class &;/' >> "$OUT_DIR/Bridge.h"
-          
-          echo "📊 Tổng cộng nhặt được: $(wc -l < "$OUT_DIR/Bridge.h") phôi."
+          # Hốt sạch mọi thứ trông giống Class (Chỉ cần bắt đầu bằng chữ hoa)
+          # Không lọc tiền tố để tránh bỏ lỡ 'anh Bin' khi đổi tên
+          strings "$TARGET_BIN" | grep -E "^[A-Z][A-Za-z0-9_]{5,64}$" | sort -u | sed 's/.*/@class &;/' >> "$OUT_DIR/Bridge.h"
 
       - name: 🎁 Nhập kho (Push)
         run: |
