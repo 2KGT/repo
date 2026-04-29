@@ -1,5 +1,5 @@
 #import "Header.h"
-#import <2KGTHeader/2KGTHeader.h>
+#import <AutoACHeader/AutoACHeader.h>
 
 // Sau đó mới đến các logic Hook của ông giáo...
 
