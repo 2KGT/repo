@@ -1,15 +1,15 @@
-name: 🏭 Refinery - Lò Tinh Luyện (Tùy chỉnh kho)
+name: 🏭 Refinery - Lò Tinh Luyện (Phân loại kho)
 
 on:
   workflow_dispatch:
     inputs:
       ipa_url:
-        description: 'Dán Link IPA YouTube'
+        description: 'Dán Link IPA'
         required: true
-      output_path:
-        description: 'Thư mục đổ hàng (Vd: headers/YouTubeHeader)'
+      folder_name:
+        description: 'Tên thư mục con trong headers/ (Vd: YouTubeHeader)'
         required: true
-        default: 'headers/YouTubeHeader'
+        default: 'YouTubeHeader'
 
 jobs:
   refine_process:
@@ -23,37 +23,42 @@ jobs:
 
       - name: 🚚 Bốc vác & Xẻ thịt
         run: |
-          # 1. Tạo folder làm việc
           mkdir -p src/refinery/staging
-          OUT_DIR="${{ github.event.inputs.output_path }}"
+          # Gắn gốc headers/ với tên thư mục ông giáo nhập
+          OUT_DIR="headers/${{ github.event.inputs.folder_name }}"
           mkdir -p "$OUT_DIR"
           
-          # 2. Tải và gắp Trùm Cuối
           curl -L "${{ github.event.inputs.ipa_url }}" -o app.ipa
-          unzip -j app.ipa "Payload/*.app/YouTube" -d src/refinery/staging/
+          # Gắp file thực thi (YouTube hoặc bất kỳ app nào)
+          unzip -j app.ipa "Payload/*.app/*" -d src/refinery/staging/ 2>/dev/null || true
+          
+          # Tìm file thực thi chính (file nặng nhất trong staging)
+          TARGET_BIN=$(ls -S src/refinery/staging/ | head -1)
+          echo "TARGET_NAME=$TARGET_BIN" >> $GITHUB_ENV
+          mv "src/refinery/staging/$TARGET_BIN" src/refinery/staging/main_bin
 
       - name: 💎 Chế tác Linh hồn & Cầu nối
         run: |
-          TARGET_BIN="src/refinery/staging/YouTube"
-          OUT_DIR="${{ github.event.inputs.output_path }}"
+          TARGET_BIN="src/refinery/staging/main_bin"
+          OUT_DIR="headers/${{ github.event.inputs.folder_name }}"
+          APP_NAME="${{ env.TARGET_NAME }}"
           
-          echo "🔨 Luyện .tbd vào $OUT_DIR..."
-          xcrun tapi stubify "$TARGET_BIN" -o "$OUT_DIR/YouTube.tbd"
+          echo "🔨 Luyện $APP_NAME.tbd vào $OUT_DIR..."
+          xcrun tapi stubify "$TARGET_BIN" -o "$OUT_DIR/$APP_NAME.tbd"
           
-          echo "🌉 Luyện Bridge.h vào $OUT_DIR..."
-          echo "// Refinery Auto-Generated Bridge Header" > "$OUT_DIR/YouTube-Bridge.h"
-          echo "@import Foundation;" >> "$OUT_DIR/YouTube-Bridge.h"
-          echo "@import UIKit;" >> "$OUT_DIR/YouTube-Bridge.h"
+          echo "🌉 Luyện Bridge.h cho $APP_NAME..."
+          echo "// Refinery Bridge: $APP_NAME" > "$OUT_DIR/Bridge.h"
+          echo "@import Foundation; @import UIKit;" >> "$OUT_DIR/Bridge.h"
           
           # Quét Class và tiêm vào Bridge
-          nm -gU "$TARGET_BIN" | grep "OBJC_CLASS_$_" | sed 's/.*OBJC_CLASS_$_\(.*\)/@class \1;/' >> "$OUT_DIR/YouTube-Bridge.h"
+          nm -gU "$TARGET_BIN" | grep "OBJC_CLASS_$_" | sed 's/.*OBJC_CLASS_$_\(.*\)/@class \1;/' >> "$OUT_DIR/Bridge.h"
 
       - name: 🎁 Nhập kho (Push)
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add .
-          git commit -m "💎 Refinery: Nhập kho vào ${{ github.event.inputs.output_path }}" || exit 0
+          git add headers/
+          git commit -m "💎 Refinery: Thêm linh hồn ${{ github.event.inputs.folder_name }} vào kho" || exit 0
           git push
 
       - name: 🗑️ Dọn rác
