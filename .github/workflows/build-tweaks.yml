@@ -82,64 +82,63 @@ jobs:
       # =========================================================
       # CÔNG ĐOẠN 4: VẬN CHUYỂN HEADERS (CHỈ KHI CÓ ĐƠN)
       # =========================================================
-      - name: 🚛 Nhập kho Headers (Bản Stubifier - Hỗ trợ Bridge)
+      - name: 🚛 Nhập kho Headers (Bản Chính Tà Hợp Nhất 2.0)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
-          [ ! -f "$DIR/headers.txt" ] && echo "🍃 Không có đơn hàng. Bỏ qua." && exit 0
-          
+          [ ! -f "$DIR/headers.txt" ] && echo "🍃 Không có đơn hàng." && exit 0
           rm -rf $THEOS/include/*
           
           # 1. Làm sạch danh sách chờ
-          sed -E 's/\.h//g; s/\r//g; s/ //g; /^\s*$/d; /^\.\.\./d' "$DIR/headers.txt" | sort -u > pending.txt
+          sed -E 's/\.h//g; s/\r//g; s/ //g; /^\s*$/d' "$DIR/headers.txt" | sort -u > pending.txt
           
-          echo "📦 Bắt đầu đi chợ bằng bản đồ Bridge..."
-          
+          echo "🔎 GIAI ĐOẠN 1: Càn quét hàng Chính Đạo (File .h xịn)..."
           for KHO_APP in headers/*/; do
             [ -d "$KHO_APP" ] || continue
-            [ ! -s pending.txt ] && break
-            
             APP_NAME=$(basename "$KHO_APP")
-            BRIDGE_FILE="${KHO_APP}Bridge.h"
             DEST_DIR="$THEOS/include/$APP_NAME"
             
-            echo "🔍 Đang check kho: $APP_NAME"
-            
-            # Nếu kho này có file Bridge.h thần thánh
-            if [ -f "$BRIDGE_FILE" ]; then
-              cp pending.txt reading.txt
-              while IFS= read -r NAME || [ -n "$NAME" ]; do
-                # KIỂM TRA: Xem Class này có trong Bridge.h không
-                if grep -q "@class $NAME;" "$BRIDGE_FILE"; then
-                  mkdir -p "$DEST_DIR"
-                  # CHIÊU MỚI: Tự đẻ ra file .h giả để Theos không báo lỗi
-                  echo -e "@interface $NAME : NSObject\n@end" > "$DEST_DIR/$NAME.h"
-                  echo "  💎 Đã đúc linh kiện từ Bridge: $NAME.h"
-                  grep -vi "^$NAME$" pending.txt > pending.tmp && mv pending.tmp pending.txt
-                fi
-              done < reading.txt
-            fi
-            
-            # CHIÊU PHỤ: Vẫn hỗ trợ tìm file .h vật lý nếu có sẵn
             cp pending.txt reading.txt
-            while IFS= read -r NAME || [ -n "$NAME" ]; do
+            while IFS= read -r NAME; do
               TARGET=$(find "$KHO_APP" -maxdepth 1 -iname "${NAME}.h" | head -n 1)
               if [ -n "$TARGET" ]; then
                 mkdir -p "$DEST_DIR"
                 cp -f "$TARGET" "$DEST_DIR/"
-                echo "  ✅ Đã nhặt file vật lý: $(basename "$TARGET")"
+                echo "  ✅ Nhặt được hàng xịn: $NAME.h (Kho $APP_NAME)"
                 grep -vi "^$NAME$" pending.txt > pending.tmp && mv pending.tmp pending.txt
               fi
             done < reading.txt
           done
 
+          echo "💎 GIAI ĐOẠN 2: Đúc hàng Tà Đạo (Từ Bridge.h)..."
+          if [ -s pending.txt ]; then
+            for KHO_APP in headers/*/; do
+              [ -d "$KHO_APP" ] || continue
+              BRIDGE_FILE="${KHO_APP}Bridge.h"
+              [ ! -f "$BRIDGE_FILE" ] && continue
+              
+              APP_NAME=$(basename "$KHO_APP")
+              DEST_DIR="$THEOS/include/$APP_NAME"
+              
+              cp pending.txt reading.txt
+              while IFS= read -r NAME; do
+                # Tìm Class trong Bridge (dùng regex vạn năng)
+                if grep -qi "@class[[:space:]]\+$NAME" "$BRIDGE_FILE"; then
+                  mkdir -p "$DEST_DIR"
+                  echo -e "@interface $NAME : NSObject\n@end" > "$DEST_DIR/$NAME.h"
+                  echo "  🔨 Đã đúc phôi: $NAME.h (Dựa trên Bridge $APP_NAME)"
+                  grep -vi "^$NAME$" pending.txt > pending.tmp && mv pending.tmp pending.txt
+                fi
+              done < reading.txt
+            done
+          fi
+
           # Tổng kết
           if [ -s pending.txt ]; then
-            echo "❌ LỖI: Class không tồn tại trong Bridge hoặc kho:"
-            sed 's/$/.h/' pending.txt
-            exit 1
-          else
-            echo "🏁 Đã đúc đủ hàng từ Bridge. Sẵn sàng build!"
+            echo "❌ LỖI: Mất tích các linh kiện sau:"
+            cat pending.txt && exit 1
           fi
+          echo "🏁 Kho bãi đầy đủ. Khai hỏa!"
+
 
       # =========================================================
       # CÔNG ĐOẠN 5: THỰC THI BUILD
