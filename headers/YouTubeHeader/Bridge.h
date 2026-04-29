@@ -1,4 +1,4 @@
-// Refinery Bridge Header (Fixed)
+// Refinery Bridge Header (Brute Force)
 @import Foundation; @import UIKit;
 @class ASAbsoluteLayoutElement;
 @class ASAbstractLayoutController;
@@ -598,7 +598,6 @@
 @class ASMWebViewModel_API;
 @class ASMWebViewModelImpl;
 @class ASMWebViewModelImpl__699125419_GeneratedFactoryImpl;
-@class ASMWebViewModelImpl__699125419_GeneratedFactoryImpl_ASMWebViewModel;
 @class ASMWebViewURLChecker;
 @class ASMWebViewURLChecker_API;
 @class ASMWebViewURLCheckerImpl;
@@ -1003,7 +1002,6 @@
 @class ASWUniversalMetricsAccessibilityInfoGrayscaleEnabled;
 @class ASWUniversalMetricsAccessibilityInfoGuidedAccessEnabled;
 @class ASWUniversalMetricsAccessibilityInfoInvertColorsEnabled;
-@class ASWUniversalMetricsAccessibilityInfoPreferredContentSizeCategory;
 @class ASWUniversalMetricsAccessibilityInfoReduceMotionEnabled;
 @class ASWUniversalMetricsAccessibilityInfoReduceTransparencyEnabled;
 @class ASWUniversalMetricsAccessibilityInfoSpeakScreenEnabled;
@@ -1773,7 +1771,6 @@
 @class YTAccountScopedVisitorIdService;
 @class YTAccountScopedVisitorIdService_API;
 @class YTAccountScopedVisitorIdServiceImpl;
-@class YTAccountScopedVisitorIdServiceImpl_YTAccountScopedVisitorIdService;
 @class YTAccountsListCacheEvents;
 @class YTAccountsListCacheService;
 @class YTAccountsListCacheService_API;
@@ -1963,7 +1960,6 @@
 @class YTAdIntervalManagerImpl_YTAdIntervalManager;
 @class YTAdIntervalManagerTriggerAdapter;
 @class YTAdIntervalManagerTriggerAdapter_API;
-@class YTAdIntervalManagerTriggerAdapter_YTAdIntervalManagerTriggerAdapter;
 @class YTAdIntroVideoPlayerOverlayViewController;
 @class YTAdjustableAccessibilityProtocol;
 @class YTAdLayout;
@@ -2084,7 +2080,6 @@
 @class YTAdsFrequencyCapProtocol_API;
 @class YTAdsFullscreenBrowserController;
 @class YTAdsFullscreenBrowserController_API;
-@class YTAdsFullscreenBrowserController_YTAdsFullscreenBrowserController;
 @class YTAdsFullscreenBrowserHideCommandHandler;
 @class YTAdsFullscreenBrowserHideCommandHandler_API;
 @class YTAdsFullscreenBrowserHideCommandHandlerImpl;
@@ -2132,7 +2127,6 @@
 @class YTAdSlotV2Configuration;
 @class YTAdsMainAppSKAdImpressionService;
 @class YTAdsMainAppSKAdImpressionServiceImpl;
-@class YTAdsMainAppSKAdImpressionServiceImpl_YTAdsSKAdImpressionService;
 @class YTAdsMainAppSKOverlayService;
 @class YTAdsMainAppSKOverlayServiceImpl;
 @class YTAdsMainAppSKOverlayServiceImpl_YTAdsSKOverlayService;
@@ -2286,7 +2280,6 @@
 @class YTAppBrowseService;
 @class YTAppBrowseService_API;
 @class YTAppBrowseService_YTAppBrowseService_YTBrowseService;
-@class YTAppBrowseServiceGhostCardsLoadingScreenContentResponseProvider;
 @class YTAppBrowseServiceHomeResponseProvider;
 @class YTAppBrowseServiceHomeResponseProvider_API;
 @class YTAppBrowseServiceHomeResponseProviderImpl;
@@ -2388,19 +2381,16 @@
 @class YTAppOfflineEntityCleanupWorker;
 @class YTAppOfflineEntityCleanupWorker_API;
 @class YTAppOfflineEntityCleanupWorkerImpl;
-@class YTAppOfflineEntityCleanupWorkerImpl_YTAppOfflineEntityCleanupWorker;
 @class YTAppOfflineFeedbackProductSpecificDataProvider;
 @class YTAppOfflineHelpBundle;
 @class YTAppOfflineMenuItemController;
 @class YTAppOfflineMenuItemController_API;
 @class YTAppOfflineMenuItemControllerImpl;
-@class YTAppOfflineMenuItemControllerImpl_YTAppOfflineMenuItemController;
 @class YTAppOfflinePlaybackTrackingDecorator;
 @class YTAppOfflinePlaybackVideoList;
 @class YTAppOfflinePlaylistController;
 @class YTAppOfflinePlaylistController_API;
 @class YTAppOfflinePlaylistControllerImpl;
-@class YTAppOfflinePlaylistControllerImpl_YTAppOfflinePlaylistController;
 @class YTAppOfflinePlaylistUtil;
 @class YTAppOfflineResources;
 @class YTAppOfflineResources_API;
@@ -2484,12 +2474,10 @@
 @class YTAppSettingsViewControllerDelegate;
 @class YTAppStartupBaselineDateProvider;
 @class YTAppStartupBaselineDateProvider_API;
-@class YTAppStartupBaselineDateProvider_YTAppStartupBaselineDateProvider;
 @class YTAppStartupBehaviourObserver;
 @class YTAppStartupElements;
 @class YTAppStartupEvent;
 @class YTAppStartupInstrumentationAddAutoFinishBlock;
-@class YTAppStartupInstrumentationAddBlockAndTriggeringTicks_block_invoke;
 @class YTAppStartupInstrumentationAddBlockAndTriggeringTicksImpl;
 @class YTAppStartupInstrumentationAppStartupBaselineDate;
 @class YTAppStartupInstrumentationBulkTicks;
@@ -2528,7 +2516,6 @@
 @class YTAppTransactionQueueController;
 @class YTAppTransactionQueueController_API;
 @class YTAppTransactionQueueControllerImpl;
-@class YTAppTransactionQueueControllerImpl_YTAppTransactionQueueController;
 @class YTAppUserDefaultsMigrator;
 @class YTAppUserDefaultsMigrator_API;
 @class YTAppUserDefaultsMigratorImpl;
@@ -3736,7 +3723,6 @@
 @class YTClearAppBadgeCommandHandler_API;
 @class YTClearAppBadgeCommandHandler_YTClearAppBadgeCommandHandler;
 @class YTClearcutComplianceDataProvider;
-@class YTClearcutComplianceDataProvider_CCTClearcutComplianceDataProvider;
 @class YTClearcutConfig;
 @class YTClearcutController;
 @class YTClearcutController_API;
@@ -3790,11 +3776,9 @@
 @class YTClientSideExperiment_;
 @class YTClientSideExperimentsController;
 @class YTClientSideExperimentsController_API;
-@class YTClientSideExperimentsController_YTClientSideExperimentsController;
 @class YTClientSideResolveUrl;
 @class YTClientSideResolveUrlController;
 @class YTClientSideResolveUrlController_API;
-@class YTClientSideResolveUrlController_YTClientSideResolveUrlController;
 @class YTClientSideSorting;
 @class YTClientStoreInfoInnerTubeContextDecorator;
 @class YTClientStoreInfoInnerTubeContextDecorator_API;
@@ -3823,7 +3807,6 @@
 @class YTClipsEngagementPanelELMStore;
 @class YTClipsEngagementPanelELMStore_API;
 @class YTClipsEngagementPanelELMStoreImpl;
-@class YTClipsEngagementPanelELMStoreImpl_YTClipsEngagementPanelELMStore;
 @class YTClipsPresentationUtils;
 @class YTClipTrimAdjustableView;
 @class YTClipTrimController;
@@ -4029,7 +4012,6 @@
 @class YTCommentsStreamReloadCommandHandlerImpl;
 @class YTCommentsStreamReloadController;
 @class YTCommentsStreamReloadController_API;
-@class YTCommentsStreamReloadController_YTCommentsStreamReloadController;
 @class YTCommentsUploadCoordinator;
 @class YTCommentsUploadCoordinator_API;
 @class YTCommentsUploadCoordinator_YTCommentsUploadCoordinator;
@@ -4047,7 +4029,6 @@
 @class YTCommerceActionCommandHandler;
 @class YTCommerceActionCommandHandler_API;
 @class YTCommerceActionCommandHandlerImpl;
-@class YTCommerceActionCommandHandlerImpl_YTCommerceActionCommandHandler;
 @class YTCommerceActionService;
 @class YTCommerceActionService_API;
 @class YTCommerceActionServiceImpl;
@@ -4061,7 +4042,6 @@
 @class YTCommerceIAPResponseProcessor;
 @class YTCommerceIAPResponseProcessor_API;
 @class YTCommerceIAPResponseProcessorImpl;
-@class YTCommerceIAPResponseProcessorImpl_YTCommerceIAPResponseProcessor;
 @class YTCommerceMessageBuilderBlockProvider;
 @class YTCommerceMessageBuilderBlockProvider_API;
 @class YTCommerceMessageBuilderRegistry;
@@ -4342,7 +4322,6 @@
 @class YTCreationAboveEngagementPanelView;
 @class YTCreationAboveFilterPickerEngagementPanelView;
 @class YTCreationAboveFilterPickerEngagementPanelViewController;
-@class YTCreationAboveFilterPickerEngagementPanelViewControllerDelegate;
 @class YTCreationAcceptedTOSVersionCommandHandler;
 @class YTCreationAcceptedTOSVersionCommandHandler_API;
 @class YTCreationAcceptedTOSVersionCommandHandlerImpl;
@@ -4469,7 +4448,6 @@
 @class YTCreationCSILoggingController;
 @class YTCreationCSILoggingController_API;
 @class YTCreationCSILoggingControllerImpl;
-@class YTCreationCSILoggingControllerImpl_YTCreationCSILoggingController;
 @class YTCreationDialogs;
 @class YTCreationDidChangeLocationPermissionsStatus;
 @class YTCreationDurationToastButton;
@@ -4494,7 +4472,6 @@
 @class YTCreationEditorCaptionsService;
 @class YTCreationEditorCaptionsService_API;
 @class YTCreationEditorCaptionsServiceImpl;
-@class YTCreationEditorCaptionsServiceImpl_YTCreationEditorCaptionsService;
 @class YTCreationEditorCaptionsTOKUtils;
 @class YTCreationEditorEffectsComponent;
 @class YTCreationEditorEffectsComponentDeps;
@@ -4603,7 +4580,6 @@
 @class YTCreationGetDynamicPageService;
 @class YTCreationGetDynamicPageService_API;
 @class YTCreationGetDynamicPageServiceImpl;
-@class YTCreationGetDynamicPageServiceImpl_YTCreationGetDynamicPageService;
 @class YTCreationGPUBufferReceiver;
 @class YTCreationGreenScreenFeature;
 @class YTCreationGreenScreenFeatureController;
@@ -4614,7 +4590,6 @@
 @class YTCreationGreenScreenFeatureControllerFactoryImpl;
 @class YTCreationGreenScreenMediaPickerModel;
 @class YTCreationHAMAudioDownloader;
-@class YTCreationHAMAudioDownloader_YTCreationMediaFetcherAudioDownloader;
 @class YTCreationHAMPlayerFetcher;
 @class YTCreationImage;
 @class YTCreationImageAsset;
@@ -4655,7 +4630,6 @@
 @class YTCreationImageUploadEventObserver;
 @class YTCreationImageUploadResult;
 @class YTCreationImageUploadService;
-@class YTCreationImageUploadService_YTCreationImageUploadServiceProtocol;
 @class YTCreationImageUploadServiceProtocol;
 @class YTCreationImageUploadServiceProtocol_API;
 @class YTCreationImageUploadTaskStateObserver;
@@ -4718,7 +4692,6 @@
 @class YTCreationInvocationThrottler_API;
 @class YTCreationInvocationThrottlerConfig;
 @class YTCreationInvocationThrottlerImpl;
-@class YTCreationInvocationThrottlerImpl_813629399_GeneratedFactoryImpl;
 @class YTCreationLimitedPhotoPermissionPanelView;
 @class YTCreationLimitedPhotoPermissionPanelViewController;
 @class YTCreationLocationColors;
@@ -4782,7 +4755,6 @@
 @class YTCreationMediaGenerationCommandHandlerLoggingEventDelegate;
 @class YTCreationMediaGenerationCommandRegistrationProvider;
 @class YTCreationMediaGenerationDoneButton;
-@class YTCreationMediaGenerationElementsCommandExtensionRegistryProvider;
 @class YTCreationMediaGenerationErrorView;
 @class YTCreationMediaGenerationErrorViewController;
 @class YTCreationMediaGenerationFeatureController;
@@ -4844,7 +4816,6 @@
 @class YTCreationMediaTransformControllerDelegate;
 @class YTCreationMessageActionBannerView;
 @class YTCreationModesController;
-@class YTCreationModesController__1785557156_SRLGeneratedFactoryProtocol;
 @class YTCreationModesController_API;
 @class YTCreationModesControllerDelegate;
 @class YTCreationModesEPContainerView;
@@ -4976,12 +4947,10 @@
 @class YTCreationStartCreationService;
 @class YTCreationStartCreationService_API;
 @class YTCreationStartCreationServiceImpl;
-@class YTCreationStartCreationServiceImpl_YTCreationStartCreationService;
 @class YTCreationStateObservableButton;
 @class YTCreationStickerConfigService;
 @class YTCreationStickerConfigService_API;
 @class YTCreationStickerConfigServiceImpl;
-@class YTCreationStickerConfigServiceImpl_YTCreationStickerConfigService;
 @class YTCreationStickerEditorViewBlockImpl;
 @class YTCreationStickerGestureManager;
 @class YTCreationStickerGestureManagerDelegate;
@@ -5029,7 +4998,6 @@
 @class YTCreationThumbnailBeltCellController;
 @class YTCreationThumbnailBeltCollectionViewController;
 @class YTCreationThumbnailBeltCollectionViewControllerConfiguration;
-@class YTCreationThumbnailBeltCollectionViewControllerConfigurationBuilder;
 @class YTCreationThumbnailBeltCollectionViewControllerDelegate;
 @class YTCreationThumbnailBeltCollectionViewLayoutModel;
 @class YTCreationThumbnailBeltDataProtocol;
@@ -5349,7 +5317,6 @@
 @class YTDataPushSecurityVerifier;
 @class YTDataPushSecurityVerifier_ELMSecurityVerifier;
 @class YTDataPushSingleFileDownloadClient;
-@class YTDataPushSingleFileDownloadClient_18731789_GeneratedFactoryImpl;
 @class YTDataPushSingleFileDownloadClient_API;
 @class YTDataPushUtilsErrorDomain;
 @class YTDataPushVersionController;
@@ -5536,7 +5503,6 @@
 @class YTDismissDialogEndpointHandler;
 @class YTDismissDialogEndpointHandler_API;
 @class YTDismissDialogEndpointHandlerImpl;
-@class YTDismissDialogEndpointHandlerImpl_YTDismissDialogEndpointHandler;
 @class YTDismissFullscreenModalCommandHandler;
 @class YTDismissFullscreenModalCommandHandler_API;
 @class YTDismissFullscreenModalCommandHandlerImpl;
@@ -5604,7 +5570,6 @@
 @class YTDownloadedItemsDataSourceBase;
 @class YTDownloadedItemsDataSourceBase_API;
 @class YTDownloadedItemsDataSourceBaseImpl;
-@class YTDownloadedItemsDataSourceBaseImpl_YTDownloadedItemsDataSourceBase;
 @class YTDownloadedItemsDataSourceImpl;
 @class YTDownloadedItemsDataSourceImpl_YTDownloadedItemsDataSource;
 @class YTDownloadedItemsDataSourceRequest;
@@ -5615,7 +5580,6 @@
 @class YTDownloadedItemsPlaybackDataSource_API;
 @class YTDownloadedItemsWatchNextCommand;
 @class YTDownloadedItemsWatchNextCommand_API;
-@class YTDownloadedItemsWatchNextCommand_YTDownloadedItemsWatchNextCommand;
 @class YTDownloadedPlaylistDownloadStatusViewModel;
 @class YTDownloadedPlaylistFeedItemFactory;
 @class YTDownloadedPlaylistFeedItemFactory_API;
@@ -5628,7 +5592,6 @@
 @class YTDownloadedVideoDataController;
 @class YTDownloadedVideoDataController_API;
 @class YTDownloadedVideoDataControllerImpl;
-@class YTDownloadedVideoDataControllerImpl_YTDownloadedVideoDataController;
 @class YTDownloadedVideoEntityModel;
 @class YTDownloadedVideoFeedItemFactory;
 @class YTDownloadedVideoFeedItemFactory_API;
@@ -5638,7 +5601,6 @@
 @class YTDownloadedVideoModel;
 @class YTDownloadedVideoModelDataSource;
 @class YTDownloadedVideoModelDataSource_API;
-@class YTDownloadedVideoModelDataSource_YTDownloadedVideoModelDataSource;
 @class YTDownloadedVideoModelEventController;
 @class YTDownloadedVideoModelEventController_API;
 @class YTDownloadedVideoModelEventError;
@@ -5667,7 +5629,6 @@
 @class YTDownloadsElementVideoModel;
 @class YTDownloadsLibraryDataController;
 @class YTDownloadsLibraryDataController_API;
-@class YTDownloadsLibraryDataController_YTDownloadsLibraryDataController;
 @class YTDownloadsLibraryDataSourceBase;
 @class YTDownloadsLibraryDataSourceBaseImpl;
 @class YTDownloadsLibraryRecommendationsDataSource;
@@ -5740,7 +5701,6 @@
 @class YTDownloadsPageStateDataSource;
 @class YTDownloadsPageStateDataSource_API;
 @class YTDownloadsPageStateDataSourceImpl;
-@class YTDownloadsPageStateDataSourceImpl_YTDownloadsPageStateDataSource;
 @class YTDownloadsPageStateEntityModel;
 @class YTDownloadsPageTexitBannerFeedItemFactory_API;
 @class YTDownloadsPageTimeSortableUIItem;
@@ -6328,7 +6288,6 @@
 @class YTElementsDownloadedPlaylistFeedItemFactory;
 @class YTElementsDownloadedVideoFeedItemFactory;
 @class YTElementsDownloadsPageLoadingSpinnerFeedItemFactory;
-@class YTElementsDownloadsPageRecommendationsSectionHeaderFeedItemFactory;
 @class YTElementsDownloadsPageRecommendedVideoFeedItemFactory;
 @class YTElementsDownloadsPageSmartDownloadedVideoFeedItemFactory;
 @class YTElementsDownloadsPageSmartDownloadsBannerFeedItemFactory;
@@ -6375,9 +6334,7 @@
 @class YTELMAnimatedVectorViewFactory;
 @class YTELMAnimatedVectorViewFactory_API;
 @class YTELMAnimatedVectorViewFactorySwift;
-@class YTELMAnimatedVectorViewFactorySwift_YTELMAnimatedVectorViewFactory;
 @class YTELMBlockDataSourceDelegateFactory;
-@class YTELMBlockDataSourceDelegateFactory_ELMDataSourceDelegateFactory;
 @class YTELMBlockRegistryProvider;
 @class YTELMBorderController;
 @class YTELMBundleIdentifier;
@@ -6428,12 +6385,10 @@
 @class YTELMImageLoadingLatencyLogger;
 @class YTELMImageLoadingLatencyLogger_API;
 @class YTELMImageLoadingLatencyLoggerImpl;
-@class YTELMImageLoadingLatencyLoggerImpl_YTELMImageLoadingLatencyLogger;
 @class YTELMImageLoadLoggingInfo;
 @class YTELMImageServiceMetricsLogger;
 @class YTELMImageServiceMetricsLogger_API;
 @class YTELMImageServiceMetricsLoggerImpl;
-@class YTELMImageServiceMetricsLoggerImpl_YTELMImageServiceMetricsLogger;
 @class YTELMInnerTubeContextDecorator;
 @class YTELMInnerTubeContextDecorator_API;
 @class YTELMInnerTubeContextDecoratorImpl;
@@ -6519,7 +6474,6 @@
 @class YTEmlMobserveHotConfigObserver;
 @class YTEmlMobserveHotConfigObserver_API;
 @class YTEmlMobserveHotConfigObserverImpl;
-@class YTEmlMobserveHotConfigObserverImpl_YTEmlMobserveHotConfigObserver;
 @class YTEMLMotionInteractionController;
 @class YTEmojiBundle;
 @class YTEmojiBundleIdentifier;
@@ -6609,7 +6563,6 @@
 @class YTEngagementPanelNavigationController;
 @class YTEngagementPanelNavigationControllerDelegate;
 @class YTEngagementPanelNavigationControllerEventObserver;
-@class YTEngagementPanelNavigationControllerEventObserverResponderProvider;
 @class YTEngagementPanelObserver;
 @class YTEngagementPanelParentViewControllerPresentationObserver;
 @class YTEngagementPanelParentViewControllerPresentationProvider;
@@ -6642,7 +6595,6 @@
 @class YTEngagementPanelViewController;
 @class YTEngagementPanelViewController_API;
 @class YTEngagementPanelViewControllerImpl;
-@class YTEngagementPanelViewControllerImpl_167410862_GeneratedFactoryImpl;
 @class YTEngagementPanelViewControllerManager;
 @class YTEngagementPanelViewControllerManagerDelegate;
 @class YTEngagementPanelViewControllerResponderProvider;
@@ -6711,7 +6663,6 @@
 @class YTEntityStoreTransformationInfo;
 @class YTEntityTransformationController;
 @class YTEntityTransformationController_API;
-@class YTEntityTransformationController_YTEntityTransformationController;
 @class YTEntityTransformationInfo;
 @class YTEntityTransformationMissingEntityObserver;
 @class YTEntityTransformationMissingEntityObserver_API;
@@ -6784,7 +6735,6 @@
 @class YTExitRewardedAdCommandHandler_API;
 @class YTExitRewardedAdCommandHandlerDomain;
 @class YTExitRewardedAdCommandHandlerImpl;
-@class YTExitRewardedAdCommandHandlerImpl_YTExitRewardedAdCommandHandler;
 @class YTExpandableCell;
 @class YTExpandablePromosheetDelegate;
 @class YTExpandablePromosheetViewProtocol;
@@ -6832,7 +6782,6 @@
 @class YTExternalShareUploadController;
 @class YTExternalShareUploadController_API;
 @class YTExternalShareUploadControllerImpl;
-@class YTExternalShareUploadControllerImpl_YTExternalShareUploadController;
 @class YTFABoolFormField;
 @class YTFabView;
 @class YTFabViewController;
@@ -7119,8 +7068,6 @@
 @class YTFullscreenEngagementAdLayoutCellController;
 @class YTFullscreenEngagementCompanionLayoutRenderingAdapter;
 @class YTFullscreenEngagementCompanionLayoutRenderingAdapterFactory;
-@class YTFullscreenEngagementCompanionLayoutRenderingAdapterFactory_API;
-@class YTFullscreenEngagementCompanionLayoutRenderingAdapterFactoryImpl;
 @class YTFullscreenEngagementCompanionRendererProvider;
 @class YTFullscreenEngagementCompanionRenderingSurface;
 @class YTFullscreenEngagementOverlayController;
@@ -7237,7 +7184,6 @@
 @class YTGetAnswerServiceImpl_YTGetAnswerService;
 @class YTGetDownloadActionCommandHandler;
 @class YTGetDownloadActionCommandHandler_API;
-@class YTGetDownloadActionCommandHandler_YTGetDownloadActionCommandHandler;
 @class YTGetDownloadActionService;
 @class YTGetDownloadActionService_API;
 @class YTGetDownloadActionService_YTGetDownloadActionService;
@@ -7249,7 +7195,6 @@
 @class YTGetLiveBroadcastStatusService;
 @class YTGetLiveBroadcastStatusService_API;
 @class YTGetLiveBroadcastStatusServiceImpl;
-@class YTGetLiveBroadcastStatusServiceImpl_YTGetLiveBroadcastStatusService;
 @class YTGetLocationCommandHandler;
 @class YTGetLocationCommandHandler_API;
 @class YTGetLocationCommandHandlerClassObservable;
@@ -7438,7 +7383,6 @@
 @class YTGMiniAppStateName;
 @class YTGNPAppSpecificAccountService;
 @class YTGNPBackgroundPushPayloadHandler;
-@class YTGNPBackgroundPushPayloadHandler_GNPBackgroundPushPayloadHandler;
 @class YTGNPClearcutIdentityIDExtractor;
 @class YTGNPClientIDConfigurationService;
 @class YTGNPConfigurationService;
@@ -7559,7 +7503,6 @@
 @class YTHideMoreDrawerCommandHandler;
 @class YTHideMoreDrawerCommandHandler_API;
 @class YTHideMoreDrawerCommandHandlerImpl;
-@class YTHideMoreDrawerCommandHandlerImpl_YTHideMoreDrawerCommandHandler;
 @class YTHideSnackbarCommandHandler;
 @class YTHideSnackbarCommandHandler_API;
 @class YTHideSnackbarCommandHandlerImpl;
@@ -7594,12 +7537,10 @@
 @class YTHomeOfflineResponseGenerator;
 @class YTHomeOfflineResponseGenerator_API;
 @class YTHomeOfflineResponseGeneratorImpl;
-@class YTHomeOfflineResponseGeneratorImpl_YTHomeOfflineResponseGenerator;
 @class YTHomeOfflineUtil;
 @class YTHomeWarmLoadLatencyTickLogger;
 @class YTHomeWarmLoadLatencyTickLogger_API;
 @class YTHomeWarmLoadLatencyTickLoggerImpl;
-@class YTHomeWarmLoadLatencyTickLoggerImpl_YTHomeWarmLoadLatencyTickLogger;
 @class YTHorizontalButtonListCell;
 @class YTHorizontalButtonListCellController;
 @class YTHorizontalButtonListView;
@@ -7656,7 +7597,6 @@
 @class YTIAboutThisAdRendererRoot_aboutThisAdRenderer;
 @class YTIAboutThisAdWebViewDelegate;
 @class YTIAcceptDelegateInvitationCommand;
-@class YTIAcceptDelegateInvitationCommand_acceptDelegateInvitationCommand;
 @class YTIAcceptDelegateInvitationRequest;
 @class YTIAcceptDelegateInvitationResponse;
 @class YTIAcceptedTosVersionCommand;
@@ -7686,7 +7626,6 @@
 @class YTIAccountItemSectionHeaderRenderer;
 @class YTIAccountItemSectionHeaderSupportedRenderers;
 @class YTIAccountItemSectionRenderer;
-@class YTIAccountItemSectionRenderer_AccountItemSectionSupportedRenderers;
 @class YTIAccountLinkButtonRenderer;
 @class YTIAccountLinkButtonRendererRoot_accountLinkButtonRenderer;
 @class YTIAccountLinkCommand;
@@ -7703,7 +7642,6 @@
 @class YTIAccountsDialogHeaderRenderer;
 @class YTIAccountsDialogHeaderSupportedRenderers;
 @class YTIAccountSectionListRenderer;
-@class YTIAccountSectionListRenderer_AccountSectionListSupportedRenderers;
 @class YTIAccountSelectionUpdate;
 @class YTIAccountsListRendererRoot_accountChannelRenderer;
 @class YTIAccountsListRendererRoot_accountItemRenderer;
@@ -7877,17 +7815,13 @@
 @class YTIAdFeedbackRenderer;
 @class YTIAdFeedbackRendererRoot_adFeedbackRenderer;
 @class YTIAdFullscreenBrowserHideCommand;
-@class YTIAdFullscreenBrowserHideCommand_adFullscreenBrowserHideCommand;
 @class YTIAdFullscreenBrowserRenderer;
 @class YTIAdFullscreenBrowserRenderer_adFullscreenBrowserRenderer;
 @class YTIAdFullscreenBrowserShowCommand;
-@class YTIAdFullscreenBrowserShowCommand_adFullscreenBrowserShowCommand;
 @class YTIAdFullscreenWebviewHideCommand;
-@class YTIAdFullscreenWebviewHideCommand_adFullscreenWebviewHideCommand;
 @class YTIAdFullscreenWebviewRenderer;
 @class YTIAdFullscreenWebviewRenderer_adFullscreenWebviewRenderer;
 @class YTIAdFullscreenWebviewShowCommand;
-@class YTIAdFullscreenWebviewShowCommand_adFullscreenWebviewShowCommand;
 @class YTIAdGestureTerminationData;
 @class YTIAdImpressionRegisterCommand;
 @class YTIAdImpressionRegisterCommand_adImpressionRegisterCommand;
@@ -7913,7 +7847,6 @@
 @class YTIAdPlayerOverlayLearnMoreCTARenderer;
 @class YTIAdPlayerOverlayLearnMoreCTASupportedRenderers;
 @class YTIAdPlayerOverlayRenderer;
-@class YTIAdPlayerOverlayRendererRoot_adPlayerOverlayLearnMoreCtaRenderer;
 @class YTIAdPlayerOverlayRendererRoot_adPlayerOverlayRenderer;
 @class YTIAdPlayerWebviewButtonRenderer;
 @class YTIAdProgressCommand;
@@ -8007,7 +7940,6 @@
 @class YTIAnalyticsBarChartRenderer;
 @class YTIAnalyticsBarChartRenderer_analyticsBarChartRenderer;
 @class YTIAnalyticsCardSectionRenderer;
-@class YTIAnalyticsCardSectionRendererRoot_analyticsCardSectionRenderer;
 @class YTIAnalyticsCardSectionSupportedRenderers;
 @class YTIAnalyticsCardType;
 @class YTIAnalyticsChartDimension;
@@ -8015,12 +7947,9 @@
 @class YTIAnalyticsChartRenderer;
 @class YTIAnalyticsChartRendererRoot_analyticsChartRenderer;
 @class YTIAnalyticsChartSupportedRenderers;
-@class YTIAnalyticsChartSupportedRenderersRoot_analyticsAreaChartRenderer;
-@class YTIAnalyticsChartSupportedRenderersRoot_analyticsLineChartRenderer;
 @class YTIAnalyticsChartValuesType;
 @class YTIAnalyticsDetailTableRenderer;
 @class YTIAnalyticsDetailTableRenderer_Row;
-@class YTIAnalyticsDetailTableRendererRoot_analyticsDetailTableRenderer;
 @class YTIAnalyticsErrorRenderer;
 @class YTIAnalyticsErrorRendererRoot_analyticsErrorRenderer;
 @class YTIAnalyticsFirstNDaysLineChartRenderer;
@@ -8041,7 +7970,6 @@
 @class YTIAnalyticsRealtimeChartRenderer;
 @class YTIAnalyticsRealtimeHeaderRenderer;
 @class YTIAnalyticsScreenHeaderRenderer;
-@class YTIAnalyticsScreenHeaderRendererRoot_analyticsScreenHeaderRenderer;
 @class YTIAnalyticsScreenHeaderSupportedRenderers;
 @class YTIAnalyticsSectionHeaderRenderer;
 @class YTIAnalyticsSectionRendererRoot_analyticsSectionHeaderRenderer;
@@ -8053,9 +7981,7 @@
 @class YTIAnalyticsSteppedAreaChartRenderer;
 @class YTIAnalyticsSummaryTableRenderer;
 @class YTIAnalyticsSummaryTableRenderer_SummaryRow;
-@class YTIAnalyticsSummaryTableRendererRoot_analyticsSummaryTableRenderer;
 @class YTIAnalyticsTabbedHeaderRenderer;
-@class YTIAnalyticsTabbedHeaderRendererRoot_analyticsTabbedHeaderRenderer;
 @class YTIAnalyticsTableRenderer;
 @class YTIAnalyticsTableRenderer_Row;
 @class YTIAnalyticsTableRendererRoot_analyticsTableRenderer;
@@ -8161,7 +8087,6 @@
 @class YTIAppStoreOverlayCommand;
 @class YTIAppStoreOverlayCommandRoot_appStoreOverlayCommand;
 @class YTIAppStoreOverlayDismissCommand;
-@class YTIAppStoreOverlayDismissCommandRoot_appStoreOverlayDismissCommand;
 @class YTIAppStoreOverlayPosition;
 @class YTIAppStoreProductData;
 @class YTIAppThemeSettingData;
@@ -8248,7 +8173,6 @@
 @class YTIAudioEdit_SpeechEnhancement;
 @class YTIAudioOnlyCastConfig;
 @class YTIAudioOnlyPlayabilityRenderer;
-@class YTIAudioOnlyPlayabilityRendererRoot_audioOnlyPlayabilityRenderer;
 @class YTIAudioOnlyPlayabilitySupportedRenderers;
 @class YTIAudioPairingConfig;
 @class YTIAudioQuality;
@@ -8323,7 +8247,6 @@
 @class YTIAutoplayRendererRoot_autoplayRenderer;
 @class YTIAutoplayRendererRoot_maybeHistoryEndpointRenderer;
 @class YTIAutoplaySwitchButtonRenderer;
-@class YTIAutoplaySwitchButtonRendererRoot_autoplaySwitchButtonRenderer;
 @class YTIAutoplayToggleLockedState;
 @class YTIAutoplayVideoRenderer;
 @class YTIAutoplayVideoRendererRoot_autoplayVideoRenderer;
@@ -8363,15 +8286,12 @@
 @class YTIBackgroundTaskType;
 @class YTIBackgroundTransition;
 @class YTIBackNavToMediaGenPromptCommand;
-@class YTIBackNavToMediaGenPromptCommand_backNavToMediaGenPromptCommand;
 @class YTIBackstageAccessRestrictions;
 @class YTIBackstageAccessRestrictionsSupportedRenderers;
 @class YTIBackstageAttachmentSupportedRenderers;
 @class YTIBackstageImageAttachment;
 @class YTIBackstageImageCreationSupportedRenderers;
 @class YTIBackstageImageEditorRenderer;
-@class YTIBackstageImageEditorRendererRoot_backstageImageEditorRenderer;
-@class YTIBackstageImageEditorRendererRoot_backstageImageSelectRenderer;
 @class YTIBackstageImageEditorSupportedRenderers;
 @class YTIBackstageImageRenderer;
 @class YTIBackstageImageRendererRoot_backstageImageRenderer;
@@ -8542,7 +8462,6 @@
 @class YTIBrowserStackInfo;
 @class YTIBrowseSecondaryContentsRenderer;
 @class YTIBrowseSectionListReloadEndpoint;
-@class YTIBrowseSectionListReloadEndpoint_browseSectionListReloadEndpoint;
 @class YTIBrowseSectionListReloadSupportedContinuations;
 @class YTIBrowseServiceCacheKey;
 @class YTIBrowseSidebarSupportedRenderers;
@@ -8689,17 +8608,14 @@
 @class YTIChangeCommentsSortModeCommand_changeCommentsSortModeCommand;
 @class YTIChangeKeyedMarkersVisibilityCommand;
 @class YTIChangeMarkersVisibilityCommand;
-@class YTIChangeMarkersVisibilityCommand_changeMarkersVisibilityCommand;
 @class YTIChangeMarkersVisibilityRestrictionMode;
 @class YTIChannelAboutFullMetadataRenderer;
 @class YTIChannelAboutMetadataActionButtonSupportedRenderers;
 @class YTIChannelAboutMetadataBusinessEmailButtonSupportedRenderers;
 @class YTIChannelAboutMetadataFlaggingMenuRenderer;
-@class YTIChannelAboutMetadataFlaggingMenuRenderer_ChannelFlaggingMenuItem;
 @class YTIChannelAboutMetadataFlaggingMenuSupportedRenderers;
 @class YTIChannelAboutMetadataGalleryPhoto;
 @class YTIChannelAboutMetadataRenderer;
-@class YTIChannelAboutMetadataRendererRoot_channelAboutMetadataRenderer;
 @class YTIChannelAboutMetadataSubscribeButtonSupportedRenderers;
 @class YTIChannelAdsenseSetupStatus;
 @class YTIChannelAgeGateRenderer;
@@ -8724,12 +8640,10 @@
 @class YTIChannelCreationFormEndpoint_channelCreationFormEndpoint;
 @class YTIChannelCreationFormRenderer;
 @class YTIChannelCreationFormStateEntity;
-@class YTIChannelCreationFormStateEntity_channelCreationFormStateEntity;
 @class YTIChannelCreationHeaderState;
 @class YTIChannelCreationRendererRoot_channelCreationFormRenderer;
 @class YTIChannelCreationRendererRoot_withGooglePlusContentRenderer;
 @class YTIChannelCreationServiceEndpoint;
-@class YTIChannelCreationServiceEndpoint_channelCreationServiceEndpoint;
 @class YTIChannelCreationSource;
 @class YTIChannelCreationSupportedRenderers;
 @class YTIChannelCustomGadgetMessageRenderer;
@@ -8743,9 +8657,7 @@
 @class YTIChannelFeaturedContentRenderer;
 @class YTIChannelFeaturedContentSupportedRenderers;
 @class YTIChannelFeaturedVideoRenderer;
-@class YTIChannelFeaturedVideoRendererRoot_channelFeaturedVideoRenderer;
 @class YTIChannelGuidelinesStateEntity;
-@class YTIChannelGuidelinesStateEntity_channelGuidelinesStateEntityPayload;
 @class YTIChannelHandleEntity;
 @class YTIChannelHandleEntity_channelHandle;
 @class YTIChannelHandleStaticValidationParams;
@@ -8769,7 +8681,6 @@
 @class YTIChannelListSubMenuContentSize;
 @class YTIChannelListSubMenuContentSize_ContentSize;
 @class YTIChannelListSubMenuRenderer;
-@class YTIChannelListSubMenuRendererRoot_channelListSubMenuAvatarRenderer;
 @class YTIChannelListSubMenuRendererRoot_channelListSubMenuRenderer;
 @class YTIChannelListSubMenuStyle;
 @class YTIChannelListSubMenuSupportedRenderers;
@@ -8798,13 +8709,11 @@
 @class YTIChannelOfflineabilityPostEnableSupportedRenderers;
 @class YTIChannelOfflineabilityQualitySupportedRenderers;
 @class YTIChannelOfflineabilityRenderer;
-@class YTIChannelOfflineabilityRendererRoot_channelOfflineabilityRenderer;
 @class YTIChannelOfflineabilityVideoCountOptionRenderer;
 @class YTIChannelOfflineabilityVideoOptionsRenderer;
 @class YTIChannelOfflineabilityVideoOptionSupportedRenderers;
 @class YTIChannelOfflineabilityVideosSupportedRenderers;
 @class YTIChannelPageContinuationCommand;
-@class YTIChannelPageContinuationCommand_channelPageContinuationCommand;
 @class YTIChannelPageContinuationCommandSupportedContinuations;
 @class YTIChannelPageContinuationCommandSupportedRenderers;
 @class YTIChannelPdgData;
@@ -8821,7 +8730,6 @@
 @class YTIChannelProfileEditorEndpoint;
 @class YTIChannelProfileEditorEndpoint_channelProfileEditorEndpoint;
 @class YTIChannelProfileEditorRenderer;
-@class YTIChannelProfileEditorRendererRoot_channelProfileEditorRenderer;
 @class YTIChannelProfileEditorTextInputSupportedRenderers;
 @class YTIChannelProfileFieldEditorEndpoint;
 @class YTIChannelProfileFieldEditorSupportedRenderers;
@@ -8834,14 +8742,12 @@
 @class YTIChannelRecommendationCardStyle;
 @class YTIChannelRecommendationCardStyle_CardStyle;
 @class YTIChannelRecommendationRenderer;
-@class YTIChannelRecommendationRendererRoot_channelRecommendationRenderer;
 @class YTIChannelRecommendationSubscribeButtonSupportedRenderers;
 @class YTIChannelReelAvatarRenderer;
 @class YTIChannelReelAvatarRenderer_channelReelAvatarRenderer;
 @class YTIChannelRenderer;
 @class YTIChannelRendererRoot_channelRenderer;
 @class YTIChannelRequiredErrorRenderer;
-@class YTIChannelRequiredErrorRendererRoot_channelRequiredErrorRenderer;
 @class YTIChannelSearchBoxRenderer;
 @class YTIChannelSearchBoxRendererRoot_channelSearchBoxRenderer;
 @class YTIChannelSecondaryHeaderLinkRenderer;
@@ -8850,7 +8756,6 @@
 @class YTIChannelSelfCertificationData;
 @class YTIChannelSettingsEditorBooleanFormFieldSupportedRenderers;
 @class YTIChannelSettingsEditorRenderer;
-@class YTIChannelSettingsEditorRendererRoot_channelSettingsEditorRenderer;
 @class YTIChannelSpotlightEditorRenderer;
 @class YTIChannelStatus;
 @class YTIChannelSubMenuItem;
@@ -8864,7 +8769,6 @@
 @class YTIChannelSummaryRenderer;
 @class YTIChannelSummaryRenderer_channelSummaryRenderer;
 @class YTIChannelThumbnailRenderersRoot_channelAvatarThumbnailRenderer;
-@class YTIChannelThumbnailRenderersRoot_channelThumbnailWithLinkRenderer;
 @class YTIChannelThumbnailStyle;
 @class YTIChannelThumbnailSupportedRenderers;
 @class YTIChannelThumbnailWithLinkRenderer;
@@ -8883,7 +8787,6 @@
 @class YTIChannelViewAsMenuRendererRoot_channelViewAsMenuRenderer;
 @class YTIChannelViewAsNotificationRenderer;
 @class YTIChannelWelcomeEditorRenderer;
-@class YTIChannelWelcomeEditorRendererRoot_channelWelcomeEditorRenderer;
 @class YTIChannelYpcOfferRenderer;
 @class YTIChannelYpcOfferRendererRoot_channelYpcOfferRenderer;
 @class YTIChannelYppBenefitsDetails;
@@ -8930,13 +8833,10 @@
 @class YTICinematicContainerGradientType;
 @class YTICinematicContainerPresentationStyle;
 @class YTICinematicContainerRenderer;
-@class YTICinematicContainerRenderer_CinematicContainerGradientColorConfig;
-@class YTICinematicContainerRenderer_CinematicContainerGradientColorStore;
 @class YTICinematicContainerRenderer_cinematicContainerRenderer;
 @class YTICircularRevealTransition;
 @class YTIClarificationRenderer;
 @class YTIClarificationRendererClientExtension;
-@class YTIClarificationRendererClientExtension_iosClientMetadataPanelData;
 @class YTIClarificationRendererRoot_clarificationRenderer;
 @class YTIClarificationRendererStyle;
 @class YTIClearAppBadgeAction;
@@ -8994,7 +8894,6 @@
 @class YTIClientData_SpotlightStoryData;
 @class YTIClientData_SpotlightStoryData_SceneData;
 @class YTIClientData_SpotlightStoryData_StoryPlayback;
-@class YTIClientData_SpotlightStoryData_StoryPlayback_FiniteStateMachine;
 @class YTIClientData_TimerData;
 @class YTIClientData_Tvhtml5SearchQuerySource;
 @class YTIClientData_UnpluggedEpgData;
@@ -9032,10 +8931,6 @@
 @class YTIClientSettingEnumValuePair;
 @class YTIClientSettingItem;
 @class YTIClientSettingItem_Item;
-@class YTIClientSettingRendererRoot_blockedContactSettingCategoryRenderer;
-@class YTIClientSettingRendererRoot_historySettingCategoryEntryRenderer;
-@class YTIClientSettingRendererRoot_unlimitedSettingCategoryEntryRenderer;
-@class YTIClientSettingRendererRoot_unpluggedSettingCategoryEntryRenderer;
 @class YTIClientSideUpdateProperties;
 @class YTIClientSortingSectionContentType;
 @class YTIClientSortingSectionContentType_ClientContentType;
@@ -9044,7 +8939,6 @@
 @class YTIClientSortingSectionHeaderRenderer;
 @class YTIClientSortingSectionHeaderSupportedRenderers;
 @class YTIClientSortingSectionRenderer;
-@class YTIClientSortingSectionRendererRoot_clientSortingSectionRenderer;
 @class YTIClientSortingSectionSortType;
 @class YTIClientSortingSectionSortType_ClientSortType;
 @class YTIClientSortingSectionSupportedContinuations;
@@ -9079,7 +8973,6 @@
 @class YTICloseEngagementPanelCommand;
 @class YTICloseEngagementPanelCommand_closeEngagementPanelCommand;
 @class YTICloseLiveChatActionPanelAction;
-@class YTICloseLiveChatActionPanelAction_closeLiveChatActionPanelAction;
 @class YTICloseMdeCommand;
 @class YTICloseMdeCommand_closeMdeCommand;
 @class YTICloseRequestedTrigger;
@@ -9125,7 +9018,6 @@
 @class YTICommandWrapperPromoRendererRoot_commandWrapperPromoRenderer;
 @class YTICommandWrapperPromoType;
 @class YTICommentActionButtonsRenderer;
-@class YTICommentActionButtonsRendererRoot_commentActionButtonsRenderer;
 @class YTICommentActionButtonsSupportedRenderers;
 @class YTICommentActionConfirmDialogSupportedRenderers;
 @class YTICommentActionRequest;
@@ -9161,7 +9053,6 @@
 @class YTICommentHotConfig;
 @class YTICommentInfo;
 @class YTICommentInlineFeedbackRenderer;
-@class YTICommentInlineFeedbackRendererRoot_commentInlineFeedbackRenderer;
 @class YTICommentItemSupportedContinuations;
 @class YTICommentItemSupportedRenderers;
 @class YTICommentModerationButtonsRenderer;
@@ -9201,7 +9092,6 @@
 @class YTICommentSectionRendererRoot_backstageSubscribeBarRenderer;
 @class YTICommentSectionRendererRoot_commentDetailHeaderRenderer;
 @class YTICommentSectionRendererRoot_commentGroupHeaderRenderer;
-@class YTICommentSectionRendererRoot_commentModerationPanelContinuation;
 @class YTICommentSectionRendererRoot_commentModerationPanelRenderer;
 @class YTICommentSectionRendererRoot_commentRepliesRenderer;
 @class YTICommentSectionRendererRoot_commentSectionHeaderRenderer;
@@ -9319,14 +9209,12 @@
 @class YTICompactPremiumShowRenderer;
 @class YTICompactPremiumShowRendererRoot_compactPremiumShowRenderer;
 @class YTICompactPromotedBannerRenderer;
-@class YTICompactPromotedBannerRendererRoot_compactPromotedBannerRenderer;
 @class YTICompactPromotedItemRenderer;
 @class YTICompactPromotedItemRendererRoot_compactPromotedItemRenderer;
 @class YTICompactPromotedItemTrigger;
 @class YTICompactPromotedItemTrigger_CompactPromo;
 @class YTICompactPromotedVideoCTASupportedRenderers;
 @class YTICompactPromotedVideoRenderer;
-@class YTICompactPromotedVideoRendererRoot_compactPromotedVideoRenderer;
 @class YTICompactRadioRenderer;
 @class YTICompactRadioRendererRoot_compactRadioRenderer;
 @class YTICompactShowRenderer;
@@ -9335,7 +9223,6 @@
 @class YTICompactStationRenderer;
 @class YTICompactStationRendererRoot_compactStationRenderer;
 @class YTICompactSuggestedVideoRenderer;
-@class YTICompactSuggestedVideoRendererRoot_compactSuggestedVideoRenderer;
 @class YTICompactSurveyAnswerItem;
 @class YTICompactSurveyRenderer;
 @class YTICompactSurveyRendererRoot_compactSurveyRenderer;
@@ -9513,7 +9400,6 @@
 @class YTIControlFlowManagerLayer;
 @class YTIControlInputColorValue;
 @class YTIControlInputMediaPickerRenderer;
-@class YTIControlInputMediaPickerRenderer_controlInputMediaPickerRenderer;
 @class YTIControlInputMediaValue;
 @class YTIControlInputPromptBoxFeedbackEntity;
 @class YTIControlInputUpdateValueEntity;
@@ -9523,7 +9409,6 @@
 @class YTIConversationBarSupportedRenderers;
 @class YTIConvolutionMatrix;
 @class YTICopyrightNotificationRenderer;
-@class YTICopyrightNotificationRendererRoot_copyrightNotificationRenderer;
 @class YTICopyTextEndpoint;
 @class YTICopyTextEndpoint_copyTextEndpoint;
 @class YTICopyURLEndpoint;
@@ -9606,7 +9491,6 @@
 @class YTICreateLivestreamHighlightClipRequest;
 @class YTICreateLivestreamHighlightClipResponse;
 @class YTICreatePlaylistDialogRenderer;
-@class YTICreatePlaylistDialogRendererRoot_createPlaylistDialogRenderer;
 @class YTICreatePlaylistEndpoint;
 @class YTICreatePlaylistEndpoint_createPlaylistEndpoint;
 @class YTICreatePlaylistRequest;
@@ -9663,7 +9547,6 @@
 @class YTICreationModesCommand_creationModesCommand;
 @class YTICreationModesContext;
 @class YTICreationModesControlsRenderer;
-@class YTICreationModesControlsRendererRoot_creationModesControlsRenderer;
 @class YTICreationModesExitCommand;
 @class YTICreationModesExitCommand_creationModesExitCommand;
 @class YTICreationModesExitReason;
@@ -9671,7 +9554,6 @@
 @class YTICreationModesSource;
 @class YTICreationModesSwitcherNotificationRenderer;
 @class YTICreationModesSwitcherRenderer;
-@class YTICreationModesSwitcherRendererRoot_creationModesSwitcherRenderer;
 @class YTICreationMusicAsset;
 @class YTICreationMusicAsset_AudioItemDisplayData;
 @class YTICreationMusicAsset_AudioItemUploadData;
@@ -9695,7 +9577,6 @@
 @class YTICreationTextAsset;
 @class YTICreationTextAsset_PresetPrompt;
 @class YTICreationUpdateBottomBarCommand;
-@class YTICreationUpdateBottomBarCommand_creationUpdateBottomBarCommand;
 @class YTICreationUpdateBottomBarExtraRenderers;
 @class YTICreationVideoAsset;
 @class YTICreationVideoAsset_AudioData;
@@ -9747,7 +9628,6 @@
 @class YTICreatorMobileConfig;
 @class YTICreatorPivotBarType;
 @class YTICreatorProductStickerViewModel;
-@class YTICreatorProductStickerViewModel_creatorProductStickerViewModel;
 @class YTICreatorSelectedExternalLinkConsentStatus;
 @class YTICreatorSponsorshipsData;
 @class YTICreatorStudioMobileEvent;
@@ -9819,7 +9699,6 @@
 @class YTIDashboardFooterSupportedRenderers;
 @class YTIDashboardHeaderSupportedRenderers;
 @class YTIDashboardWidgetRenderer;
-@class YTIDashboardWidgetRendererRoot_dashboardAdditionalContentRenderer;
 @class YTIDashboardWidgetRendererRoot_dashboardBasicHeaderRenderer;
 @class YTIDashboardWidgetRendererRoot_dashboardWidgetRenderer;
 @class YTIDataFreshnessEntity;
@@ -10001,7 +9880,6 @@
 @class YTIDisableBeforeFocusCommand;
 @class YTIDisableBeforeFocusCommandRoot_disableBeforeFocusCommand;
 @class YTIDisableCinematicLightingCommand;
-@class YTIDisableCinematicLightingCommand_disableCinematicLightingCommand;
 @class YTIDisableLiveStickerCreationCommand;
 @class YTIDisableSingleVideoPlaybackLoopCommand;
 @class YTIDiscardPendingSegmentCommand;
@@ -10118,7 +9996,6 @@
 @class YTIDownloadsPagePlaylistEntity_downloadsPagePlaylistEntity;
 @class YTIDownloadsPagePlaylistEntityThumbnailParams;
 @class YTIDownloadsPageRefreshTokenEntity;
-@class YTIDownloadsPageRefreshTokenEntity_downloadsPageRefreshTokenEntity;
 @class YTIDownloadsPageSectionFilterType;
 @class YTIDownloadsPageSectionIdentifier;
 @class YTIDownloadsPageSmartDownloadsErrorMessageParams;
@@ -10338,7 +10215,6 @@
 @class YTIEmergencyBufferInjectionPosition;
 @class YTIEmergencyOneboxRenderer;
 @class YTIEmergencyOneboxRendererRoot_emergencyOneboxRenderer;
-@class YTIEmergencyOneboxRendererRoot_multiActionEmergencySupportRenderer;
 @class YTIEmergencyOneboxSupportedRenderers;
 @class YTIEmlMobserveConfig;
 @class YTIEmoji;
@@ -10360,7 +10236,6 @@
 @class YTIEnableAutoplayCommand;
 @class YTIEnableAutoplayCommand_enableAutoplayCommand;
 @class YTIEnableCinematicLightingCommand;
-@class YTIEnableCinematicLightingCommand_enableCinematicLightingCommand;
 @class YTIEnableSingleVideoPlaybackLoopCommand;
 @class YTIEndpoint;
 @class YTIEndpoint_Downloads;
@@ -10420,7 +10295,6 @@
 @class YTIEngagementPanelWatchSurfaceConfigs;
 @class YTIEngagementPermission;
 @class YTIEngagementToolbarStateEntity;
-@class YTIEngagementToolbarStateEntity_engagementToolbarStateEntityPayload;
 @class YTIEngagementToolbarStyle;
 @class YTIEngagementToolbarStyle_EngagementToolbarStyleValue;
 @class YTIEngagementType;
@@ -10484,7 +10358,6 @@
 @class YTIEpgSupportedRenderers;
 @class YTIEpgUnavailableRowRenderer;
 @class YTIEpisodesSectionHeaderRenderer;
-@class YTIEpisodesSectionHeaderRendererRoot_episodesSectionHeaderRenderer;
 @class YTIErrorDetails;
 @class YTIErrorLevel;
 @class YTIErrorLoggingConfig;
@@ -10609,9 +10482,7 @@
 @class YTIFeatureGatesConfig;
 @class YTIFeaturePlayerOverlayChildItemRenderer;
 @class YTIFeaturePlayerOverlayRenderer;
-@class YTIFeaturePlayerOverlayRendererRoot_featurePlayerOverlayRenderer;
 @class YTIFeaturePlayerOverlayStateEntity;
-@class YTIFeaturePlayerOverlayStateEntity_featurePlayerOverlayStateEntity;
 @class YTIFeatureRestrictedRenderer;
 @class YTIFeatureRestrictedRendererRoot_featureRestrictedRenderer;
 @class YTIFeatureSurface;
@@ -10634,7 +10505,6 @@
 @class YTIFeedEntryActionMenuItemData;
 @class YTIFeedEntryActionMenuSupportedRenderers;
 @class YTIFeedEntryRenderer;
-@class YTIFeedEntryRendererRoot_commentApprovalFeedEntryActionMenuRenderer;
 @class YTIFeedEntryRendererRoot_feedEntryRenderer;
 @class YTIFeedEntrySupportedRenderers;
 @class YTIFeedFilterChipBarRenderer;
@@ -10645,7 +10515,6 @@
 @class YTIFeedTabbedHeaderRendererRoot_feedTabbedHeaderRenderer;
 @class YTIFetchBehavior;
 @class YTIFetchTeaserContinuationCommand;
-@class YTIFetchTeaserContinuationCommand_fetchTeaserContinuationCommand;
 @class YTIFetchUpdatedModelCommand;
 @class YTIFetchUpdatedModelCommand_fetchUpdatedModelCommand;
 @class YTIFileDescriptor;
@@ -10779,10 +10648,8 @@
 @class YTIFormData;
 @class YTIFormFieldValidationError;
 @class YTIFormfillCheckboxInputRenderer;
-@class YTIFormfillCheckboxInputRendererRoot_formfillCheckboxInputRenderer;
 @class YTIFormfillDropdownInputRenderer;
 @class YTIFormfillDropdownInputRenderer_FormfillDropdownInputItem;
-@class YTIFormfillDropdownInputRendererRoot_formfillDropdownInputRenderer;
 @class YTIFormfillFormRenderer;
 @class YTIFormfillFormRendererRoot_formfillFormRenderer;
 @class YTIFormfillInputRenderer;
@@ -10833,14 +10700,12 @@
 @class YTIGamingAccountLinkConfirmDialogCommand;
 @class YTIGamingAccountLinkConfirmDialogRenderer;
 @class YTIGamingAccountLinkSettingCommand;
-@class YTIGamingAccountLinkSettingCommand_gamingAccountLinkSettingCommand;
 @class YTIGamingAccountLinkSettingRenderer;
 @class YTIGamingAccountLinkStatusChanged;
 @class YTIGamingConfig;
 @class YTIGamingMetadata;
 @class YTIGamingSupportedRenderersRoot_gameDetailsRenderer;
 @class YTIGamingThirdPartySettingRenderer;
-@class YTIGamingThirdPartySettingRenderer_gamingThirdPartySettingRenderer;
 @class YTIGarbageCollectEntityCommand;
 @class YTIGarbageCollectEntityCommand_garbageCollectEntityCommand;
 @class YTIGarbageCollectionEntity;
@@ -10936,7 +10801,6 @@
 @class YTIGetDownloadActionRequest;
 @class YTIGetDownloadActionResponse;
 @class YTIGetDynamicCreationAssetCommand;
-@class YTIGetDynamicCreationAssetCommand_getDynamicCreationAssetCommand;
 @class YTIGetDynamicCreationAssetRequest;
 @class YTIGetDynamicCreationAssetResponse;
 @class YTIGetDynamicCreationPageRequest;
@@ -10947,7 +10811,6 @@
 @class YTIGetFlowCommand;
 @class YTIGetFlowCommand_getFlowCommand;
 @class YTIGetGeneratedImageThemesCommand;
-@class YTIGetGeneratedImageThemesCommand_getGeneratedImageThemesCommand;
 @class YTIGetGeneratedThumbnailsCommand;
 @class YTIGetGeneratedThumbnailsCommand_getGeneratedThumbnailsCommand;
 @class YTIGetGeneratedThumbnailsRequest;
@@ -10957,7 +10820,6 @@
 @class YTIGetHotConfigFunctionBindingInput;
 @class YTIGetHotConfigFunctionBindingOutput;
 @class YTIGetKidsBlocklistPickerCommand;
-@class YTIGetKidsBlocklistPickerCommandRoot_getKidsBlocklistPickerCommand;
 @class YTIGetKidsBlocklistPickerRequest;
 @class YTIGetKidsBlocklistPickerResponse;
 @class YTIGetLiveChatItemContextMenuRequest;
@@ -11020,7 +10882,6 @@
 @class YTIGetReportFormEndpoint;
 @class YTIGetReportFormEndpoint_getReportFormEndpoint;
 @class YTIGetScheduledBroadcastsEndpoint;
-@class YTIGetScheduledBroadcastsEndpoint_getScheduledBroadcastsEndpoint;
 @class YTIGetSearchSuggestionsCommand;
 @class YTIGetSearchSuggestionsCommand_getSearchSuggestionsCommand;
 @class YTIGetSearchSuggestionsCommandHandler;
@@ -11109,7 +10970,6 @@
 @class YTIGoogleAccountHeaderRenderer;
 @class YTIGoogleHatsEvent;
 @class YTIGoogleMapsNavigationEndpoint;
-@class YTIGoogleMapsNavigationEndpointRoot_googleMapsNavigationEndpoint;
 @class YTIGoToSettings;
 @class YTIGpcLookupKeyEffectIds;
 @class YTIGradeQuestionsForPolicySchoolElementsCommand;
@@ -11188,7 +11048,6 @@
 @class YTIGuideActionHandler;
 @class YTIGuideChannelBadges;
 @class YTIGuideCollapsibleEntryRenderer;
-@class YTIGuideCollapsibleEntryRendererRoot_guideCollapsibleEntryRenderer;
 @class YTIGuideCollapsibleEntrySupportedRenderers;
 @class YTIGuideEntryData;
 @class YTIGuideEntryData_guideEntryData;
@@ -11319,7 +11178,6 @@
 @class YTIHeroImageSupportedRenderers;
 @class YTIHeroPlaylistThumbnailRenderer;
 @class YTIHideAllEngagementPanelsCommand;
-@class YTIHideAllEngagementPanelsCommand_hideAllEngagementPanelsCommand;
 @class YTIHideAnimationType;
 @class YTIHideEnclosingAction;
 @class YTIHideEnclosingAction_hideEnclosingAction;
@@ -11328,7 +11186,6 @@
 @class YTIHideInfeedAdCommand;
 @class YTIHideInfeedAdCommand_hideInfeedAdCommand;
 @class YTIHideInteractivityWidgetsAction;
-@class YTIHideInteractivityWidgetsAction_hideInteractivityWidgetsAction;
 @class YTIHideInteractivityWidgetsAction_WidgetQueue;
 @class YTIHideItemSectionVideosByIdCommand;
 @class YTIHideLiveChatItemCommand;
@@ -11366,13 +11223,11 @@
 @class YTIHlsProxyConfig;
 @class YTIHlsProxyConfig_StreamSelectionStrategy;
 @class YTIHomeLocationConditionalCommand;
-@class YTIHomeLocationConditionalCommand_homeLocationConditionalCommand;
 @class YTIHomeMetadataRenderer;
 @class YTIHomeMetadataRendererRoot_homeMetadataRenderer;
 @class YTIHomeScreenQuickActionSupportedRenderers;
 @class YTIHorizontalButtonListColorPalette;
 @class YTIHorizontalButtonListRenderer;
-@class YTIHorizontalButtonListRendererRoot_horizontalButtonListRenderer;
 @class YTIHorizontalCardListButtonSupportedRenderers;
 @class YTIHorizontalCardListHeaderSupportedRenderers;
 @class YTIHorizontalCardListHeaderTitleStyle;
@@ -11382,7 +11237,6 @@
 @class YTIHorizontalCardListNavIndicatorStyle;
 @class YTIHorizontalCardListRenderer;
 @class YTIHorizontalCardListRendererRoot_horizontalCardListRenderer;
-@class YTIHorizontalCardListRendererRoot_titleAndButtonListHeaderRenderer;
 @class YTIHorizontalCardListStyle;
 @class YTIHorizontalCardListStyle_HorizontalCardListStyleType;
 @class YTIHorizontalCardListSupportedContinuations;
@@ -11459,7 +11313,6 @@
 @class YTIImmersiveDiscoDailyOverlayRenderer;
 @class YTIImmersiveLiveLightweightOverlayRenderer;
 @class YTIImmersiveLiveOverlayRenderer;
-@class YTIImmersiveLiveOverlayRendererRoot_immersiveLiveOverlayRenderer;
 @class YTIImmersiveLivePresentationData;
 @class YTIImmersiveLivePreviewOverlayRenderer;
 @class YTIImmersiveLivePreviewPresentationData;
@@ -11548,12 +11401,10 @@
 @class YTIInlineMutedCommand;
 @class YTIInlineMutedCommand_inlineMutedCommand;
 @class YTIInlineMutedSettingsMenuEndpoint;
-@class YTIInlineMutedSettingsMenuEndpoint_inlineMutedSettingsMenuEndpoint;
 @class YTIInlineMutedWatchEndpointMutationCommand;
 @class YTIInLineNonLinear;
 @class YTIInLineNonLinearAds;
 @class YTIInlinePlaybackAudioStateEntity;
-@class YTIInlinePlaybackAudioStateEntity_inlinePlaybackAudioStateEntity;
 @class YTIInlinePlaybackCaptionsUIStyle;
 @class YTIInlinePlaybackCaptionVisibilityEntity;
 @class YTIInlinePlaybackConfig;
@@ -11616,8 +11467,6 @@
 @class YTIInnerTubeTokenJar;
 @class YTIInnerTubeUploadsConfig;
 @class YTIInnertubeWatchNextServiceRoot_editOnWatchRenderer;
-@class YTIInnertubeWatchNextServiceRoot_twoColumnWatchNextResultsRenderer;
-@class YTIInnertubeWatchNextServiceRoot_watchNextSecondaryResultsRenderer;
 @class YTIInnertubeWatchNextServiceRoot_watchNextTabbedResultsRenderer;
 @class YTIInPlayerAdLayoutRenderer;
 @class YTIInPlayerAdLayoutRendererRoot_inPlayerAdLayoutRenderer;
@@ -11689,7 +11538,6 @@
 @class YTIInterstitialFlowItemRenderer;
 @class YTIInterstitialGridPromoRenderer;
 @class YTIInterstitialGridPromoRenderer_gridPromoAnalyticsTag;
-@class YTIInterstitialGridPromoRendererRoot_interstitialGridPromoRenderer;
 @class YTIInterstitialGridPromoRendererRoot_serviceItemRowRenderer;
 @class YTIInterstitialGridPromoRendererRoot_serviceTitleRowRenderer;
 @class YTIInterstitialInteractionStateEntity;
@@ -11741,7 +11589,6 @@
 @class YTIIosConvolutionPlaneMode;
 @class YTIIosCrashReportingConfig;
 @class YTIIosForegroundPushNotificationDisplayStyle;
-@class YTIIosForegroundPushNotificationDisplayStyle_ForegroundDisplayStyle;
 @class YTIIosGcmConfig;
 @class YTIIosguardChallengeRequestData;
 @class YTIIosguardData;
@@ -11800,7 +11647,6 @@
 @class YTIItemSectionHeaderTitleStyle;
 @class YTIItemSectionMenuHeaderRenderer;
 @class YTIItemSectionPreviewRenderer;
-@class YTIItemSectionPreviewRenderer_ItemSectionPreviewSupportedRenderers;
 @class YTIItemSectionPreviewRendererRoot_itemSectionPreviewRenderer;
 @class YTIItemSectionRenderer;
 @class YTIItemSectionRenderer_itemSectionContinuation;
@@ -11853,7 +11699,6 @@
 @class YTIKidsBlacklistResponseSupportedRenderers;
 @class YTIKidsBlacklistResponseToastRenderer;
 @class YTIKidsBlocklistPickerItemRenderer;
-@class YTIKidsBlocklistPickerItemRenderer_kidsBlocklistPickerItemRenderer;
 @class YTIKidsBlocklistPickerRenderer;
 @class YTIKidsBlocklistPickerRenderer_kidsBlocklistPickerRenderer;
 @class YTIKidsCardPaletteData;
@@ -11869,7 +11714,6 @@
 @class YTIKidsConsentVersion;
 @class YTIKidsContentDensity;
 @class YTIKidsContentGroupHeroRenderer;
-@class YTIKidsContentGroupHeroRendererRoot_kidsContentGroupHeroRenderer;
 @class YTIKidsContentSettings;
 @class YTIKidsCorpusPreference;
 @class YTIKidsCuratedCollectionHeaderRenderer;
@@ -11951,14 +11795,12 @@
 @class YTIKidsSearchPromoTileRenderer;
 @class YTIKidsSearchPromoTileRendererRoot_kidsSearchPromoTileRenderer;
 @class YTIKidsSeeAllSharedTileRenderer;
-@class YTIKidsSeeAllSharedTileRendererRoot_kidsSeeAllSharedTileRenderer;
 @class YTIKidsServerSideAssets;
 @class YTIKidsSettingsDefault;
 @class YTIKidsSettingsDefaultSupportedConfigs;
 @class YTIKidsSettingsIconType;
 @class YTIKidsSettingsUIConfig;
 @class YTIKidsSharedWithKidsBadgeRenderer;
-@class YTIKidsSharedWithKidsBadgeRenderer_kidsSharedWithKidsBadgeRenderer;
 @class YTIKidsSharedWithKidsHeaderRenderer;
 @class YTIKidsSignInPromoConfig;
 @class YTIKidsSigninToken;
@@ -12099,7 +11941,6 @@
 @class YTILiveChatBannerBackgroundType;
 @class YTILiveChatBannerCollapsedStateEntity;
 @class YTILiveChatBannerHeaderRenderer;
-@class YTILiveChatBannerHeaderRendererRoot_liveChatBannerHeaderRenderer;
 @class YTILiveChatBannerRenderer;
 @class YTILiveChatBannerRenderer_BannerProperties;
 @class YTILiveChatBannerRendererRoot_liveChatBannerRenderer;
@@ -12124,7 +11965,6 @@
 @class YTILiveChatEndpoint_liveChatEndpoint;
 @class YTILiveChatEngagementPanelInputRenderer;
 @class YTILiveChatErrorMessageRenderer;
-@class YTILiveChatErrorMessageRendererRoot_liveChatErrorMessageRenderer;
 @class YTILiveChatFilterMode;
 @class YTILiveChatHeaderButtonSupportedRenderers;
 @class YTILiveChatHeaderMenuSupportedRenderers;
@@ -12136,20 +11976,17 @@
 @class YTILiveChatIconToggleButtonRenderer;
 @class YTILiveChatInputInteractionMessageSupportedRenderers;
 @class YTILiveChatItemContextMenuEndpoint;
-@class YTILiveChatItemContextMenuEndpoint_liveChatItemContextMenuEndpoint;
 @class YTILiveChatItemContextMenuSupportedRenderers;
 @class YTILiveChatItemListRenderer;
 @class YTILiveChatItemListRendererRoot_liveChatItemListRenderer;
 @class YTILiveChatItemListSupportedRenderers;
 @class YTILiveChatItemRendererRoot_liveChatAutoModMessageRenderer;
-@class YTILiveChatItemRendererRoot_liveChatDonationAnnouncementRenderer;
 @class YTILiveChatItemRendererRoot_liveChatLegacyPaidMessageRenderer;
 @class YTILiveChatItemRendererRoot_liveChatMembershipItemRenderer;
 @class YTILiveChatItemRendererRoot_liveChatModeChangeMessageRenderer;
 @class YTILiveChatItemRendererRoot_liveChatModerationMessageRenderer;
 @class YTILiveChatItemRendererRoot_liveChatPlaceholderItemRenderer;
 @class YTILiveChatItemRendererRoot_liveChatTextMessageRenderer;
-@class YTILiveChatItemRendererRoot_liveChatViewerEngagementMessageRenderer;
 @class YTILiveChatItemSupportedRenderers;
 @class YTILiveChatLegacyPaidMessageRenderer;
 @class YTILiveChatLegalDisclaimerType;
@@ -12165,7 +12002,6 @@
 @class YTILiveChatMessageInputPickerButtonSupportedRenderers;
 @class YTILiveChatMessageInputPickerSupportedRenderers;
 @class YTILiveChatMessageInputRenderer;
-@class YTILiveChatMessageInputRendererRoot_liveChatMessageInputRenderer;
 @class YTILiveChatMessageSent;
 @class YTILiveChatModeChangeMessageRenderer;
 @class YTILiveChatModerationMessageRenderer;
@@ -12179,7 +12015,6 @@
 @class YTILiveChatPaidStickerRendererRoot_liveChatPaidStickerRenderer;
 @class YTILiveChatParticipantRenderer;
 @class YTILiveChatParticipantsListRenderer;
-@class YTILiveChatParticipantsListRendererRoot_liveChatParticipantRenderer;
 @class YTILiveChatParticipantsListSupportedRenderers;
 @class YTILiveChatParticipantSupportedRenderers;
 @class YTILiveChatPlaceholderItemRenderer;
@@ -12191,11 +12026,8 @@
 @class YTILiveChatPredefinedMessageType;
 @class YTILiveChatPresentationStyle;
 @class YTILiveChatProductButtonRenderer;
-@class YTILiveChatProductButtonRendererRoot_liveChatProductButtonRenderer;
 @class YTILiveChatProductPickerRenderer;
-@class YTILiveChatProductPickerRendererRoot_liveChatProductPickerRenderer;
 @class YTILiveChatPurchaseMessageEndpoint;
-@class YTILiveChatPurchaseMessageEndpoint_liveChatPurchaseMessageEndpoint;
 @class YTILiveChatRelativeDimensions;
 @class YTILiveChatRenderer;
 @class YTILiveChatRenderer_liveChatContinuation;
@@ -12203,17 +12035,14 @@
 @class YTILiveChatRendererRoot_liveChatRenderer;
 @class YTILiveChatReplaceableComponent;
 @class YTILiveChatReplayContinuationData;
-@class YTILiveChatReplayContinuationData_liveChatReplayContinuationData;
 @class YTILiveChatReplaySegment;
 @class YTILiveChatReplayTimeline;
 @class YTILiveChatReportHighEngagementCommand;
 @class YTILiveChatReportModerationStateCommand;
 @class YTILiveChatReportPresenceCommand;
-@class YTILiveChatReportPresenceCommandRoot_liveChatReportPresenceCommand;
 @class YTILiveChatResponseSupportedRenderers;
 @class YTILiveChatRestrictedParticipationButtonSupportedRenderers;
 @class YTILiveChatRestrictedParticipationRenderer;
-@class YTILiveChatRestrictedParticipationToggleablePanelSupportedRenderers;
 @class YTILiveChatRichMessageInput;
 @class YTILiveChatRichMessageInputTextSegment;
 @class YTILiveChatSettings;
@@ -12228,7 +12057,6 @@
 @class YTILiveChatTickerPaidMessageItemRenderer;
 @class YTILiveChatTickerPaidStickerItemRenderer;
 @class YTILiveChatTickerRenderer;
-@class YTILiveChatTickerRendererRoot_liveChatTickerPaidMessageItemRenderer;
 @class YTILiveChatTickerRendererRoot_liveChatTickerRenderer;
 @class YTILiveChatTickerRendererRoot_liveChatTickerSponsorItemRenderer;
 @class YTILiveChatTickerSlideDirection;
@@ -12245,7 +12073,6 @@
 @class YTILiveCreationCameraMetrics;
 @class YTILiveCreationContext;
 @class YTILiveCreationCoStreamingConnection;
-@class YTILiveCreationCoStreamingConnection_CoStreamingMediaSessionInfo;
 @class YTILiveCreationEffectLifecycleEventType;
 @class YTILiveCreationEncodingMetrics;
 @class YTILiveCreationEndpoint;
@@ -12273,7 +12100,6 @@
 @class YTILiveCreationWebRTCStats;
 @class YTILiveDashboardChatSettingsSupportedRenderers;
 @class YTILiveDashboardSharingRenderer;
-@class YTILiveDashboardSharingRendererRoot_liveDashboardSharingRenderer;
 @class YTILiveEffectType;
 @class YTILiveErrorRenderer;
 @class YTILiveErrorRendererRoot_liveErrorRenderer;
@@ -12281,7 +12107,6 @@
 @class YTILiveIndicatorEntity;
 @class YTILiveIndicatorEntity_liveIndicatorEntity;
 @class YTILiveIngestionSettingsRenderer;
-@class YTILiveIngestionSettingsRendererRoot_liveIngestionSettingsRenderer;
 @class YTILiveIngestionSettingsSupportedRenderers;
 @class YTILiveInteractivityQueueTimings;
 @class YTILiveInteractivitySettingsRenderer;
@@ -12327,7 +12152,6 @@
 @class YTILocalImageEntity;
 @class YTILocalImageEntity_localImageEntity;
 @class YTILocalImageEntityActionMetadata;
-@class YTILocalImageEntityActionMetadata_localImageEntityActionMetadata;
 @class YTILocalInnerTubeClickTrackingProto;
 @class YTILocalizedStrings;
 @class YTILocalShortsDrafts;
@@ -12349,7 +12173,6 @@
 @class YTILocationPickerOnTapCommand;
 @class YTILocationPickerOnTapCommand_locationPickerOnTapCommand;
 @class YTILocationPickerServerStateEntity;
-@class YTILocationPickerServerStateEntity_locationPickerServerStateEntity;
 @class YTILockModeData;
 @class YTILockModeStateEntity;
 @class YTILockModeStateEntity_lockModeStateEntity;
@@ -12507,7 +12330,6 @@
 @class YTIMainOfflineGenerationStatusEntity;
 @class YTIMainPlaylistAdditionalMetadata;
 @class YTIMainPlaylistDownloadStateEntity;
-@class YTIMainPlaylistDownloadStateEntity_mainPlaylistDownloadStateEntity;
 @class YTIMainPlaylistEntity;
 @class YTIMainPlaylistEntity_mainPlaylistEntity;
 @class YTIMainPlaylistEntityActionMetadata;
@@ -12532,7 +12354,6 @@
 @class YTIMainVideoEntityDownloadType;
 @class YTIMainVideoUserStateMetadata;
 @class YTIManageActivityIndicatorCommand;
-@class YTIManageActivityIndicatorCommand_manageActivityIndicatorCommand;
 @class YTIManageActivityIndicatorCommandType;
 @class YTIManageBlockedContactsEndpoint;
 @class YTIManageBlockedContactsEndpoint_manageBlockedContactsEndpoint;
@@ -12557,7 +12378,6 @@
 @class YTIMarkersEngagementPanelSyncEntity;
 @class YTIMarkersMetadata;
 @class YTIMarkersVisibilityOverrideEntity;
-@class YTIMarkersVisibilityOverrideEntity_markersVisibilityOverrideEntity;
 @class YTIMarkerType;
 @class YTIMaskImageProcessor;
 @class YTIMaskImageProcessor_Mask;
@@ -12612,7 +12432,6 @@
 @class YTIMdeDebugInfoIos_ErrorInfo;
 @class YTIMdeDebugInfoIos_VideoCompositorInfo;
 @class YTIMdeDebugInfoIos_VideoCompositorInfo_StallInfo;
-@class YTIMdeDebugInfoIos_VideoCompositorInfo_VideoCompositionRequestInfo;
 @class YTIMdeDeleteButtonRenderer;
 @class YTIMdeDescriptionUpdateRequest;
 @class YTIMdeDetailedCommitButtonRenderer;
@@ -12620,7 +12439,6 @@
 @class YTIMdeDistributionOptionsRenderer;
 @class YTIMdeDistributionOptionsUpdateRequest;
 @class YTIMdeDownloadThumbnailRenderer;
-@class YTIMdeDownloadThumbnailRendererRoot_mdeDownloadThumbnailRenderer;
 @class YTIMdeDraftStateUpdateOperation;
 @class YTIMdeDraftStateUpdateRequestParams;
 @class YTIMdeDvrEnabledRenderer;
@@ -12759,7 +12577,6 @@
 @class YTIMdxNotificationGELType;
 @class YTIMdxNotificationTrigger;
 @class YTIMdxNotificationTriggerCondition;
-@class YTIMdxNotificationTriggerCondition_DependentNotificationCondition;
 @class YTIMdxNotificationTriggerCondition_PageType;
 @class YTIMdxNotificationTriggerCondition_Range;
 @class YTIMdxNotificationTriggerCondition_RangeByPeriodCondition;
@@ -12827,7 +12644,6 @@
 @class YTIMediaColdConfig;
 @class YTIMediaCommonConfig;
 @class YTIMediaCompositionPlaybackCommand;
-@class YTIMediaCompositionPlaybackCommand_mediaCompositionPlaybackCommand;
 @class YTIMediaCompositionPlaybackOption;
 @class YTIMediaEngineAudioMimeType;
 @class YTIMediaEngineEffectIdentifier;
@@ -12900,7 +12716,6 @@
 @class YTIMembershipOfferRenderer;
 @class YTIMembershipOfferRendererRoot_membershipOfferRenderer;
 @class YTIMembershipPostCancelRenderer;
-@class YTIMembershipPostCancelRendererRoot_membershipPostCancelRenderer;
 @class YTIMembershipPostTransactionRenderer;
 @class YTIMemoryUsageProto;
 @class YTIMentionsServerStateEntity;
@@ -12981,10 +12796,8 @@
 @class YTIMetadataEditorSupportedRenderers;
 @class YTIMetadataFormat;
 @class YTIMetadataRowContainerRenderer;
-@class YTIMetadataRowContainerRendererRoot_metadataRowContainerRenderer;
 @class YTIMetadataRowContainerRendererRoot_metadataRowHeaderRenderer;
 @class YTIMetadataRowContainerRendererRoot_metadataRowRenderer;
-@class YTIMetadataRowContainerRendererRoot_metadataWithImageRowRenderer;
 @class YTIMetadataRowContainerRendererRoot_richMetadataRenderer;
 @class YTIMetadataRowContainerRendererRoot_richMetadataRowRenderer;
 @class YTIMetadataRowHeaderRenderer;
@@ -13032,7 +12845,6 @@
 @class YTIMiniAppWebToNativeParams;
 @class YTIMiniAppWebViewDelegate;
 @class YTIMinimalVideoMetadataRenderer;
-@class YTIMinimalVideoMetadataRendererRoot_minimalVideoMetadataRenderer;
 @class YTIMiniPlayerBylineRenderer;
 @class YTIMiniPlayerBylineRendererRoot_miniPlayerBylineRenderer;
 @class YTIMiniplayerData;
@@ -13057,7 +12869,6 @@
 @class YTIMobileBroadcastSetupGoLiveScreenSupportedRenderers;
 @class YTIMobileBroadcastSetupNextButtonSupportedRenderers;
 @class YTIMobileBroadcastSetupRenderer;
-@class YTIMobileBroadcastSetupRendererRoot_mobileBroadcastSetupRenderer;
 @class YTIMobileBroadcastSetupScheduleScreenRenderer;
 @class YTIMobileBroadcastSetupShowGoLiveScreenEndpoint;
 @class YTIMobileBroadcastSetupSwitchCameraButtonSupportedRenderers;
@@ -13072,7 +12883,6 @@
 @class YTIMobileDataPlanInfo;
 @class YTIMobileEomFlowState;
 @class YTIMobileGoLiveCountdownViewModel;
-@class YTIMobileGoLiveCountdownViewModel_mobileGoLiveCountdownViewModel;
 @class YTIMobileInfraColdConfig;
 @class YTIMobileInfraHotConfig;
 @class YTIMobileInfraHotConfig_InnerTubeClientNetworkStack;
@@ -13083,10 +12893,8 @@
 @class YTIMobileSharedTrayItemEnums;
 @class YTIMobileStreamButtonSupportedRenderers;
 @class YTIMobileStreamEndscreenRenderer;
-@class YTIMobileStreamEndscreenRendererRoot_mobileStreamEndscreenRenderer;
 @class YTIMobileStreamInviteScreenRenderer;
 @class YTIMobileStreamMenuItemRenderer;
-@class YTIMobileStreamMenuItemRendererRoot_mobileStreamMenuItemRenderer;
 @class YTIMobileStreamMenuItemStyleType;
 @class YTIMobileStreamMenuItemSupportedRenderers;
 @class YTIMobileStreamMenuItemTag;
@@ -13145,7 +12953,6 @@
 @class YTIMovieCardRenderer;
 @class YTIMovieCardRendererRoot_movieCardRenderer;
 @class YTImpactFeedbackGenerator;
-@class YTImpactFeedbackGenerator__206954813_SRLGeneratedFactoryProtocol;
 @class YTImpactFeedbackGenerator_API;
 @class YTImpactFeedbackGeneratorImpl;
 @class YTImpactFeedbackGeneratorImpl_1243034172_GeneratedFactoryImpl;
@@ -13158,7 +12965,6 @@
 @class YTIMultiChoiceQuestionRenderer;
 @class YTIMultiFeedbackTokenCommand;
 @class YTIMultiItemCompanionAdRenderer;
-@class YTIMultiItemCompanionAdRendererRoot_multiItemCompanionAdRenderer;
 @class YTIMultiLanguageStackInfo;
 @class YTIMultiMarkersPlayerBarRenderer;
 @class YTIMultiModalInputInitialState;
@@ -13187,7 +12993,6 @@
 @class YTIMusicAlbumReleaseEntity;
 @class YTIMusicAlbumReleaseEntity_musicAlbumRelease;
 @class YTIMusicAlbumReleaseUserDetailEntity;
-@class YTIMusicAlbumReleaseUserDetailEntity_musicAlbumReleaseUserDetail;
 @class YTIMusicAllOfCondition;
 @class YTIMusicallyMatchingSegment;
 @class YTIMusicallyMatchingSegmentMap;
@@ -13210,7 +13015,6 @@
 @class YTIMusicArtistEntity;
 @class YTIMusicArtistEntity_musicArtist;
 @class YTIMusicArtistThumbnailRenderer;
-@class YTIMusicArtistThumbnailRendererRoot_musicArtistThumbnailRenderer;
 @class YTIMusicArtistUserDetailEntity;
 @class YTIMusicArtistUserDetailEntity_musicArtistUserDetail;
 @class YTIMusicAssetData;
@@ -13245,11 +13049,9 @@
 @class YTIMusicCoreClientHotConfig;
 @class YTIMusicData;
 @class YTIMusicDescriptionShelfRenderer;
-@class YTIMusicDescriptionShelfRendererRoot_musicDescriptionShelfRenderer;
 @class YTIMusicDetailHeaderButtonsBylineRenderer;
 @class YTIMusicDetailHeaderBylineRenderer;
 @class YTIMusicDetailHeaderRenderer;
-@class YTIMusicDetailHeaderRendererRoot_musicDetailHeaderBylineRenderer;
 @class YTIMusicDetailHeaderRendererRoot_musicDetailHeaderRenderer;
 @class YTIMusicDisplayConfig;
 @class YTIMusicDownloadsLibraryEntity;
@@ -13268,12 +13070,10 @@
 @class YTIMusicEntityReference;
 @class YTIMusicEntityUserData;
 @class YTIMusicExpandableShelfRenderer;
-@class YTIMusicExpandableShelfRendererRoot_musicExpandableShelfRenderer;
 @class YTIMusicExpandableShelfSimpleHeaderRenderer;
 @class YTIMusicExternallyHostedMetadata;
 @class YTIMusicFullscreenPromoRenderer;
 @class YTIMusicFullscreenPromoRenderer_buttonAnalyticsTag;
-@class YTIMusicFullscreenPromoRendererRoot_musicFullscreenPromoRenderer;
 @class YTIMusicGlobalConfig;
 @class YTIMusicHeaderRenderer;
 @class YTIMusicHeaderRendererRoot_musicHeaderRenderer;
@@ -13283,7 +13083,6 @@
 @class YTIMusicImageAspectRatio;
 @class YTIMusicImmersiveCarouselShelfRenderer;
 @class YTIMusicImmersiveHeaderRenderer;
-@class YTIMusicImmersiveHeaderRendererRoot_musicImmersiveHeaderRenderer;
 @class YTIMusicImmersiveVideoRenderer;
 @class YTIMusicIndeterminateProgressIndicator;
 @class YTIMusicInfo;
@@ -13306,7 +13105,6 @@
 @class YTIMusicLibraryEditEntity_musicLibraryEdit;
 @class YTIMusicLibraryItemViewMode;
 @class YTIMusicLibraryItemViewModeEntity;
-@class YTIMusicLibraryItemViewModeEntity_musicLibraryItemViewModeEntity;
 @class YTIMusicLibraryStatusEntity;
 @class YTIMusicListAlbumOfflineabilitySupportedRenderers;
 @class YTIMusicListAlbumRenderer;
@@ -13318,7 +13116,6 @@
 @class YTIMusicListMetadataInfoIconSupportedRenderers;
 @class YTIMusicListMetadataInfoListItemType;
 @class YTIMusicListMetadataInfoRenderer;
-@class YTIMusicListMetadataInfoRendererRoot_musicListMetadataInfoRenderer;
 @class YTIMusicListPlaylistOfflineabilitySupportedRenderers;
 @class YTIMusicListPlaylistRenderer;
 @class YTIMusicListPlaylistRendererExtension;
@@ -13344,7 +13141,6 @@
 @class YTIMusicMenuTitleRendererRoot_musicMenuTitleRenderer;
 @class YTIMusicMultiselectFormItemRenderer;
 @class YTIMusicMultiselectFormRenderer;
-@class YTIMusicMultiselectFormRendererRoot_musicMultiselectFormRenderer;
 @class YTIMusicNarrowAlbumOfflineabilitySupportedRenderers;
 @class YTIMusicNarrowAlbumRenderer;
 @class YTIMusicNarrowAlbumRendererRoot_musicNarrowAlbumRenderer;
@@ -13367,7 +13163,6 @@
 @class YTIMusicNavigationButtonIconStyle;
 @class YTIMusicNavigationButtonOutlineBorderStyle;
 @class YTIMusicNavigationButtonRenderer;
-@class YTIMusicNavigationButtonRendererRoot_musicNavigationButtonRenderer;
 @class YTIMusicNavigationButtonSolidStyle;
 @class YTIMusicNewUserHotConfig;
 @class YTIMusicNotificationProgressIndicator;
@@ -13426,7 +13221,6 @@
 @class YTIMusicPlaylistEntity;
 @class YTIMusicPlaylistEntity_musicPlaylist;
 @class YTIMusicPlaylistEntryCollectionEntity;
-@class YTIMusicPlaylistEntryCollectionEntity_musicPlaylistEntryCollection;
 @class YTIMusicPlaylistItemData;
 @class YTIMusicPlaylistShelfRenderer;
 @class YTIMusicPlaylistShelfRenderer_musicPlaylistShelfContinuation;
@@ -13486,14 +13280,11 @@
 @class YTIMusicSimpleTextRenderer;
 @class YTIMusicSimpleTextRenderer_musicSimpleTextRenderer;
 @class YTIMusicSingleItemShelfRenderer;
-@class YTIMusicSingleItemShelfRendererRoot_musicSingleItemShelfRenderer;
 @class YTIMusicSmartDownloadMetadata;
 @class YTIMusicSmartDownloadTriggerEntity;
-@class YTIMusicSmartDownloadTriggerEntity_musicSmartDownloadTriggerEntity;
 @class YTIMusicSongDetailHeaderRenderer;
 @class YTIMusicSortFilterButtonFontStyle;
 @class YTIMusicSortFilterButtonRenderer;
-@class YTIMusicSortFilterButtonRendererRoot_musicSortFilterButtonRenderer;
 @class YTIMusicSortFilterButtonStyle;
 @class YTIMusicSplitViewRenderer;
 @class YTIMusicSpotlightShelfRenderer;
@@ -13511,7 +13302,6 @@
 @class YTIMusicTastebuilderShelfThumbnailRenderer;
 @class YTIMusicTastebuilderShelfThumbnailSupportedRenderers;
 @class YTIMusicThumbnailButtonRenderer;
-@class YTIMusicThumbnailButtonRendererRoot_musicThumbnailButtonRenderer;
 @class YTIMusicThumbnailRenderer;
 @class YTIMusicThumbnailRendererCropOptions;
 @class YTIMusicThumbnailRendererRoot_musicThumbnailRenderer;
@@ -13550,11 +13340,9 @@
 @class YTIMusicWideAlbumRendererRoot_musicWideAlbumRenderer;
 @class YTIMusicWideAlbumThumbnailSupportedRenderers;
 @class YTIMusicWideArtistRadioRenderer;
-@class YTIMusicWideArtistRadioRendererRoot_musicWideArtistRadioRenderer;
 @class YTIMusicWideArtistRadioThumbnailSupportedRenderers;
 @class YTIMusicWideOfflineMixtapeRenderer;
 @class YTIMusicWideOfflineMixtapeRendererExtension;
-@class YTIMusicWideOfflineMixtapeRendererExtension_iosClientOfflineData;
 @class YTIMusicWideOfflineMixtapeThumbnailSupportedRenderers;
 @class YTIMusicWidePlaylistOfflineabilitySupportedRenderers;
 @class YTIMusicWidePlaylistRenderer;
@@ -13610,22 +13398,18 @@
 @class YTInAppBrowserGestureLogger;
 @class YTInAppBrowserRendererProvider;
 @class YTInAppBrowserViewController;
-@class YTInAppBrowserViewController_YTInAppBrowserViewControllerProtocol;
 @class YTInAppBrowserViewControllerProtocol;
 @class YTInAppBrowserViewControllerProtocol_API;
 @class YTInAppReviewPromptThrottleController;
-@class YTInAppReviewPromptThrottleController_YTInAppReviewPromptThrottler;
 @class YTInAppReviewPromptThrottler;
 @class YTInAppReviewPromptThrottler_API;
 @class YTINativeAdBadgeRenderer;
 @class YTINativeAdBadgeRendererRoot_nativeAdBadgeRenderer;
 @class YTINativeBridgeBenchmarkingCommand;
-@class YTINativeBridgeBenchmarkingCommand_nativeBridgeBenchmarkingCommand;
 @class YTINavBarBackgroundStyle;
 @class YTINavigateAction;
 @class YTINavigateAction_navigateAction;
 @class YTINavigateAndOpenDialogEndpoint;
-@class YTINavigateAndOpenDialogEndpointRoot_navigateAndOpenDialogEndpoint;
 @class YTINavigateBackCommand;
 @class YTINavigateBackCommand_navigateBackCommand;
 @class YTINavigateToArForward;
@@ -13650,7 +13434,6 @@
 @class YTIncognitoAnimationController;
 @class YTIncognitoAnimationController_API;
 @class YTIncognitoAnimationControllerImpl;
-@class YTIncognitoAnimationControllerImpl_YTIncognitoAnimationController;
 @class YTIncognitoVisitorDataStore;
 @class YTIndividualSearchDeletedFromHistory;
 @class YTINerdStatsEndpoint;
@@ -13685,7 +13468,6 @@
 @class YTInfoCardContainerProtocol;
 @class YTInfoCardController;
 @class YTInfoCardControllerProvider;
-@class YTInfoCardControllerProvider_YTInfoCardControllerProviderProtocol;
 @class YTInfoCardControllerProviderProtocol;
 @class YTInfoCardControllerProviderProtocol_API;
 @class YTInfoCardCueRange;
@@ -13757,7 +13539,6 @@
 @class YTInlineMutedPlaybackScrubberViewController;
 @class YTInlineMutedPlaybackScrubbingGestureRecognizer;
 @class YTInlineMutedPlaybackScrubbingGestureRecognizerDelegate;
-@class YTInlineMutedPlaybackScrubbingGestureRecognizerProcessingDelegate;
 @class YTInlineMutedPlaybackScrubbingGestureRecognizerTouchDelegate;
 @class YTInlineMutedPlaybackScrubbingSlider;
 @class YTInlineMutedPlaybackShortsPlayerOverlayView;
@@ -14056,7 +13837,6 @@
 @class YTINotificationTextRenderer;
 @class YTINotificationTextRendererRoot_notificationTextRenderer;
 @class YTINotificationThumbnailRenderer;
-@class YTINotificationThumbnailRendererRoot_notificationThumbnailRenderer;
 @class YTINotificationTopbarButtonRenderer;
 @class YTINotificationType;
 @class YTINotificationType_NotificationTypeEnum;
@@ -14133,7 +13913,6 @@
 @class YTInterstitialPromoView;
 @class YTInterstitialPromoViewController;
 @class YTInterstitialPromoViewController_API;
-@class YTInterstitialPromoViewController_YTInterstitialPromoViewController;
 @class YTInterstitialPromoViewDelegate;
 @class YTInterval;
 @class YTIntervalNode;
@@ -14163,7 +13942,6 @@
 @class YTIOfflineabilityRenderer;
 @class YTIOfflineabilityRenderer_AudioTrack;
 @class YTIOfflineabilityRenderer_OfflineabilityInfoSupportedRenderers;
-@class YTIOfflineabilityRenderer_OfflineabilityRendererSupportedConfigs;
 @class YTIOfflineabilityRenderer_OfflineFormatSupportedDatas;
 @class YTIOfflineabilityRendererRoot_offlineabilityRenderer;
 @class YTIOfflineabilitySupportedRenderers;
@@ -14413,15 +14191,12 @@
 @class YTIOpenMyGooglePageCommand;
 @class YTIOpenMyGooglePageCommand_openMyGooglePageCommand;
 @class YTIOpenOSNotificationDialogAction;
-@class YTIOpenOSNotificationDialogAction_openOsNotificationDialogAction;
 @class YTIOpenPersistentCommentBoxAction;
-@class YTIOpenPersistentCommentBoxAction_openPersistentCommentBoxAction;
 @class YTIOpenPopupAction;
 @class YTIOpenPopupAction_openPopupAction;
 @class YTIOpenPopupActionSupportedRenderers;
 @class YTIOpenPopupActionType;
 @class YTIOpenSuperStickerBuyFlowCommand;
-@class YTIOpenSuperStickerBuyFlowCommand_openSuperStickerBuyFlowCommand;
 @class YTIOpenUrlInCurrentWebviewData;
 @class YTIOpenWaitingRoomCommand;
 @class YTIOpenWaitingRoomCommand_openWaitingRoomCommand;
@@ -14595,7 +14370,6 @@
 @class YTIPictureInPictureClingRenderer;
 @class YTIPictureInPicturePlayability;
 @class YTIPictureInPictureRenderer;
-@class YTIPictureInPictureRenderer_PictureInPictureInfoSupportedRenderers;
 @class YTIPictureInPictureRendererRoot_pictureInPictureRenderer;
 @class YTIPictureInPictureSupportedRenderers;
 @class YTIPingConfig;
@@ -14698,9 +14472,7 @@
 @class YTIPlayerAttestationDummyRenderer;
 @class YTIPlayerAttestationIosguardRenderer;
 @class YTIPlayerAttestationRenderer;
-@class YTIPlayerAttestationRendererRoot_playerAttestationBotguardRenderer;
 @class YTIPlayerAttestationRendererRoot_playerAttestationDummyRenderer;
-@class YTIPlayerAttestationRendererRoot_playerAttestationIosguardRenderer;
 @class YTIPlayerAttestationRendererRoot_playerAttestationRenderer;
 @class YTIPlayerAttestationRequestData;
 @class YTIPlayerBarCollectionModel;
@@ -14736,17 +14508,14 @@
 @class YTIPlayerConfig;
 @class YTIPlayerContentType;
 @class YTIPlayerControlOverlayRenderer;
-@class YTIPlayerControlOverlayRendererRoot_playerControlOverlayRenderer;
 @class YTIPlayerControlsChildItemIdentifier;
 @class YTIPlayerControlsConfig;
 @class YTIPlayerControlsOverlayRenderer;
-@class YTIPlayerControlsOverlayRendererRoot_playerControlsOverlayRenderer;
 @class YTIPlayerControlsOverlayRendererRoot_playerNoSoundMemoRenderer;
 @class YTIPlayerControlsOverlayRendererRoot_playerOverflowRenderer;
 @class YTIPlayerControlsOverlaySupportedRenderers;
 @class YTIPlayerControlsVisibility;
 @class YTIPlayerControlsVisibilityEntity;
-@class YTIPlayerControlsVisibilityEntity_playerControlsVisibilityEntity;
 @class YTIPlayerCueRange;
 @class YTIPlayerCueRangeSet;
 @class YTIPlayerCueRangeSetIdentifier;
@@ -14826,8 +14595,6 @@
 @class YTIPlayerOverlayVideoDetailsSupportedRenderers;
 @class YTIPlayerOverlayVideoInteractions;
 @class YTIPlayerOverlayVideoInteractions_Interaction;
-@class YTIPlayerOverlayVideoInteractions_Interaction_PopUpActionRenderers;
-@class YTIPlayerOverlayVideoInteractionsRoot_videoInteractionPopUpRenderer;
 @class YTIPlayerOverlayVisibilityControl;
 @class YTIPlayerPlaybackState;
 @class YTIPlayerPrebufferConfig;
@@ -14846,7 +14613,6 @@
 @class YTIPlayerSeekMetrics;
 @class YTIPlayerServiceRetryConfig;
 @class YTIPlayerSpotlightStoryRenderer;
-@class YTIPlayerSpotlightStoryRendererRoot_playerSpotlightStoryRenderer;
 @class YTIPlayerState;
 @class YTIPlayerStateActionType;
 @class YTIPlayerStateEntity;
@@ -14857,7 +14623,6 @@
 @class YTIPlayerStateTriggeredAction;
 @class YTIPlayerStateTriggerTypeEnum;
 @class YTIPlayerStoryboardSpecRenderer;
-@class YTIPlayerStoryboardSpecRendererRoot_playerStoryboardSpecRenderer;
 @class YTIPlayerThreedRenderer;
 @class YTIPlayerThreedRendererRoot_playerThreedRenderer;
 @class YTIPlayerTimeEntity;
@@ -14894,7 +14659,6 @@
 @class YTIPlaylistDedupeSuggestionsVideoRenderer;
 @class YTIPlaylistDedupeSuggestionsVideoSupportedRenderers;
 @class YTIPlaylistDetailHeaderRenderer;
-@class YTIPlaylistDetailHeaderRendererRoot_playlistDetailHeaderRenderer;
 @class YTIPlaylistDetailHeaderSupportedAccessibilityDatas;
 @class YTIPlaylistDetailMetrics;
 @class YTIPlaylistDetailPodcastMetadataBadges;
@@ -14949,7 +14713,6 @@
 @class YTIPlaylistMetadataRendererRoot_playlistMetadataRenderer;
 @class YTIPlaylistNotificationButtonSupportedRenderers;
 @class YTIPlaylistNotificationRenderer;
-@class YTIPlaylistNotificationRendererRoot_playlistNotificationRenderer;
 @class YTIPlaylistPanelButtonSupportedRenderers;
 @class YTIPlaylistPanelLinkRenderer;
 @class YTIPlaylistPanelRenderer;
@@ -14969,7 +14732,6 @@
 @class YTIPlaylistPayload;
 @class YTIPlaylistPickerAlertsSupportedRenderers;
 @class YTIPlaylistPickerDialogRenderer;
-@class YTIPlaylistPickerDialogRendererRoot_playlistPickerDialogRenderer;
 @class YTIPlaylistPickerDialogSupportedRenderers;
 @class YTIPlaylistPickerServerStateEntity;
 @class YTIPlaylistRenderer;
@@ -14978,7 +14740,6 @@
 @class YTIPlaylistSaveButtonSupportedRenderers;
 @class YTIPlaylistSegmentRenderer;
 @class YTIPlaylistSelectOptionRenderer;
-@class YTIPlaylistSelectOptionRendererRoot_playlistSelectOptionRenderer;
 @class YTIPlaylistSelectOptionSupportedRenderers;
 @class YTIPlaylistSettingsEditorAutoAddSettingsSectionRenderer;
 @class YTIPlaylistSettingsEditorBasicSettingsSectionRenderer;
@@ -14994,12 +14755,9 @@
 @class YTIPlaylistSettingsEditorSupportedRenderers;
 @class YTIPlaylistSettingsEditorTextInputSupportedRenderers;
 @class YTIPlaylistShowMetadataRenderer;
-@class YTIPlaylistShowMetadataRendererRoot_playlistShowMetadataRenderer;
 @class YTIPlaylistSidebarPrimaryInfoRenderer;
 @class YTIPlaylistSidebarRenderer;
-@class YTIPlaylistSidebarRendererRoot_playlistSidebarPrimaryInfoRenderer;
 @class YTIPlaylistSidebarRendererRoot_playlistSidebarRenderer;
-@class YTIPlaylistSidebarRendererRoot_playlistSidebarSecondaryInfoRenderer;
 @class YTIPlaylistSidebarSecondaryInfoRenderer;
 @class YTIPlaylistSuggestionsRenderer;
 @class YTIPlaylistSuggestionsRendererRoot_playlistSuggestionsRenderer;
@@ -15011,10 +14769,6 @@
 @class YTIPlaylistThumbnailOverlayRenderer;
 @class YTIPlaylistThumbnailOverlayThumbnailSupportedRenderers;
 @class YTIPlaylistThumbnailRenderersRoot_heroPlaylistThumbnailRenderer;
-@class YTIPlaylistThumbnailRenderersRoot_playlistCollageThumbnailRenderer;
-@class YTIPlaylistThumbnailRenderersRoot_playlistCroppedThumbnailRenderer;
-@class YTIPlaylistThumbnailRenderersRoot_playlistCustomThumbnailRenderer;
-@class YTIPlaylistThumbnailRenderersRoot_playlistVideoThumbnailRenderer;
 @class YTIPlaylistThumbnailStyle;
 @class YTIPlaylistThumbnailSupportedRenderers;
 @class YTIPlaylistVideoBindingSupportedDatas;
@@ -15090,7 +14844,6 @@
 @class YTIPostDescriptor;
 @class YTIPostDwellObserver;
 @class YTIPostEphemeralityDialogRenderer;
-@class YTIPostEphemeralityDialogRenderer_postEphemeralityDialogRenderer;
 @class YTIPostEphemeralitySettings;
 @class YTIPostEphemeralitySettingsEntity;
 @class YTIPostEphemeralityType;
@@ -15106,7 +14859,6 @@
 @class YTIPostImpressionEvent;
 @class YTIPostImpressionEventType;
 @class YTIPostLiveCreationThumbnailSource;
-@class YTIPostLiveCreationThumbnailSource_postLiveCreationThumbnailSource;
 @class YTIPostMusicCreationData;
 @class YTIPostMusicSourceType;
 @class YTIPostObserver;
@@ -15184,8 +14936,6 @@
 @class YTIPreviousContinuationData;
 @class YTIPreviousContinuationData_previousContinuationData;
 @class YTIPrimesSettings;
-@class YTIPrimetimePromoPanelRendererRoot_panelAlbumStyleMetadataRenderer;
-@class YTIPrimetimePromoPanelRendererRoot_panelShowStyleMetadataRenderer;
 @class YTIPrivacyBadgeRenderer;
 @class YTIPrivacyDropdownItemRenderer;
 @class YTIPrivacyPickerStateEntity;
@@ -15195,7 +14945,6 @@
 @class YTIPrivacyTosFooterRendererRoot_privacyTosFooterRenderer;
 @class YTIPrivacyType;
 @class YTIProcessingProgressBarRenderer;
-@class YTIProcessingProgressBarRendererRoot_processingProgressBarRenderer;
 @class YTIProducerAppStateChange;
 @class YTIProducerAssetCategory;
 @class YTIProducerAssetFontParams;
@@ -15266,7 +15015,6 @@
 @class YTIPromotedNativeAdClickBehaviorType;
 @class YTIPromotedNativeTextClickLocation;
 @class YTIPromotedNativeTextContent;
-@class YTIPromotedNativeTextContent_PromotedNativeTextClickLocationTarget;
 @class YTIPromotedNativeTextCtdClickLocation;
 @class YTIPromotedNativeTextCtdContent;
 @class YTIPromotedSparkles15ClickBehaviorType;
@@ -15335,7 +15083,6 @@
 @class YTIQueueAddMenuItemCommand;
 @class YTIQueueAddMenuItemCommand_queueAddMenuItemCommand;
 @class YTIQueueAwarePlaylistWatchCommand;
-@class YTIQueueAwarePlaylistWatchCommand_queueAwarePlaylistWatchCommand;
 @class YTIQueueInsertPosition;
 @class YTIQueueItem;
 @class YTIQueueMode;
@@ -15404,7 +15151,6 @@
 @class YTIRedCarpetVideoRendererRoot_overlayBadgeRenderer;
 @class YTIRedCarpetVideoRendererRoot_redCarpetVideoRenderer;
 @class YTIRedCarpetVideoRendererRoot_thumbnailBadgeIconRenderer;
-@class YTIRedCarpetVideoRendererRoot_thumbnailOverlayCenterBadgeRenderer;
 @class YTIRedCarpetVideoRendererRoot_thumbnailOverlayScrimRenderer;
 @class YTIRedHotConfig;
 @class YTIReelAccessoryViewRenderer;
@@ -15486,14 +15232,12 @@
 @class YTIReelPlayerOverlayRendererRoot_forcedMuteMessageRenderer;
 @class YTIReelPlayerOverlayRendererRoot_pivotButtonRenderer;
 @class YTIReelPlayerOverlayRendererRoot_reelPlayerAgeGateRenderer;
-@class YTIReelPlayerOverlayRendererRoot_reelPlayerContextualHeaderRenderer;
 @class YTIReelPlayerOverlayRendererRoot_reelPlayerHeaderRenderer;
 @class YTIReelPlayerOverlayRendererRoot_reelPlayerOverlayRenderer;
 @class YTIReelPlayerOverlayStyle;
 @class YTIReelPlayerOverlaySupportedRenderers;
 @class YTIReelPlayerOverlayVariant;
 @class YTIReelPlayerPausedStateRenderer;
-@class YTIReelPlayerPausedStateRendererRoot_reelPlayerPausedStateRenderer;
 @class YTIReelPlayerPersistentEducationRenderer;
 @class YTIReelPlayerPersistentEducationRenderer_ImpressionCapConfig;
 @class YTIReelPlayerPersistentEducationRenderer_TriggerTime;
@@ -15504,7 +15248,6 @@
 @class YTIReelShowAnimationCommand_reelShowAnimationCommand;
 @class YTIReelsSequenceMutationEvent;
 @class YTIReelTimeLimitEnforcementCommand;
-@class YTIReelTimeLimitEnforcementCommand_reelTimeLimitEnforcementCommand;
 @class YTIReelTopBarConfig;
 @class YTIReelToReelBaseline;
 @class YTIReelVideoType;
@@ -15586,7 +15329,6 @@
 @class YTIRelatedChipCloudRenderer;
 @class YTIRelatedChipCloudRendererRoot_relatedChipCloudRenderer;
 @class YTIRelatedChipCloudSelectionEntity;
-@class YTIRelatedChipCloudSelectionEntity_relatedChipCloudSelectionEntity;
 @class YTIRelatedChipCommand;
 @class YTIRelatedChipCommand_relatedChipCommand;
 @class YTIRelatedChipContinuationRoot_relatedChipsContinuationRenderer;
@@ -15607,7 +15349,6 @@
 @class YTIReloadPlaybackContext;
 @class YTIReloadPlaybackParams;
 @class YTIReloadSponsorshipsDialogCommand;
-@class YTIReloadSponsorshipsDialogCommand_reloadSponsorshipsDialogCommand;
 @class YTIRematerializationOptions;
 @class YTIReminder;
 @class YTIReminders;
@@ -15636,13 +15377,11 @@
 @class YTIRemoveChatItemByAuthorAction_removeChatItemByAuthorAction;
 @class YTIRemoveCreatorGoalTickerChipCommand;
 @class YTIRemoveFanzoneTickerChipCommand;
-@class YTIRemoveFanzoneTickerChipCommand_removeFanzoneTickerChipCommand;
 @class YTIRemoveFromAdditionalContentsCommand;
 @class YTIRemoveFromRemoteQueueEndpoint;
 @class YTIRemoveFromRemoteQueueEndpoint_removeFromRemoteQueueEndpoint;
 @class YTIRemoveGDataHeaderFromPingsConfig;
 @class YTIRemoveInteractivityWidgetAction;
-@class YTIRemoveInteractivityWidgetAction_removeInteractivityWidgetAction;
 @class YTIRemoveItemOperation;
 @class YTIRemoveLikeRequest;
 @class YTIRemoveLikeResponse;
@@ -15744,7 +15483,6 @@
 @class YTIResponseContext;
 @class YTIResponseType;
 @class YTIResponsiveCompatibilityOptions;
-@class YTIResponsiveCompatibilityOptions_responsiveCompatibilityOptions;
 @class YTIResponsiveContainerConfiguration;
 @class YTIResponsiveContainerMapping;
 @class YTIResponsiveGridsReflowConfiguration;
@@ -15896,7 +15634,6 @@
 @class YTISearchPyvRendererRoot_searchPyvRenderer;
 @class YTISearchPyvSupportedRenderers;
 @class YTISearchRefinementCardRenderer;
-@class YTISearchRefinementCardRendererRoot_searchRefinementCardRenderer;
 @class YTISearchRefinementCardRendererStyle;
 @class YTISearchRefinementCardRendererStyle_CardRendererStyleType;
 @class YTISearchRequest;
@@ -15942,7 +15679,6 @@
 @class YTISectionListEngagementPanelExtras;
 @class YTISectionListFabSupportedRenderers;
 @class YTISectionListGhostCardRenderer;
-@class YTISectionListGhostCardRendererRoot_sectionListGhostCardRenderer;
 @class YTISectionListHeaderSupportedRenderers;
 @class YTISectionListIdentifier;
 @class YTISectionListItem;
@@ -16044,7 +15780,6 @@
 @class YTIServerSuggestedEdits;
 @class YTIServiceEndpointClientScreenExtension;
 @class YTIServiceEndpointExtension;
-@class YTIServiceEndpointExtension_serviceEndpointClientScreenExtension;
 @class YTIServiceIntegrityDimensions;
 @class YTIServiceItemsRowRenderer;
 @class YTIServiceItemsRowSupportedRenderers;
@@ -16118,7 +15853,6 @@
 @class YTISettingRendererRoot_tvMdxSettingRenderer;
 @class YTISettingRendererRoot_unpluggedAppTourSettingRenderer;
 @class YTISettingRendererRoot_unpluggedDisclaimerSettingRenderer;
-@class YTISettingRendererRoot_unpluggedLiveGuideSettingCategoryRenderer;
 @class YTISettingRendererRoot_unpluggedLocationSettingRenderer;
 @class YTISettingsCheckboxRenderer;
 @class YTISettingScreenRenderer;
@@ -16142,7 +15876,6 @@
 @class YTISfvAudioPickerBackButtonPosition;
 @class YTISfvAudioPickerBackButtonStyle;
 @class YTISfvAudioPickerHeaderRenderer;
-@class YTISfvAudioPickerHeaderRendererRoot_sfvAudioPickerHeaderRenderer;
 @class YTISfvAudioSearchBoxRenderer;
 @class YTISfvAudioSearchBoxRendererRoot_sfvAudioSearchBoxRenderer;
 @class YTISfvAudioSearchCommand;
@@ -16197,7 +15930,6 @@
 @class YTIShareImageCommand;
 @class YTIShareImageCommand_shareImageCommand;
 @class YTIShareMiniAppWithContextCommand;
-@class YTIShareMiniAppWithContextCommand_shareMiniAppWithContextCommand;
 @class YTISharePanelCommunityPostSupportedRenderers;
 @class YTISharePanelHeaderRenderer;
 @class YTISharePanelHeaderSupportedRenderers;
@@ -16292,7 +16024,6 @@
 @class YTIShoppingItemSearchQuery;
 @class YTIShoppingProducts;
 @class YTIShoppingSettingsRequestCommand;
-@class YTIShoppingSettingsRequestCommand_shoppingSettingsRequestCommand;
 @class YTIShoppingWebViewDelegate;
 @class YTIShortItemEvents;
 @class YTIShortItemEvents_shortItemEvents;
@@ -16311,7 +16042,6 @@
 @class YTIShortsCameraRendererRoot_shortsCameraRenderer;
 @class YTIShortsCompositionMetadata;
 @class YTIShortsCreationAiMontageRenderer;
-@class YTIShortsCreationAiMontageRenderer_shortsCreationAiMontageRenderer;
 @class YTIShortsCreationApplyVisualRemixCommand;
 @class YTIShortsCreationAudioPickerTitleStateEntity;
 @class YTIShortsCreationAudioRenderer;
@@ -16396,9 +16126,7 @@
 @class YTIShortsCreationVideoIngestionCommand_VideoSegment;
 @class YTIShortsCreationVideoIngestionRenderer;
 @class YTIShortsCreationYtPlayerRenderer;
-@class YTIShortsCreationYtPlayerRenderer_shortsCreationYtPlayerRenderer;
 @class YTIShortsDeleteProjectDraftCommand;
-@class YTIShortsDeleteProjectDraftCommand_shortsDeleteProjectDraftCommand;
 @class YTIShortsDurationToggleState;
 @class YTIShortsEditRenderer;
 @class YTIShortsEditRendererRoot_shortsEditRenderer;
@@ -16429,21 +16157,15 @@
 @class YTIShortsHandleAiExtensionVideoCommand;
 @class YTIShortsHandleAiObjectInsertionVideoMetadataCommand;
 @class YTIShortsHandleAiRemixVideoCommand;
-@class YTIShortsHandleAiRemixVideoCommand_shortsHandleAiRemixVideoCommand;
 @class YTIShortsHandleCollabVideoCommand;
-@class YTIShortsHandleCollabVideoCommand_shortsHandleCollabVideoCommand;
 @class YTIShortsHandleGreenScreenVideoCommand;
 @class YTIShortsHandleImportedMediaCommand;
 @class YTIShortsHandleImportedMediaCommand_ExportType;
 @class YTIShortsHandleImportedVodCommand;
 @class YTIShortsHandleImportedVodCommand_ImportType;
-@class YTIShortsHandleImportedVodCommand_shortsHandleImportedVodCommand;
 @class YTIShortsHandleSaveDraftMDECommand;
-@class YTIShortsHandleSaveDraftMDECommand_shortsHandleSaveDraftMdeCommand;
 @class YTIShortsHandleSplicedVideoCommand;
-@class YTIShortsHandleSplicedVideoCommand_shortsHandleSplicedVideoCommand;
 @class YTIShortsImportCompositionCommand;
-@class YTIShortsImportCompositionCommand_shortsImportCompositionCommand;
 @class YTIShortsLayoutPickerEntryRenderer;
 @class YTIShortsLoadMdeSnapshotCommand;
 @class YTIShortsLoadMdeSnapshotCommand_shortsLoadMdeSnapshotCommand;
@@ -16483,7 +16205,6 @@
 @class YTIShortsThumbnailEditorState;
 @class YTIShortsTimeRange;
 @class YTIShortsToolbeltButtonRenderer;
-@class YTIShortsToolbeltButtonRendererRoot_shortsToolbeltButtonRenderer;
 @class YTIShortsTrimRenderer;
 @class YTIShortsTrimRenderer_shortsTrimRenderer;
 @class YTIShortsUndoLastSegmentCommand;
@@ -16492,7 +16213,6 @@
 @class YTIShortsVideoTitleViewModel;
 @class YTIShortsVideoTitleViewModel_shortsVideoTitleViewModel;
 @class YTIShowActionSheetCommandExtension;
-@class YTIShowActionSheetCommandExtension_showActionSheetCommandExtension;
 @class YTIShowAppReviewPromptAction;
 @class YTIShowAppReviewPromptAction_showAppReviewPromptAction;
 @class YTIShowAppStoreOverlayCommand;
@@ -16501,7 +16221,6 @@
 @class YTIShowAppStorePanelCommandRoot_showAppStorePanelCommand;
 @class YTIShowBackstageFullscreenImageViewerCommand;
 @class YTIShowChannelNotificationPreferenceDialogAction;
-@class YTIShowChannelNotificationPreferenceDialogActionSupportedRenderers;
 @class YTIShowCommentRepliesEngagementPanelCommand;
 @class YTIShowComposerCommand;
 @class YTIShowContentPillAction;
@@ -16554,7 +16273,6 @@
 @class YTIShowMealbarAction_showMealbarAction;
 @class YTIShowMealbarActionSupportedRenderers;
 @class YTIShowMessageInputPromptCommand;
-@class YTIShowMessageInputPromptCommandRoot_showMessageInputPromptCommand;
 @class YTIShowMiniAppAdCommand;
 @class YTIShowMiniAppAdCommand_showMiniAppAdCommand;
 @class YTIShowMiniplayerCommand;
@@ -16565,13 +16283,11 @@
 @class YTIShowMoreDrawerCommand;
 @class YTIShowMoreDrawerCommand_showMoreDrawerCommand;
 @class YTIShowNotificationThumbnailAction;
-@class YTIShowNotificationThumbnailAction_showNotificationThumbnailAction;
 @class YTIShowPlayableCommand;
 @class YTIShowPlayableCommand_showPlayableCommand;
 @class YTIShowPlayerSideAdsEngagementPageCommand;
 @class YTIShowPostEphemeralityDialogCommand;
 @class YTIShowPostsElementsDialogCommand;
-@class YTIShowPostsElementsDialogCommand_showPostsElementsDialogCommand;
 @class YTIShowPromoCommand;
 @class YTIShowPromoCommand_showPromoCommand;
 @class YTIShowRenderer;
@@ -16582,7 +16298,6 @@
 @class YTIShowSearchContentsCommand_showSearchContentsCommand;
 @class YTIShowSFVElementsBottomSheetCommand;
 @class YTIShowShareWithKidsPanelCommand;
-@class YTIShowShareWithKidsPanelCommandRoot_showShareWithKidsPanelCommand;
 @class YTIShowSheetCommand;
 @class YTIShowSheetCommand_showSheetCommand;
 @class YTIShowSnackbarCommand;
@@ -16592,7 +16307,6 @@
 @class YTIShowSponsorshipsEngagementPanelCommand;
 @class YTIShowStackedEngagementPanelCommand;
 @class YTIShowThumbnailEditMenuCommand;
-@class YTIShowThumbnailEditMenuCommandRoot_showThumbnailEditMenuCommand;
 @class YTIShowThumbnailRenderersRoot_showCustomThumbnailRenderer;
 @class YTIShowThumbnailSupportedRenderers;
 @class YTIShowTooltipCommand;
@@ -16619,7 +16333,6 @@
 @class YTISignInIdentityChooserPromptCommand;
 @class YTISignInIdentityChooserPromptOverride;
 @class YTISignInOAuthConsentPromptCommand;
-@class YTISignInOAuthConsentPromptCommand_signInOauthConsentPromptCommand;
 @class YTISignInPromoRenderer;
 @class YTISignInPromoRendererRoot_signInPromoRenderer;
 @class YTISignInPromoWithBackgroundRenderer;
@@ -16701,13 +16414,10 @@
 @class YTISlimVideoInformationCaretStyle;
 @class YTISlimVideoInformationRenderer;
 @class YTISlimVideoMetadataRenderer;
-@class YTISlimVideoMetadataRendererRoot_slimMetadataAddToButtonRenderer;
 @class YTISlimVideoMetadataRendererRoot_slimMetadataButtonRenderer;
-@class YTISlimVideoMetadataRendererRoot_slimMetadataToggleButtonRenderer;
 @class YTISlimVideoMetadataRendererRoot_slimOwnerRenderer;
 @class YTISlimVideoMetadataRendererRoot_slimVideoMetadataRenderer;
 @class YTISlimVideoMetadataSectionRenderer;
-@class YTISlimVideoMetadataSectionRendererRoot_slimVideoActionBarRenderer;
 @class YTISlimVideoScrollableActionBarRenderer;
 @class YTISlotData;
 @class YTISlotData_DebugData;
@@ -16774,7 +16484,6 @@
 @class YTISponsorshipsRenderersRoot_sponsorshipsOfferListRenderer;
 @class YTISponsorsOnlyBadgeRenderer;
 @class YTISponsorsOnlyDetails;
-@class YTISportsWatchCardRendererRoot_watchCardHeroOneVsOneEventRenderer;
 @class YTISRSDataPushVersion;
 @class YTISRSManifest;
 @class YTISRSManifest_srsManifest;
@@ -16814,7 +16523,6 @@
 @class YTIStartModularOnboardingCommand;
 @class YTIStartModularOnboardingCommand_startModularOnboardingCommand;
 @class YTIStartPrefetchThumbnailsCommand;
-@class YTIStartPrefetchThumbnailsCommand_startPrefetchThumbnailsCommand;
 @class YTIStartStreamEndpoint;
 @class YTIStartStreamEndpoint_startStreamEndpoint;
 @class YTIStartToShortsClientPauseConfig;
@@ -16842,7 +16550,6 @@
 @class YTIStickerCatalogEndpoint;
 @class YTIStickerCatalogEndpoint_stickerCatalogEndpoint;
 @class YTIStickerCatalogHeaderRenderer;
-@class YTIStickerCatalogHeaderRendererRoot_stickerCatalogHeaderRenderer;
 @class YTIStickerCatalogRenderer;
 @class YTIStickerCatalogRendererRoot_dynamicStickerRenderer;
 @class YTIStickerCatalogRendererRoot_stickerCatalogRenderer;
@@ -16881,7 +16588,6 @@
 @class YTIStorefrontGenreType;
 @class YTIStorefrontMoodType;
 @class YTIStoreMiniAppUserDefaultCommand;
-@class YTIStoreMiniAppUserDefaultCommand_storeMiniAppUserDefaultCommand;
 @class YTIStoreUploadAccountScopedSettingsCommand;
 @class YTIStoriesCreatorInfoPanelDismissalStateEntity;
 @class YTIStoriesShareCommand;
@@ -16961,8 +16667,6 @@
 @class YTISubscriptionOffersRenderer;
 @class YTISubscriptionOptionsRenderer;
 @class YTISubscriptionOptionsRendererRoot_subscriptionOptionsRenderer;
-@class YTISubscriptionOptionsRendererRoot_subscriptionRadioOptionRenderer;
-@class YTISubscriptionOptionsRendererRoot_subscriptionToggleOptionRenderer;
 @class YTISubscriptionOptionsSupportedRenderers;
 @class YTISubscriptionProductRenderer;
 @class YTISubscriptionProductRendererRoot_subscriptionProductRenderer;
@@ -16987,7 +16691,6 @@
 @class YTISuggestedActionsRendererRoot_suggestedActionRenderer;
 @class YTISuggestedActionsRendererRoot_suggestedActionsRenderer;
 @class YTISuggestedActionTimeRangeTrigger;
-@class YTISuggestedActionTimeRangeTrigger_suggestedActionTimeRangeTrigger;
 @class YTISuggestedActionTrigger;
 @class YTISuggestedAmount;
 @class YTISuggestEditableTextAction;
@@ -16998,7 +16701,6 @@
 @class YTISuggestedVideoRendererRoot_suggestedVideoRenderer;
 @class YTISuggestedVideosCompanionAdRenderer;
 @class YTISuggestedVideosHeaderRenderer;
-@class YTISuggestedVideosHeaderRendererRoot_suggestedVideosHeaderRenderer;
 @class YTISuggestionData;
 @class YTISuggestionSearchParams;
 @class YTISuggestType;
@@ -17112,7 +16814,6 @@
 @class YTITagEditorServerStateEntity_tagEditorServerStateEntity;
 @class YTItagParser;
 @class YTITakePictureForThumbnailEndpoint;
-@class YTITakePictureForThumbnailEndpoint_takePictureForThumbnailEndpoint;
 @class YTITakeScreenshotCommand;
 @class YTITakeScreenshotCommand_takeScreenshotCommand;
 @class YTITargetedIncentiveData;
@@ -17245,12 +16946,8 @@
 @class YTIThumbnailOverlayInlineUnplayableRenderer;
 @class YTIThumbnailOverlayPlaybackStatusRenderer;
 @class YTIThumbnailOverlayRenderersRoot_premiereTrailerBadgeRenderer;
-@class YTIThumbnailOverlayRenderersRoot_thumbnailOverlayEqualizerRenderer;
-@class YTIThumbnailOverlayRenderersRoot_thumbnailOverlayHoverTextRenderer;
 @class YTIThumbnailOverlayRenderersRoot_thumbnailOverlayIconRenderer;
-@class YTIThumbnailOverlayRenderersRoot_thumbnailOverlaySidePanelRenderer;
 @class YTIThumbnailOverlayRenderersRoot_thumbnailOverlayTextRenderer;
-@class YTIThumbnailOverlayRenderersRoot_thumbnailOverlayTimeStatusRenderer;
 @class YTIThumbnailOverlayResumePlaybackRenderer;
 @class YTIThumbnailOverlayScrimRenderer;
 @class YTIThumbnailOverlaySidePanelRenderer;
@@ -17293,11 +16990,9 @@
 @class YTITimedListData;
 @class YTITimedMarkerDecoration;
 @class YTITimedMarkerDecorationRenderer;
-@class YTITimedMarkerDecorationRendererRoot_timedMarkerDecorationRenderer;
 @class YTITimedMarkersListSyncEntity;
 @class YTITimedMarkersListSyncEntity_timedMarkersListSyncEntity;
 @class YTITimedReactionFeedbackEndpoint;
-@class YTITimedReactionFeedbackEndpointRoot_timedReactionFeedbackEndpoint;
 @class YTITimedSectionListData;
 @class YTITimedSyncDataItem;
 @class YTITimeline;
@@ -17329,7 +17024,6 @@
 @class YTIToggleButtonViewModel;
 @class YTIToggleButtonViewModel_toggleButtonViewModel;
 @class YTIToggleChatInteractivityCommand;
-@class YTIToggleChatInteractivityCommand_toggleChatInteractivityCommand;
 @class YTIToggleCompositionEffectsOperation;
 @class YTIToggleEngagementPanelCommand;
 @class YTIToggleEngagementPanelCommand_toggleEngagementPanelCommand;
@@ -17474,7 +17168,6 @@
 @class YTITvfilmSellableItemRenderer;
 @class YTITvInfo;
 @class YTITvMdxSettingRenderer;
-@class YTITvPurchaseItemRendererRoot_unlimitedSubscriptionDialogRenderer;
 @class YTITvSignInCommand;
 @class YTITvSignInCommand_tvSignInCommand;
 @class YTITvSignInEventData;
@@ -17496,7 +17189,6 @@
 @class YTIUndvrButtonType;
 @class YTIUnfilledMediaTrackingRenderer;
 @class YTIUnfilledMediaTrackingRendererProvider;
-@class YTIUnfilledMediaTrackingRendererRoot_unfilledMediaTrackingRenderer;
 @class YTIUnicodeEmojiSticker;
 @class YTIUnicodeEmojiStickerPageRenderer;
 @class YTIUnifiedRetryConfig;
@@ -17511,8 +17203,6 @@
 @class YTIUnifiedSharePanelRendererRoot_sharePanelPromoRenderer;
 @class YTIUnifiedSharePanelRendererRoot_sharePanelTitleRenderer;
 @class YTIUnifiedSharePanelRendererRoot_sharePanelTitleV15Renderer;
-@class YTIUnifiedSharePanelRendererRoot_shareStartTimeWithContextRenderer;
-@class YTIUnifiedSharePanelRendererRoot_thirdPartyNetworkSectionRenderer;
 @class YTIUnifiedSharePanelRendererRoot_unifiedSharePanelRenderer;
 @class YTIUnifiedVerifiedBadgeRenderer;
 @class YTIUniversalWatchCardHeaderColorSupportedDatas;
@@ -17566,7 +17256,6 @@
 @class YTIUnpluggedAppInfo;
 @class YTIUnpluggedAppTourSettingRenderer;
 @class YTIUnpluggedAssistantShelfCardRenderer;
-@class YTIUnpluggedAssistantShelfSuggestionCardMessageSupportedRenderers;
 @class YTIUnpluggedAssistantShelfSuggestionCardRenderer;
 @class YTIUnpluggedAssistantSuggestionCardRenderer;
 @class YTIUnpluggedBadgeRenderersRoot_unpluggedIconBadgeRenderer;
@@ -17606,7 +17295,6 @@
 @class YTIUnpluggedCompactBrowseItemRenderer;
 @class YTIUnpluggedCompactVideoRenderer;
 @class YTIUnpluggedCompactVideoRenderer_ClientStateSyncData;
-@class YTIUnpluggedCompactVideoRendererRoot_unpluggedCompactVideoRenderer;
 @class YTIUnpluggedCompositeSourceThumbnailDetails;
 @class YTIUnpluggedCompositeThumbnailDetails;
 @class YTIUnpluggedContentDetailsAboutFieldsRenderer;
@@ -17653,13 +17341,11 @@
 @class YTIUnpluggedFilterModeType;
 @class YTIUnpluggedFlowBodyRenderer;
 @class YTIUnpluggedFlowMessageRenderer;
-@class YTIUnpluggedFlowMessageRendererRoot_unpluggedFlowMessageRenderer;
 @class YTIUnpluggedFullScreenMessageRenderer;
 @class YTIUnpluggedFullScreenStepRenderer;
 @class YTIUnpluggedGameCardRenderer;
 @class YTIUnpluggedGameCardRendererRoot_unpluggedGameCardRenderer;
 @class YTIUnpluggedGridChannelRenderer;
-@class YTIUnpluggedGridChannelRendererRoot_unpluggedGridChannelRenderer;
 @class YTIUnpluggedGridVideoRenderer;
 @class YTIUnpluggedGridVideoRenderer_ClientStateSyncData;
 @class YTIUnpluggedGridVideoRendererRoot_unpluggedGridVideoRenderer;
@@ -17703,7 +17389,6 @@
 @class YTIUnpluggedLensRenderer;
 @class YTIUnpluggedLensRendererRoot_unpluggedLensRenderer;
 @class YTIUnpluggedLibraryItemRenderer;
-@class YTIUnpluggedLibraryItemRendererRoot_unpluggedLibraryItemRenderer;
 @class YTIUnpluggedLibraryItemSupportedRenderers;
 @class YTIUnpluggedLiveGuideSettingCategoryRenderer;
 @class YTIUnpluggedLocationAcquisitionRenderer;
@@ -17718,7 +17403,6 @@
 @class YTIUnpluggedLocationSettingItemSupportedRenderers;
 @class YTIUnpluggedLocationSettingRenderer;
 @class YTIUnpluggedLocationStepRenderer;
-@class YTIUnpluggedLocationStepRendererRoot_unpluggedLocationStepRenderer;
 @class YTIUnpluggedLocationStepSupportedRenderers;
 @class YTIUnpluggedMarketingPageRenderer;
 @class YTIUnpluggedMarketingPageRenderer_CarouselScreen;
@@ -17742,7 +17426,6 @@
 @class YTIUnpluggedOnboardingLocationRenderer;
 @class YTIUnpluggedOnboardingRenderer;
 @class YTIUnpluggedOnboardingStateEntity;
-@class YTIUnpluggedOnboardingStateEntity_unpluggedOnboardingStateEntity;
 @class YTIUnpluggedOverflowMenuPopupRenderer;
 @class YTIUnpluggedOverlayStyle;
 @class YTIUnpluggedPackageConfirmationSupportedRenderers;
@@ -17753,7 +17436,6 @@
 @class YTIUnpluggedPopupSupportedRenderers;
 @class YTIUnpluggedPricingDetails;
 @class YTIUnpluggedPromoBannerRenderer;
-@class YTIUnpluggedPromoBannerRendererRoot_unpluggedPromoBannerRenderer;
 @class YTIUnpluggedPromoData;
 @class YTIUnpluggedPromoRenderer;
 @class YTIUnpluggedPromoRendererRoot_unpluggedPromoRenderer;
@@ -17767,7 +17449,6 @@
 @class YTIUnpluggedSearchOneboxOtherCorpusRenderer;
 @class YTIUnpluggedSearchOneboxRenderer;
 @class YTIUnpluggedSearchOneboxRenderer_ThumbnailType;
-@class YTIUnpluggedSearchOneboxRendererRoot_unpluggedSearchOneboxRenderer;
 @class YTIUnpluggedSearchShowingResultsForRenderer;
 @class YTIUnpluggedSelectableSectionContentsRenderer;
 @class YTIUnpluggedSelectableSectionContentsSupportedRenderers;
@@ -17777,14 +17458,12 @@
 @class YTIUnpluggedSelectionMenuDialogRenderer;
 @class YTIUnpluggedSettingCategoryEntryRenderer;
 @class YTIUnpluggedSettingItemRenderer;
-@class YTIUnpluggedSettingItemRendererRoot_unpluggedSettingItemRenderer;
 @class YTIUnpluggedShelfRendererType;
 @class YTIUnpluggedSingleSelectionMenuItemRenderer;
 @class YTIUnpluggedSmallTeamsScoreRenderer;
 @class YTIUnpluggedSpoilerModeEntity;
 @class YTIUnpluggedSpoilerModeState;
 @class YTIUnpluggedSpoilerModeStateEntity;
-@class YTIUnpluggedSpoilerModeStateEntity_unpluggedSpoilerModeStateEntity;
 @class YTIUnpluggedSportsActionMenuItemRenderer;
 @class YTIUnpluggedSportsActionMenuItemRenderer_ClientStateSyncData;
 @class YTIUnpluggedSportsMenuItemRenderer;
@@ -17793,7 +17472,6 @@
 @class YTIUnpluggedSportsTeamMatchupSupportedRenderers;
 @class YTIUnpluggedSportsTeamRenderer;
 @class YTIUnpluggedStorageUsageRenderer;
-@class YTIUnpluggedStorageUsageRendererRoot_unpluggedStorageUsageRenderer;
 @class YTIUnpluggedStreamChunkBasedPosition;
 @class YTIUnpluggedSubscribeButtonSupportedRenderers;
 @class YTIUnpluggedSubscriptionsCategorySupportedRenderers;
@@ -17804,7 +17482,6 @@
 @class YTIUnpluggedTableSectionPlayerStatsHeaderRenderer;
 @class YTIUnpluggedTableSectionPlayerStatsRowRenderer;
 @class YTIUnpluggedTableSectionRenderer;
-@class YTIUnpluggedTableSectionRendererRoot_unpluggedTableSectionRenderer;
 @class YTIUnpluggedTableSectionRowSupportedRenderers;
 @class YTIUnpluggedTableSectionTeamStatsHeaderRenderer;
 @class YTIUnpluggedTableSectionTeamStatsRowRenderer;
@@ -17812,7 +17489,6 @@
 @class YTIUnpluggedTextBadgeRenderer_UnpluggedTextBadgeType;
 @class YTIUnpluggedThumbnailDetails;
 @class YTIUnpluggedTimeCounterRenderer;
-@class YTIUnpluggedTimeCounterRendererRoot_unpluggedTimeCounterRenderer;
 @class YTIUnpluggedTravelElementRenderer;
 @class YTIUnpluggedTravelRenderer;
 @class YTIUnpluggedTravelRendererRoot_unpluggedTravelRenderer;
@@ -17829,14 +17505,11 @@
 @class YTIUnpluggedVoiceRemoteData;
 @class YTIUnpluggedVoiceRemoteDialogRenderer;
 @class YTIUnpluggedVoiceSearchRenderer;
-@class YTIUnpluggedVoiceSearchRendererRoot_unpluggedVoiceSearchRenderer;
 @class YTIUnpluggedWarmWelcomeRenderer;
-@class YTIUnpluggedWarmWelcomeRendererRoot_unpluggedWarmWelcomeRenderer;
 @class YTIUnpluggedWatchNextOptions;
 @class YTIUnpluggedWatchStateEntity;
 @class YTIUnpluggedWatchStateEntity_unpluggedWatchStateEntity;
 @class YTIUnpluggedZipcodeInputRenderer;
-@class YTIUnpluggedZipcodeInputRendererRoot_unpluggedZipcodeInputRenderer;
 @class YTIUnpublishedEffectAssetItem;
 @class YTIUnseenContentCountRenderer;
 @class YTIUnseenContentCountRendererRoot_unseenContentCountRenderer;
@@ -17869,7 +17542,6 @@
 @class YTIUpdateBroadcastParticipantRequest;
 @class YTIUpdateBroadcastParticipantResponse;
 @class YTIUpdateBrowseTabNewContentAction;
-@class YTIUpdateBrowseTabNewContentAction_updateBrowseTabNewContentAction;
 @class YTIUpdateBrowseTabNewContentHintSupportedRenderers;
 @class YTIUpdateChannelPageSettingsCommand;
 @class YTIUpdateChannelPageSettingsRequest;
@@ -17923,15 +17595,12 @@
 @class YTIUpdateFlowCommand_updateFlowCommand;
 @class YTIUpdateGeneratedThumbnailPromptTermCommand;
 @class YTIUpdateHorizontalCardListAction;
-@class YTIUpdateHorizontalCardListAction_updateHorizontalCardListAction;
 @class YTIUpdateHorizontalCardListActionEndpoint;
 @class YTIUpdateHorizontalCardListSupportedRenderers;
 @class YTIUpdateImagePreviewCommand;
 @class YTIUpdateImagePreviewCommandRoot_updateImagePreviewCommand;
 @class YTIUpdateInfoCardVisibilityCommand;
-@class YTIUpdateInfoCardVisibilityCommand_updateInfoCardVisibilityCommand;
 @class YTIUpdateInteractivityWidgetAction;
-@class YTIUpdateInteractivityWidgetAction_updateInteractivityWidgetAction;
 @class YTIUpdateKidsAllowlistCommand;
 @class YTIUpdateKidsAllowlistCommandRoot_updateKidsAllowlistCommand;
 @class YTIUpdateKidsAllowlistRequest;
@@ -17944,18 +17613,14 @@
 @class YTIUpdateLiveChatPollAction_updateLiveChatPollAction;
 @class YTIUpdateLiveChatShoppingConfig;
 @class YTIUpdateLocalAppSettingCommand;
-@class YTIUpdateLocalAppSettingCommandRoot_updateLocalAppSettingCommand;
 @class YTIUpdateMentionSuggestionsCommand;
-@class YTIUpdateMentionSuggestionsCommand_updateMentionSuggestionsCommand;
 @class YTIUpdateMetadataForSharingCommand;
-@class YTIUpdateMetadataForSharingCommand_updateMetadataForSharingCommand;
 @class YTIUpdateOrAddInteractivityWidgetAction;
 @class YTIUpdateOverallResult;
 @class YTIUpdateOverallResult_ResultCode;
 @class YTIUpdatePanelContinuationData;
 @class YTIUpdatePartResult;
 @class YTIUpdatePlayerErrorMessageCommand;
-@class YTIUpdatePlayerErrorMessageCommand_updatePlayerErrorMessageCommand;
 @class YTIUpdatePlaylistHeaderAction;
 @class YTIUpdatePlaylistHeaderAction_updatePlaylistHeaderAction;
 @class YTIUpdatePostCommand;
@@ -17966,7 +17631,6 @@
 @class YTIUpdateReelWatchSequenceCommand;
 @class YTIUpdateReelWatchSequenceMutationType;
 @class YTIUpdateShareClientParamsCommand;
-@class YTIUpdateShareClientParamsCommand_updateShareClientParamsCommand;
 @class YTIUpdateShareSheetCommand;
 @class YTIUpdateShareSheetCommand_updateShareSheetCommand;
 @class YTIUpdateShareSheetCommandOptions;
@@ -18103,7 +17767,6 @@
 @class YTIUserMentionAutoCompleteBoxEventType;
 @class YTIUserMentionAutoCompleteSource;
 @class YTIUserMentionSuggestionRenderer;
-@class YTIUserMentionSuggestionRendererRoot_userMentionSuggestionRenderer;
 @class YTIUserProfile;
 @class YTIUserScrubbingStateEntity;
 @class YTIUserScrubbingStateEntity_userScrubbingStateEntity;
@@ -18116,7 +17779,6 @@
 @class YTIValidateChannelHandleRequest;
 @class YTIValidateChannelHandleResponse;
 @class YTIValidateCreatorDelegatesCommand;
-@class YTIValidateCreatorDelegatesCommand_validateCreatorDelegatesCommand;
 @class YTIValidateCreatorDelegatesRequest;
 @class YTIValidateCreatorDelegatesResponse;
 @class YTIValidateVerificationCodeErrorSupportedRenderers;
@@ -18169,7 +17831,6 @@
 @class YTIVideoAd_VideoAdBreakType;
 @class YTIVideoAdOverlaySupportedRenderers;
 @class YTIVideoAdPlayerOverlayRenderer;
-@class YTIVideoAdPlayerOverlayRendererRoot_videoAdPlayerOverlayRenderer;
 @class YTIVideoAdRenderer;
 @class YTIVideoAdRendererRoot_videoAdRenderer;
 @class YTIVideoAdTracking;
@@ -18503,7 +18164,6 @@
 @class YTIWatchGamingEventEndpoint_watchGamingEventEndpoint;
 @class YTIWatchInfo;
 @class YTIWatchMetadataAppPromoRenderer;
-@class YTIWatchMetadataAppPromoRendererRoot_watchMetadataAppPromoRenderer;
 @class YTIWatchMetapanelCollapseEntity;
 @class YTIWatchMetapanelCollapseEntity_watchMetapanelCollapseEntity;
 @class YTIWatchMetapanelCollapseState;
@@ -18523,14 +18183,12 @@
 @class YTIWatchNextSupportedRenderers;
 @class YTIWatchNextSurveyTriggerSupportedRenderers;
 @class YTIWatchNextTabbedResultsRenderer;
-@class YTIWatchNextTabbedResultsRenderer_WatchNextTabSupportedRenderers;
 @class YTIWatchPageModalTriggerCondition;
 @class YTIWatchPageModalTriggerType;
 @class YTIWatchPageSurveyDisplayTrigger;
 @class YTIWatchPartyFeatureData;
 @class YTIWatchPlayerMode;
 @class YTIWatchPlayerOverflowMenuCommand;
-@class YTIWatchPlayerOverflowMenuCommand_watchPlayerOverflowMenuCommand;
 @class YTIWatchPlayerOverflowMenuType;
 @class YTIWatchPlayerSettingsTeaser;
 @class YTIWatchPlayerSettingsTeaserType;
@@ -18593,7 +18251,6 @@
 @class YTIWhosWatchingItemRendererRoot_whosWatchingItemAvatarRenderer;
 @class YTIWhosWatchingItemRendererRoot_whosWatchingItemRenderer;
 @class YTIWhosWatchingPageCacheTaskEntity;
-@class YTIWhosWatchingPageCacheTaskEntity_whosWatchingPageCacheTaskEntity;
 @class YTIWhosWatchingPageRenderer;
 @class YTIWhosWatchingPageRendererRoot_whosWatchingAddAccountRenderer;
 @class YTIWhosWatchingPageRendererRoot_whosWatchingPageRenderer;
@@ -18769,7 +18426,6 @@
 @class YTIYtMainChannelEntity_ytMainChannelEntity;
 @class YTIYtMainChannelEntityLocalizedStrings;
 @class YTIYtMainDownloadedPlaylistEntity;
-@class YTIYtMainDownloadedPlaylistEntity_ytMainDownloadedPlaylistEntity;
 @class YTIYtMainDownloadedVideoEntity;
 @class YTIYtMainDownloadedVideoEntity_ytMainDownloadedVideoEntity;
 @class YTIYtMainDownloadedVideoEntityActionMetadata;
@@ -18781,7 +18437,6 @@
 @class YTIYtMainVideoEntity;
 @class YTIYtMainVideoEntity_ytMainVideoEntity;
 @class YTIYtMainVideoEntityActionMetadata;
-@class YTIYtMainVideoEntityActionMetadata_ytMainVideoEntityActionMetadata;
 @class YTIYtMainVideoEntityLocalizedStrings;
 @class YTIYtSysMeasurementReference;
 @class YTIYtSystemHealthMetric;
@@ -18909,7 +18564,6 @@
 @class YTLCBroadcastConferenceService;
 @class YTLCBroadcastConferenceService_API;
 @class YTLCBroadcastConferenceServiceImpl;
-@class YTLCBroadcastConferenceServiceImpl_YTLCBroadcastConferenceService;
 @class YTLCBroadcastPreviewDisplay;
 @class YTLCBroadcastScheduleCollectionCellButton;
 @class YTLCBroadcastScheduleCollectionViewCell;
@@ -19127,7 +18781,6 @@
 @class YTLegalReportDetailsViewController;
 @class YTLegalReportMediaTimeResponderProvider;
 @class YTLensFeatureFlagOverrideProvider;
-@class YTLensFeatureFlagOverrideProvider_LNSFeatureFlagOverrideProvider;
 @class YTLensHostAppProvider;
 @class YTLensHostAppProvider_LNSLensHostAppProvider;
 @class YTLensHostController;
@@ -19276,7 +18929,6 @@
 @class YTLocalSearchHistoryProtocol_API;
 @class YTLocalWatchHistoryCommandHandler;
 @class YTLocalWatchHistoryCommandHandler_API;
-@class YTLocalWatchHistoryCommandHandler_YTLocalWatchHistoryCommandHandler;
 @class YTLocationAccountScopedInnerTubeContextDecorator;
 @class YTLocationAccountScopedInnerTubeContextDecorator_API;
 @class YTLocationAccountScopedInnerTubeContextDecoratorImpl;
@@ -19300,7 +18952,6 @@
 @class YTLocationPermissionStateCache;
 @class YTLocationPermissionStateCache_API;
 @class YTLocationPermissionStateCacheImpl;
-@class YTLocationPermissionStateCacheImpl_YTLocationPermissionStateCache;
 @class YTLocationPickerServerStateEntityModel;
 @class YTLockModeStateEntityController;
 @class YTLockModeStateEntityControllerDelegate;
@@ -19325,7 +18976,6 @@
 @class YTLogBackToAppEventCommandHandlerImpl;
 @class YTLogFirebaseEventCommandHandler;
 @class YTLogFirebaseEventCommandHandler_API;
-@class YTLogFirebaseEventCommandHandler_YTLogFirebaseEventCommandHandler;
 @class YTLogFlowLoggingEventCommandHandler;
 @class YTLogFlowLoggingEventCommandHandler_API;
 @class YTLogFlowLoggingEventCommandHandlerImpl;
@@ -19368,7 +19018,6 @@
 @class YTLogoutObserverDelegate;
 @class YTLogYPCFlowDismissCommandHandler;
 @class YTLogYPCFlowDismissCommandHandler_API;
-@class YTLogYPCFlowDismissCommandHandler_YTLogYPCFlowDismissCommandHandler;
 @class YTLogYPCFlowStartCommandHandler;
 @class YTLogYPCFlowStartCommandHandler_API;
 @class YTLogYPCFlowStartCommandHandler_YTLogYPCFlowStartCommandHandler;
@@ -19406,7 +19055,6 @@
 @class YTMacroMarkersSyncModel;
 @class YTMacroMarkersTimedSyncController;
 @class YTMacroMarkersTimedSyncController_API;
-@class YTMacroMarkersTimedSyncController_YTMacroMarkersTimedSyncController;
 @class YTMacroMarkersTimedSyncControllerObserver;
 @class YTMacroMarkersTimelineMarkersSet;
 @class YTMacroMarkersVisibilityController;
@@ -19435,7 +19083,6 @@
 @class YTMainAppEngagementPanelDataCollector;
 @class YTMainAppGeneratedThumbnailsViewControllerDelegateImpl;
 @class YTMainAppNonPromoOverlayDetector;
-@class YTMainAppNonPromoOverlayDetector_YTNonPromoOverlayDetectorProtocol;
 @class YTMainAppPlayerOverlayDataCollector;
 @class YTMainAppPlayerOverlayDataCollector_API;
 @class YTMainAppPlayerOverlayDataCollectorImpl;
@@ -19449,11 +19096,9 @@
 @class YTMainAppSequenceItemInPlayerImageAdsLayoutRenderingAdapter;
 @class YTMainAppSequenceItemInPlayerLayoutRenderingAdapter;
 @class YTMainAppSequenceItemInPlayerLayoutRenderingAdapterFactory;
-@class YTMainAppSequenceItemPlayerOrganicOverlayAdLayoutRenderingAdapter;
 @class YTMainAppSequenceItemPlayerSideLayoutRenderingAdapter;
 @class YTMainAppSequenceItemPlayerSideLayoutRenderingAdapterFactory;
 @class YTMainAppSequenceItemPlayerUnderlayLayoutRenderingAdapter;
-@class YTMainAppSequenceItemPlayerUnderlayLayoutRenderingAdapterFactory;
 @class YTMainAppShouldSimultaneouslyRecognizeBackgroundTaps;
 @class YTMainAppToastController;
 @class YTMainAppToastController_YTToastController;
@@ -19461,7 +19106,6 @@
 @class YTMainAppVideoMetadataEntityModel;
 @class YTMainAppVideoOverlayAccessibilityGlassContainerView;
 @class YTMainAppVideoOverlayAccessibilityView;
-@class YTMainAppVideoPlayerOverlayAccessibilityGlassContainerViewDelegate;
 @class YTMainAppVideoPlayerOverlayAccessibilityViewDelegate;
 @class YTMainAppVideoPlayerOverlayEngagementPanelStateObserver;
 @class YTMainAppVideoPlayerOverlayView;
@@ -19482,7 +19126,6 @@
 @class YTMainDownloadsListEntity_ItemModel;
 @class YTMainDownloadsListEntityController;
 @class YTMainDownloadsListEntityModel;
-@class YTMainDownloadsListEntityToSmartDownloadsHeaderEntityTransformer;
 @class YTMainGeneratedThumbnailsViewConfiguration;
 @class YTMainOfflineGenerationStatusEntityModel;
 @class YTMainPesOrphanEntityCleanupWorker;
@@ -19492,7 +19135,6 @@
 @class YTMainPlaylistAdditionalMetadataModel;
 @class YTMainPlaylistDownloadController;
 @class YTMainPlaylistDownloadController_API;
-@class YTMainPlaylistDownloadController_YTMainPlaylistDownloadController;
 @class YTMainPlaylistDownloadStateEntityModel;
 @class YTMainPlaylistDownloadStatus;
 @class YTMainPlaylistEntityController;
@@ -19513,7 +19155,6 @@
 @class YTMainUserChannelDetailsEntityModel;
 @class YTMainVideoAdditionalMetadataModel;
 @class YTMainVideoDownloadStateEntityController;
-@class YTMainVideoDownloadStateEntityController_YTOfflineEntityController;
 @class YTMainVideoDownloadStateEntityModel;
 @class YTMainVideoEntityController;
 @class YTMainVideoEntityController_YTOfflineEntityController;
@@ -19723,7 +19364,6 @@
 @class YTMetadataUpdateCommandHandler;
 @class YTMetadataUpdateCommandHandler_API;
 @class YTMetadataUpdateCommandHandlerImpl;
-@class YTMetadataUpdateCommandHandlerImpl_YTMetadataUpdateCommandHandler;
 @class YTMEThumbnail;
 @class YTMEThumbnailCropView;
 @class YTMEThumbnailEditor;
@@ -19803,7 +19443,6 @@
 @class YTModifyChannelNotificationPreferenceEndpointCommandHandler;
 @class YTModifyChannelNotificationPreferenceEndpointCommandHandler_API;
 @class YTModifyChannelNotificationPreferenceEndpointCommandHandlerImpl;
-@class YTModifyChannelNotificationPreferenceEndpointErrorResponderEvent;
 @class YTModularPlayerBarConstants;
 @class YTModularPlayerBarController;
 @class YTModularPlayerBarControllerDelegate;
@@ -20262,7 +19901,6 @@
 @class YTMutableUnpluggedLensClip_TimeRangeModel;
 @class YTMutableUnpluggedLensClipModel;
 @class YTMutableUnpluggedOfflineVideoEntityModel;
-@class YTMutableUnpluggedOfflineVideoMetadataEntity_NetworkMetadataModel;
 @class YTMutableUnpluggedOfflineVideoMetadataEntityModel;
 @class YTMutableUnpluggedOnboardingStateEntityModel;
 @class YTMutableUnpluggedSpoilerModeStateEntityModel;
@@ -20322,7 +19960,6 @@
 @class YTMySubsLatencyLoggerController;
 @class YTMySubsLatencyLoggerController_API;
 @class YTMySubsLatencyLoggerControllerImpl;
-@class YTMySubsLatencyLoggerControllerImpl_YTMySubsLatencyLoggerController;
 @class YTNativeBridgeBenchmarkingCommandHandler;
 @class YTNativeBridgeBenchmarkingCommandHandler_API;
 @class YTNativeBridgeBenchmarkingCommandHandlerDomain;
@@ -20500,7 +20137,6 @@
 @class YTNotificationRegistrationDelayedEventControllerImpl;
 @class YTNotificationRegistrationManager;
 @class YTNotificationRegistrationManager_API;
-@class YTNotificationRegistrationManager_YTNotificationRegistrationManager;
 @class YTNotificationSectionHeaderCell;
 @class YTNotificationSectionHeaderCellController;
 @class YTNotificationService;
@@ -20723,7 +20359,6 @@
 @class YTOfflineInterleavingUpdateInstruction;
 @class YTOfflineInterleavingUpdateWorker;
 @class YTOfflineInterleavingUpdateWorker_API;
-@class YTOfflineInterleavingUpdateWorker_YTOfflineInterleavingUpdateWorker;
 @class YTOfflineItemSectionController;
 @class YTOfflineLocalImageEntityController;
 @class YTOfflineLocalImageEntityController_API;
@@ -20761,7 +20396,6 @@
 @class YTOfflineNotificationController;
 @class YTOfflineNotificationController_API;
 @class YTOfflineNotificationControllerImpl;
-@class YTOfflineNotificationControllerImpl_YTOfflineNotificationController;
 @class YTOfflineOrchestrationAction;
 @class YTOfflineOrchestrationActionBatchRules;
 @class YTOfflineOrchestrationActionCommandHandler;
@@ -20810,7 +20444,6 @@
 @class YTOfflinePlayerRequestCacheKey;
 @class YTOfflinePlayerServiceController;
 @class YTOfflinePlayerServiceController_API;
-@class YTOfflinePlayerServiceController_YTOfflinePlayerServiceController;
 @class YTOfflinePlaylist;
 @class YTOfflinePlaylistActionController;
 @class YTOfflinePlaylistActionController_API;
@@ -20838,7 +20471,6 @@
 @class YTOfflinePlaylistStore_YTOfflinePlaylistStore;
 @class YTOfflinePlaylistSyncCheckService;
 @class YTOfflinePlaylistSyncCheckService_API;
-@class YTOfflinePlaylistSyncCheckService_YTOfflinePlaylistSyncCheckService;
 @class YTOfflinePlaylistSyncController;
 @class YTOfflinePlaylistSyncControllerDelegate;
 @class YTOfflinePlaylistSyncWorker;
@@ -20896,7 +20528,6 @@
 @class YTOfflineSettingsServiceSwitch;
 @class YTOfflineSettingsServiceSwitch_API;
 @class YTOfflineSettingsServiceSwitchImpl;
-@class YTOfflineSettingsServiceSwitchImpl_YTOfflineSettingsServiceSwitch;
 @class YTOfflineSettingsStorageCell;
 @class YTOfflineSettingsUserDefaultsProtocol;
 @class YTOfflineSharedEntityGeneratorProtocol;
@@ -20905,7 +20536,6 @@
 @class YTOfflineSinglePlayerResponseCaptionsDownloadController;
 @class YTOfflineSinglePlayerResponseCaptionsDownloadControllerDelegate;
 @class YTOfflineSinglePlayerResponseDRMLicenseDownloadController;
-@class YTOfflineSinglePlayerResponseDRMLicenseDownloadControllerDelegate;
 @class YTOfflineState;
 @class YTOfflineStateActionWorker;
 @class YTOfflineStateGELController;
@@ -20958,7 +20588,6 @@
 @class YTOfflineVideoActionController;
 @class YTOfflineVideoActionController_API;
 @class YTOfflineVideoActionControllerImpl;
-@class YTOfflineVideoActionControllerImpl_YTOfflineVideoActionController;
 @class YTOfflineVideoAdPlaylistObserver;
 @class YTOfflineVideoAdPlaylistProvider;
 @class YTOfflineVideoAdPlaylistProvider_API;
@@ -20967,7 +20596,6 @@
 @class YTOfflineVideoCaptionsDownloadControllerDelegate;
 @class YTOfflineVideoCaptionsDownloadErrors;
 @class YTOfflineVideoCaptionsProvider;
-@class YTOfflineVideoCaptionsProvider_MLOfflineTracklistCaptionProvider;
 @class YTOfflineVideoChannelEntityGenerator;
 @class YTOfflineVideoClientBindingController;
 @class YTOfflineVideoClientBindingController_API;
@@ -21081,7 +20709,6 @@
 @class YTOpenLensForFrameCommandHandlerImpl;
 @class YTOpenMyGooglePageCommandHandler;
 @class YTOpenMyGooglePageCommandHandler_API;
-@class YTOpenMyGooglePageCommandHandler_YTOpenMyGooglePageCommandHandler;
 @class YTOpenOSNotificationDialogCommandHandler;
 @class YTOpenOSNotificationDialogCommandHandler_API;
 @class YTOpenPopupActionCommandHandler;
@@ -21531,7 +21158,6 @@
 @class YTPlaybackLockScreenController;
 @class YTPlaybackLockScreenController_API;
 @class YTPlaybackLockScreenControllerImpl;
-@class YTPlaybackLockScreenControllerImpl_YTPlaybackLockScreenController;
 @class YTPlaybackMacroExpander;
 @class YTPlaybackMacroState;
 @class YTPlaybackPositionSyncController;
@@ -21595,7 +21221,6 @@
 @class YTPlayerAdEventTriggerAdapterV2;
 @class YTPlayerAdEventTriggerAdapterV2_API;
 @class YTPlayerAdEventTriggerAdapterV2Impl;
-@class YTPlayerAdEventTriggerAdapterV2Impl_YTPlayerAdEventTriggerAdapterV2;
 @class YTPlayerAdsOverlayManager;
 @class YTPlayerAdsProvider;
 @class YTPlayerAdsProvider_API;
@@ -21678,23 +21303,16 @@
 @class YTPlayerBytesSequenceItemExternallyManagedSlotAdapter;
 @class YTPlayerBytesSequenceItemExternallyManagedSlotAdapter_API;
 @class YTPlayerBytesSequenceItemMediaLayoutScheduledOpportunityAdapter;
-@class YTPlayerBytesSequenceItemMediaLayoutScheduledOpportunityAdapter_API;
-@class YTPlayerBytesSequenceItemMediaLayoutScheduledOpportunityAdapterImpl;
 @class YTPlayerBytesSequenceItemPingTrackingController;
 @class YTPlayerBytesSequenceItemSlotIDMetadataProvider;
 @class YTPlayerBytesSequenceItemSlotStatus;
 @class YTPlayerBytesSequenceItemTrackingLayoutRenderingAdapterFactory;
-@class YTPlayerBytesSequenceItemTrackingLayoutRenderingAdapterFactory_API;
-@class YTPlayerBytesSequenceItemTrackingLayoutRenderingAdapterFactoryImpl;
 @class YTPlayerBytesSequenceItemTrackingSlotFulfillmentAdapter;
 @class YTPlayerBytesSequenceItemTrackingSlotFulfillmentAdapterFactory;
-@class YTPlayerBytesSequenceItemTrackingSlotFulfillmentAdapterFactory_API;
-@class YTPlayerBytesSequenceItemTrackingSlotFulfillmentAdapterFactoryImpl;
 @class YTPlayerBytesSlotAdapter;
 @class YTPlayerBytesSlotAdapterFactory;
 @class YTPlayerBytesSlotAdapterFactory_API;
 @class YTPlayerBytesSlotAdapterFactoryImpl;
-@class YTPlayerBytesSlotAdapterFactoryImpl_YTPlayerBytesSlotAdapterFactory;
 @class YTPlayerBytesSlotAdapterHelper;
 @class YTPlayerBytesSlotFulfillmentAdapter;
 @class YTPlayerBytesSlotFulfillmentAdapterFactory;
@@ -21741,7 +21359,6 @@
 @class YTPlayerOfflineFallbackService;
 @class YTPlayerOfflineFallbackService_API;
 @class YTPlayerOfflineFallbackServiceImpl;
-@class YTPlayerOfflineFallbackServiceImpl_YTPlayerOfflineFallbackService;
 @class YTPlayerOverflowInfoCardProvider;
 @class YTPlayerOverflowInfoProvider;
 @class YTPlayerOverflowMenuBuilder;
@@ -21807,7 +21424,6 @@
 @class YTPlayerSequencer;
 @class YTPlayerSequencerDefaultPlaybackItem;
 @class YTPlayerSequencerDefaultPlaybackItemHandler;
-@class YTPlayerSequencerDefaultPlaybackItemHandlerLatencyLoggerProvider;
 @class YTPlayerSequencerItem;
 @class YTPlayerSequencerItemHandler;
 @class YTPlayerSequencerNoopItem;
@@ -21987,7 +21603,6 @@
 @class YTPollPlaylistFreshnessService;
 @class YTPollPlaylistFreshnessService_API;
 @class YTPollPlaylistFreshnessServiceImpl;
-@class YTPollPlaylistFreshnessServiceImpl_YTPollPlaylistFreshnessService;
 @class YTPollRenderer;
 @class YTPollView;
 @class YTPopover;
@@ -22298,7 +21913,6 @@
 @class YTRatingView;
 @class YTRBadgesBundleIdentifier;
 @class YTRCHServiceConfigurationProvider;
-@class YTRCHServiceConfigurationProvider_RCHServiceConfigurationProvider;
 @class YTReachability;
 @class YTReachabilityController;
 @class YTReachabilityController_API;
@@ -22480,7 +22094,6 @@
 @class YTReelLatencyTickLoggerProvider;
 @class YTReelLatencyTickLoggerProvider_API;
 @class YTReelLatencyTickLoggerProviderImpl;
-@class YTReelLatencyTickLoggerProviderImpl_YTReelLatencyTickLoggerProvider;
 @class YTReelLatencyTickLoggers;
 @class YTReelLatencyTickOptions;
 @class YTReelLikeModel;
@@ -22585,7 +22198,6 @@
 @class YTReelSearchVisibilityNotifier;
 @class YTReelSearchVisibilityNotifier_API;
 @class YTReelSearchVisibilityNotifierImpl;
-@class YTReelSearchVisibilityNotifierImpl_YTReelSearchVisibilityNotifier;
 @class YTReelSearchVisibilityObserver;
 @class YTReelSequenceController;
 @class YTReelSequenceControllerDelegate;
@@ -22815,7 +22427,6 @@
 @class YTRenderingConfig_API;
 @class YTRenderingErrorLoggingController;
 @class YTRenderingErrorLoggingController_API;
-@class YTRenderingErrorLoggingController_YTRenderingErrorLoggingController;
 @class YTRenderingEventDataBuilder;
 @class YTRenderingEventThrottlingDecisionDelegate;
 @class YTRenderingEventThrottlingTracker;
@@ -22932,7 +22543,6 @@
 @class YTRulesetValidationResult;
 @class YTRunAttestationCommandHandler_API;
 @class YTRunAttestationCommandHandlerImpl;
-@class YTRunAttestationCommandHandlerImpl_YTRunAttestationCommandHandler;
 @class YTSAcceptDelegateInvitationCommandHandler;
 @class YTSAdstubeAccountService;
 @class YTSAdstubeAccountService_API;
@@ -22949,11 +22559,9 @@
 @class YTSAudioPickerBlockImpl;
 @class YTSaveAppDeepLinkCommandHandler_API;
 @class YTSaveAppDeepLinkCommandHandlerImpl;
-@class YTSaveAppDeepLinkCommandHandlerImpl_YTSaveAppDeepLinkCommandHandler;
 @class YTSaveCreationAssetButtonEntityModel;
 @class YTSaveImageToDeviceCommandHandler;
 @class YTSaveImageToDeviceCommandHandler_API;
-@class YTSaveImageToDeviceCommandHandler_YTSaveImageToDeviceCommandHandler;
 @class YTSaveToPlaylistListEntityModel;
 @class YTSaveToPlaylistListEntityParser;
 @class YTSaveToPlaylistListEntityUpdateCommandHandler;
@@ -23215,11 +22823,8 @@
 @class YTSequenceItemInPlayerSlotFulfillmentAdapterFactoryImpl;
 @class YTSequenceItemInPlayerSpaceAvailableTrigger;
 @class YTSequenceItemInPlayerSpaceUnavailableTrigger;
-@class YTSequenceItemPlayerOrganicOverlayAdLayoutRenderingAdapterFactory;
 @class YTSequenceItemPlayerOrganicOverlaySlotFulfillmentAdapter;
 @class YTSequenceItemPlayerOrganicOverlaySlotFulfillmentAdapterFactory;
-@class YTSequenceItemPlayerOrganicOverlaySlotFulfillmentAdapterFactory_API;
-@class YTSequenceItemPlayerOrganicOverlaySlotFulfillmentAdapterFactoryImpl;
 @class YTSequenceItemPlayerSideLayoutRenderingAdapterFactory;
 @class YTSequenceItemPlayerSideLayoutRenderingAdapterFactory_API;
 @class YTSequenceItemPlayerSideSlotFulfillmentAdapter;
@@ -23626,7 +23231,6 @@
 @class YTShortsCreation;
 @class YTShortsCreationAudioPickerTitleStateEntityModel;
 @class YTShortsCreationAudioPlayer;
-@class YTShortsCreationAudioPlayer_678366067_SRLGeneratedFactoryProtocol;
 @class YTShortsCreationAudioPlayer_API;
 @class YTShortsCreationAudioPlayerImpl;
 @class YTShortsCreationAudioPlayerImpl_1406841740_GeneratedFactoryImpl;
@@ -24188,7 +23792,6 @@
 @class YTShortsUUIDGeneratorImpl;
 @class YTShortsVideoCreationElementsNodeClassRegistryProvider;
 @class YTShortsVideoCreationElementsNodeClassRegistryProviderProtocol;
-@class YTShortsVideoCreationElementsNodeClassRegistryProviderProtocol_API;
 @class YTShortsVideoCreationPlayerNode;
 @class YTShortsVideoCreationPlayerView;
 @class YTShortsVideoDownloader;
@@ -24307,14 +23910,12 @@
 @class YTShowMiniplayerCommandHandler;
 @class YTShowMiniplayerCommandHandler_API;
 @class YTShowMiniplayerCommandHandlerImpl;
-@class YTShowMiniplayerCommandHandlerImpl_YTShowMiniplayerCommandHandler;
 @class YTShowModeratedElqCommentsCommandHandler;
 @class YTShowModeratedElqCommentsCommandHandler_API;
 @class YTShowModeratedElqCommentsResponderEvent;
 @class YTShowMoreDrawerCommandHandler;
 @class YTShowMoreDrawerCommandHandler_API;
 @class YTShowMoreDrawerCommandHandlerImpl;
-@class YTShowMoreDrawerCommandHandlerImpl_YTShowMoreDrawerCommandHandler;
 @class YTShowPostsElementsDialogCommandHandler;
 @class YTShowPostsElementsDialogCommandHandler_API;
 @class YTShowPostsElementsDialogCommandHandlerImpl;
@@ -24352,7 +23953,6 @@
 @class YTShowTransientPlayerScrimOverlayCommandHandler;
 @class YTShowTransientPlayerScrimOverlayCommandHandler_API;
 @class YTShowTransientPlayerScrimOverlayCommandHandlerClassDelegation;
-@class YTShowTransientPlayerScrimOverlayCommandHandlerClassDelegation_API;
 @class YTShowTransientPlayerScrimOverlayCommandHandlerDelegate;
 @class YTShowTransientPlayerScrimOverlayCommandHandlerImpl;
 @class YTShowVoiceSearchResponderEvent;
@@ -24409,7 +24009,6 @@
 @class YTSinglePlayerBytesEventListener;
 @class YTSinglePlayerBytesHalftimeLayoutRenderingAdapter;
 @class YTSinglePlayerBytesLayoutRenderingAdapter;
-@class YTSinglePlayerBytesMediaOrMediaBreakGaplessLayoutRenderingAdapter;
 @class YTSinglePlayerBytesMediaOrMediaBreakLayoutRenderingAdapter;
 @class YTSinglePlayerBytesTimelineLayoutRenderingAdapter;
 @class YTSingleVideo;
@@ -24428,7 +24027,6 @@
 @class YTSingleVideoControllerFactory;
 @class YTSingleVideoControllerFactory_API;
 @class YTSingleVideoControllerFactoryImpl;
-@class YTSingleVideoControllerFactoryImpl_YTSingleVideoControllerFactory;
 @class YTSingleVideoControllerQueuePlayerDelegate;
 @class YTSingleVideoControllerTime;
 @class YTSingleVideoControllerVideoSequencerDelegate;
@@ -24744,7 +24342,6 @@
 @class YTStartupNonCriticalDeferredAttributionPingsTask;
 @class YTStartupNonCriticalElementsQueryEngineTask;
 @class YTStartupNonCriticalElementsTask;
-@class YTStartupNonCriticalElementsTask_YTStartupSchedulerNonCriticalTask;
 @class YTStartupNonCriticalEmlMobserveBackgroundSyncTask;
 @class YTStartupNonCriticalEssentialOnlyModePhenotypePropagationTask;
 @class YTStartupNonCriticalExternalShareTask;
@@ -24782,10 +24379,8 @@
 @class YTStartupNonCriticalProofOfOriginTokenTask;
 @class YTStartupNonCriticalQuickActionsTask;
 @class YTStartupNonCriticalRemindersTask;
-@class YTStartupNonCriticalRemindersTask_YTStartupSchedulerNonCriticalTask;
 @class YTStartupNonCriticalResumeToHomeTask;
 @class YTStartupNonCriticalSafeModeTask;
-@class YTStartupNonCriticalSafeModeTask_YTStartupSchedulerNonCriticalTask;
 @class YTStartupNonCriticalSettingsLoggingTask;
 @class YTStartupNonCriticalSiriShortcutTask;
 @class YTStartupNonCriticalStickyAudioSettingsTask;
@@ -24793,9 +24388,7 @@
 @class YTStartupNonCriticalUserDefaultsMigrationTask;
 @class YTStartupNonCriticalWebViewPreauthenticatorTask;
 @class YTStartupNonCriticalWidgetTask;
-@class YTStartupNonCriticalWidgetTask_YTStartupSchedulerNonCriticalTask;
 @class YTStartupNonCriticalWorkersTask;
-@class YTStartupNonCriticalWorkersTask_YTStartupSchedulerNonCriticalTask;
 @class YTStartupPostCriticalAsyncAudioSessionTask;
 @class YTStartupPostCriticalAsyncBlocksEnvironmentTask;
 @class YTStartupPostCriticalAsyncElementsQueryEngineTask;
@@ -24952,7 +24545,6 @@
 @class YTSubscribeControlVisibilityProtocol;
 @class YTSubscribeEndpointCommandHandler;
 @class YTSubscribeEndpointCommandHandler_API;
-@class YTSubscribeEndpointCommandHandler_YTSubscribeEndpointCommandHandler;
 @class YTSubscribeSwitch;
 @class YTSubscribeSwitchContainer;
 @class YTSubscribeSwitchController;
@@ -25144,7 +24736,6 @@
 @class YTSystemHealthCapturerRegistry;
 @class YTSystemHealthCapturerRegistry_API;
 @class YTSystemHealthCapturerRegistryImpl;
-@class YTSystemHealthCapturerRegistryImpl_YTSystemHealthCapturerRegistry;
 @class YTSystemHealthClientErrorLogger;
 @class YTSystemHealthClientErrorLogger_API;
 @class YTSystemHealthColdConfig;
@@ -25209,7 +24800,6 @@
 @class YTTeaserRepliesViewDelegate;
 @class YTTerminationEventPingController;
 @class YTTerminationEventPingController_API;
-@class YTTerminationEventPingController_YTTerminationEventPingController;
 @class YTTerminationPingInfo;
 @class YTTextAttributedViewController;
 @class YTTextDialogView;
@@ -25336,7 +24926,6 @@
 @class YTToggleAutoplayCommandHandler;
 @class YTToggleAutoplayCommandHandler_API;
 @class YTToggleAutoplayCommandHandlerImpl;
-@class YTToggleAutoplayCommandHandlerImpl_YTToggleAutoplayCommandHandler;
 @class YTToggleButtonRenderer;
 @class YTToggleCinematicLightingCommandHandler;
 @class YTToggleCinematicLightingCommandHandler_API;
@@ -25399,7 +24988,6 @@
 @class YTTranscriptSearchBoxInputStateEntityModel;
 @class YTTranscriptSearchCommandHandler;
 @class YTTranscriptSearchCommandHandler_API;
-@class YTTranscriptSearchCommandHandler_YTTranscriptSearchCommandHandler;
 @class YTTranscriptSearchStateEntityModel;
 @class YTTranscriptSegmentDataModel;
 @class YTTranscriptSegmentEntityModel;
@@ -25454,7 +25042,6 @@
 @class YTTriggerConditionsBlockImpl;
 @class YTTriggerConditionsController;
 @class YTTriggeredContinuationController;
-@class YTTriggeredContinuationController_YTTriggeredContinuationManager;
 @class YTTriggeredContinuationDelegate;
 @class YTTriggeredContinuationManager;
 @class YTTriggeredContinuationManager_API;
@@ -25551,7 +25138,6 @@
 @class YTUnpluggedOnboardingStateEntityModel;
 @class YTUnpluggedResolveLocationService;
 @class YTUnpluggedResolveLocationService_API;
-@class YTUnpluggedResolveLocationService_YTUnpluggedResolveLocationService;
 @class YTUnpluggedResolveLocationServiceObserver;
 @class YTUnpluggedSpoilerModeStateEntityModel;
 @class YTUnpluggedStreamChunkBasedPositionModel;
@@ -25582,7 +25168,6 @@
 @class YTUpdateCreatorSettingsService;
 @class YTUpdateCreatorSettingsService_API;
 @class YTUpdateCreatorSettingsServiceImpl;
-@class YTUpdateCreatorSettingsServiceImpl_YTUpdateCreatorSettingsService;
 @class YTUpdatedMetadataController;
 @class YTUpdatedMetadataControllerDelegate;
 @class YTUpdatedMetadataService;
@@ -25595,7 +25180,6 @@
 @class YTUpdateEOMStateCommandHandler;
 @class YTUpdateEOMStateCommandHandler_API;
 @class YTUpdateEOMStateCommandHandlerImpl;
-@class YTUpdateEOMStateCommandHandlerImpl_YTUpdateEOMStateCommandHandler;
 @class YTUpdateInfoCardResponderEvent;
 @class YTUpdateInfoCardVisibilityCommandHandler_API;
 @class YTUpdateInfoCardVisibilityCommandHandlerImpl;
@@ -25627,7 +25211,6 @@
 @class YTUpdateShareClientParamsCommandHandlerImpl;
 @class YTUpdateShareSheetCommandHandler;
 @class YTUpdateShareSheetCommandHandler_API;
-@class YTUpdateShareSheetCommandHandler_YTUpdateShareSheetCommandHandler;
 @class YTUpdateShoppingSettingsCommandHandler;
 @class YTUpForFullController;
 @class YTUpForFullControllerDelegate;
@@ -25673,7 +25256,6 @@
 @class YTUploadClient;
 @class YTUploadClient_API;
 @class YTUploadClientImpl;
-@class YTUploadClientImpl_YTUploadClient_YTUploadClientPromiseAdditions;
 @class YTUploadClientPromiseAdditions;
 @class YTUploadClientPromiseAdditions_API;
 @class YTUploadCombiningProcessor;
@@ -25691,7 +25273,6 @@
 @class YTUploadCreateUserMediaService;
 @class YTUploadCreateUserMediaService_API;
 @class YTUploadCreateUserMediaServiceImpl;
-@class YTUploadCreateUserMediaServiceImpl_YTUploadCreateUserMediaService;
 @class YTUploadCreateVideoProcessor;
 @class YTUploadCreateVideoService;
 @class YTUploadCreateVideoService_API;
@@ -25725,7 +25306,6 @@
 @class YTUploadGelLogger_YTUploadGelLogger;
 @class YTUploadHandle;
 @class YTUploadIndicatorController;
-@class YTUploadIndicatorController_46435770_SRLGeneratedFactoryProtocol;
 @class YTUploadIndicatorController_API;
 @class YTUploadIndicatorControllerDelegate;
 @class YTUploadIndicatorControllerImpl;
@@ -26322,7 +25902,6 @@
 @class YTWatchLayoutResponderProvider;
 @class YTWatchLikeEndpointCommandHandler;
 @class YTWatchLikeEndpointCommandHandler_API;
-@class YTWatchLikeEndpointCommandHandler_YTWatchLikeEndpointCommandHandler;
 @class YTWatchMetadataAppPromoCell;
 @class YTWatchMetadataAppPromoCellController;
 @class YTWatchMetadataAppPromoCellDelegate;
@@ -26586,7 +26165,6 @@
 @class YTYouThereView;
 @class YTYouThereViewDelegate;
 @class YTYoutubeAccountContainer;
-@class YTYoutubeAccountContainer_YTBYoutubeSingletonAccountContainerType;
 @class YTYoutubeAssistantRequest;
 @class YTYoutubeContainer;
 @class YTYoutubeContainer_YTBYoutubeContainerType;
@@ -26605,7 +26183,6 @@
 @class YTYPCCompleteTransactionService;
 @class YTYPCCompleteTransactionService_API;
 @class YTYPCCompleteTransactionServiceImpl;
-@class YTYPCCompleteTransactionServiceImpl_YTYPCCompleteTransactionService;
 @class YTYPCGetCancellationFlowCommandHandler;
 @class YTYPCGetCancellationFlowCommandHandler_API;
 @class YTYPCGetCancellationFlowService;
