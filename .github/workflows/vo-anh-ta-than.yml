@@ -33,38 +33,34 @@ jobs:
           git clone --recursive https://github.com/theos/theos.git $THEOS
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: 🎯 3.1 Metadata (Gõ đầu file Gốc)
+      - name: 🎯 3. Metadata (Gõ đầu file Gốc)
         id: metadata
         run: |
           PROJ="${{ github.event.inputs.project }}"
+          # Sử dụng biến chuẩn theo repath ông giáo đã xác nhận
           DIR="src/build-tweaks/$PROJ"
           CTRL="$DIR/control"
           
-          echo "📍 Hiện tại đang đứng ở: $(pwd)"
-          echo "🔍 Đang tìm mục tiêu tại: $DIR"
-
-          # Kiểm tra xem thư mục cha có tồn tại không
-          if [ ! -d "$DIR" ]; then
-            echo "❌ Oái chưởng! Thư mục $DIR không tồn tại."
-            echo "📂 Danh sách thực tế trong src/build-tweaks/ là:"
-            ls -F src/build-tweaks/
-            exit 1
-          fi
-
-          # Kiểm tra file control
+          echo "🔍 Kiểm tra linh hồn tại: $CTRL"
           if [ ! -f "$CTRL" ]; then
-            echo "❌ Không tìm thấy file control tại: $CTRL"
-            echo "📂 Trong thư mục $DIR đang có những file này:"
-            ls -a "$DIR"
+            echo "❌ LỖI OÁI CHƯỞNG: Không thấy file control tại $CTRL"
+            echo "📂 Danh sách thực tế:"
+            ls -R src/build-tweaks/
             exit 1
           fi
 
-          # Nếu tìm thấy thì mới tiếp tục luyện đan...
+          # Định danh nhãn dán
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | xargs | tr -d '() ')
           H_NAME="${PROJ}headers"
           
+          # Xử lý Version (Chuẩn chỉ không lệch một li)
           OLD_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
-          NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$OLD_VER" || echo "$OLD_VER-test$(date +%H%M)")
+          if [ "${{ github.event.inputs.publish }}" == "true" ]; then
+            NEW_VER="$OLD_VER"
+          else
+            NEW_VER="$OLD_VER-test$(date +%H%M)"
+          fi
+          
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
           
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
@@ -79,17 +75,18 @@ jobs:
           DEST="$THEOS/include/$H_NAME"
           mkdir -p "$DEST"
           
-          # Ưu tiên bốc file headers.h nằm cạnh Tweak.x
+          # Bốc file headers.h chính chủ
           if [ -f "$DIR/headers.h" ]; then
             cp "$DIR/headers.h" "$DEST/$H_NAME.h"
+            echo "🔮 Đã đúc xác thành công từ headers.h"
           fi
 
-      - name: 🔨 5. Luyện Đan (Biên dịch Thông minh)
+      - name: 🔨 5. Luyện Đan (Biên dịch Chống Văng)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           H_NAME="${{ steps.metadata.outputs.h_name }}"
           
-          # FLAGS: -I. tìm tại chỗ, -I$THEOS tìm trong kho xác, -Wl... chống văng
+          # LDFLAGS quan trọng nhất để Sideload không văng trên iPhone 12 Pro
           DYNAMIC_FLAGS="-fobjc-arc -Wno-error -I. -I$THEOS/include/$H_NAME"
           LDFLAGS="-Wl,-segalign,4000"
           
