@@ -1,5 +1,4 @@
-#import "Header.h"
-#import <AutoACHeader/AutoACHeader.h>
+#import <AutoACHeader/AutoACHeader.h> // <--- Dùng hàng chuẩn của nhà máy đúc
 
 // Sau đó mới đến các logic Hook của ông giáo...
 
