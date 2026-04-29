@@ -1,3 +1,12 @@
+### 🚀 v0.0.1-test1825 (29/04/2026 18:26)
+#### ✨ Tính năng mới
+- (void)setHidden:(BOOL)hidden {
+(void)viewDidLoad {
+(void)handle2KGTMenu:(UILongPressGestureRecognizer *)sender {
+#### 🐛 Sửa lỗi
+- 
+
+---
 ### 🚀 v0.0.1-test1642 (29/04/2026 16:42)
 #### ✨ Tính năng mới
 - (BOOL)isAdInterrupting;
