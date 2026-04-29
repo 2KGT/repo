@@ -17,7 +17,7 @@
         <img src="https://img.shields.io/github/actions/workflow/status/badges/shields/daily-tests.yml?label=daily%20tests"
 
 
-<a href="https://github.com/2KGT/repo/tree/main/.github/workflows/">
+<a href="https://github.com/2KGT/repo/tree/main/.github/workflows/.yml">
   <img src="https://img.shields.io/badge/Edit_Workflows-blue?logo=github" alt="Edit Workflows">
 </a>
 
