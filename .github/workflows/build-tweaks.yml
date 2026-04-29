@@ -82,40 +82,46 @@ jobs:
       # ===============================================
       # CÔNG ĐOẠN 4: VẬN CHUYỂN HEADERS (CHỈ KHI CÓ ĐƠN)
       # ===============================================
-      - name: 🚀 Nhập kho Headers (Bản Đoàn Tụ Gia Phả)
+      - name: 🚀 Nhập kho Headers (Bản Sát Thủ Diệt Zip - Chuẩn hóa)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           [ ! -f "$DIR/headers.txt" ] && echo "🍃 Không có đơn hàng." && exit 0
           rm -rf $THEOS/include/*
           
-          # 1. Lập "Tổng sớ" ban đầu từ headers.txt
+          # 1. Lập "Tổng sớ" ban đầu
           sed -E 's/\.h//g; s/\r//g; s/ //g; /^\s*$/d' "$DIR/headers.txt" | sort -u > gia_pha.txt
           
-          echo "📝 GIAI ĐOẠN 1: Truy tìm tông ti, lập sổ hộ khẩu..."
-          # Soi ruột tất cả các file có sẵn trong kho để tự điền tên vào gia phả
+          echo "📝 GIAI ĐOẠN 1: Truy tìm tông ti (Chỉ soi file văn bản)..."
           for KHO in headers/*/; do
-            # Quét file .h lẻ
-            grep -rE '^[[:space:]]*#(import|include)' "$KHO" 2>/dev/null | sed -E 's/.*["<]([^">/ ]+\/)?([^"> ]+)\.h[">]/\2/' >> gia_pha.txt || true
-            # Quét trong Zip (chỉ lấy danh sách file để biết mặt con cháu)
+            [ -d "$KHO" ] || continue
+            # CHỐT CHẶN: Chỉ grep trên file .h, bỏ qua hoàn toàn file nhị phân
+            grep -rhE '^[[:space:]]*#(import|include)' "$KHO" --include="*.h" 2>/dev/null | \
+            sed -E 's/.*["<]([^">/ ]+\/)?([^"> ]+)\.h[">]/\2/' >> gia_pha.txt || true
+            
+            # LỤC ZIP: Dùng lệnh chuyên dụng để liệt kê, không dùng grep bừa bãi
             for ZIP in "$KHO"*.zip; do
               [ -e "$ZIP" ] || continue
               unzip -l "$ZIP" | grep ".h$" | awk '{print $NF}' | sed -E 's/.*\/(.*)\.h/\1/' >> gia_pha.txt || true
             done
           done
+          
+          # Làm sạch gia phả: Xóa ký tự lạ, xóa dòng trống, xóa trùng
+          sed -i 's/\r//g' gia_pha.txt 2>/dev/null || true
           sort -u gia_pha.txt -o gia_pha.txt
 
-          echo "🚛 GIAI ĐOẠN 2: Bốc hàng một mẻ cho cả họ đoàn tụ..."
+          echo "🚛 GIAI ĐOẠN 2: Bốc hàng một mẻ - Phẳng hóa đường dẫn..."
           while IFS= read -r NAME || [ -n "$NAME" ]; do
             CLEAN_NAME=$(echo "$NAME" | tr -d '\r' | xargs)
-            [ -z "$CLEAN_NAME" ] && continue
+            [ -z "$CLEAN_NAME" ] || [[ "$CLEAN_NAME" == *" "* ]] && continue # Bỏ qua tên có dấu cách (lỗi binary)
             
             FOUND=false
             for KHO_APP in headers/*/; do
+              [ -d "$KHO_APP" ] || continue
               APP_NAME=$(basename "$KHO_APP")
               DEST_DIR="$THEOS/include/$APP_NAME"
               mkdir -p "$DEST_DIR"
 
-              # Thử bốc hàng Chính Đạo
+              # Bốc hàng Chính Đạo
               TARGET=$(find "$KHO_APP" -maxdepth 1 -iname "${CLEAN_NAME}.h" | head -n 1)
               if [ -z "$TARGET" ]; then
                 for ZIP in "$KHO_APP"*.zip; do
@@ -132,23 +138,21 @@ jobs:
               fi
 
               if [ -f "$DEST_DIR/$CLEAN_NAME.h" ]; then
-                # Phẳng hóa đường dẫn để compiler gọi kiểu gì cũng trúng
+                # PHẲNG HÓA: Nhân bản ra gốc để compiler gọi kiểu gì cũng trúng
                 cp -f "$DEST_DIR/$CLEAN_NAME.h" "$THEOS/include/" 2>/dev/null || true
                 echo "  ✅ Nhập kho: $CLEAN_NAME"
                 FOUND=true; break
               fi
             done
 
-            # GIAI ĐOẠN 3: PHONG THẦN (Nếu gia phả có tên mà kho không có xác)
+            # GIAI ĐOẠN 3: PHONG THẦN (Đúc xác rỗng nếu mất tích)
             if [ "$FOUND" = false ]; then
-               # Lục bảng Phong Thần, nếu có thì triệu hồi, không có thì đúc xác rỗng
-               # (Phần này giữ logic cũ nhưng áp dụng cho cả gia phả)
                echo -e "@interface $CLEAN_NAME : NSObject\n@end" > "$THEOS/include/$CLEAN_NAME.h"
                echo "  ✨ [Phong Thần] Đúc phôi: $CLEAN_NAME"
             fi
           done < gia_pha.txt
 
-          echo "🏁 Cả họ đã đoàn tụ tại $THEOS/include. Khai hỏa!"
+          echo "🏁 Toàn gia quy tụ. Khai hỏa thôi ông giáo!"
 
       # ===============================================
       # CÔNG ĐOẠN 5: THỰC THI BUILD
