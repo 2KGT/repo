@@ -1,7 +1,5 @@
 Package: com.kyic.autoac
 Name: AutoAC
-Version: 0.0.1-test2029
-Architecture: iphoneos-arm64
 Section: Tweaks
 Priority: optional
 Maintainer: Kyic
@@ -10,3 +8,6 @@ Description: AutoAC - tự động xoá cache + xoá Ads, banner tag sản phẩ
 Author: Kyic
 Icon: https://2kgt.github.io/repo/icons/autoac.png
 SileoDepiction: https://raw.githubusercontent.com/2KGT/repo/main/depictions/AutoAC.json
+Architecture: iphoneos-arm64
+Version: 0.0.1-test2029
+Installed-Size: 168
