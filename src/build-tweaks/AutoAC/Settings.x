@@ -1,14 +1,12 @@
-#import <UIKit/UIKit.h>
-#import "headers.txt"
+#import "Header.h"
 
 static const NSInteger AutoACSection = 2026;
-#define kPrefs [NSUserDefaults standardUserDefaults]
 
 %hook YTAppSettingsPresentationData
 + (NSArray *)settingsCategoryOrder {
     NSMutableArray *order = [%orig mutableCopy];
     if (![order containsObject:@(AutoACSection)]) {
-        [order insertObject:@(AutoACSection) atIndex:1]; // Nằm ngay dưới mục General
+        [order insertObject:@(AutoACSection) atIndex:1];
     }
     return [order copy];
 }
@@ -19,7 +17,6 @@ static const NSInteger AutoACSection = 2026;
     if (category == AutoACSection) {
         NSMutableArray *items = [NSMutableArray array];
 
-        // 1. Công tắc Xoá Cache
         [items addObject:[%c(YTSettingsSectionItem) switchItemWithTitle:@"Xoá cache tự động" 
             titleDescription:@"Tự dọn dẹp khi mở App" 
             accessibilityIdentifier:nil 
@@ -29,7 +26,6 @@ static const NSInteger AutoACSection = 2026;
                 return YES;
             } settingItemId:0]];
 
-        // 2. Công tắc Chặn Ads & Tag
         [items addObject:[%c(YTSettingsSectionItem) switchItemWithTitle:@"Chặn quảng cáo & Tag" 
             titleDescription:@"Loại bỏ Ads và Tag sản phẩm" 
             accessibilityIdentifier:nil 
