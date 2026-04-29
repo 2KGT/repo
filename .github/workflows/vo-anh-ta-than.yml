@@ -7,10 +7,10 @@ on:
         description: 'Linh hồn dự án'
         required: true
         type: choice
-        default: '(none)'
+        default: 'AutoAC'
         options: [ AutoAC, AutoDL ]
       publish:
-        description: 'Release Official (Lên Sileo)'
+        description: 'Release Official'
         type: boolean
         default: false
 
@@ -27,79 +27,69 @@ jobs:
       - name: 📥 1. Triệu hồi Source
         uses: actions/checkout@v4
 
-      - name: 🛠️ 2. Chuẩn bị Pháp khí (Cache SDK)
+      - name: 🛠️ 2. Chuẩn bị Pháp khí
         run: |
           brew install make ldid dpkg
           git clone --recursive https://github.com/theos/theos.git $THEOS
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: 🎯 3. Metadata & Đồng bộ Nhãn Xác
+      - name: 🎯 3. Metadata (Gõ đầu file Gốc)
         id: metadata
         run: |
           PROJ="${{ github.event.inputs.project }}"
-          CTRL=$(find src/build-tweaks/$PROJ -name "control")
-          DIR=$(dirname "$CTRL")
-          SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | xargs | tr -d '() ')
+          DIR="src/build-tweaks/$PROJ"
+          CTRL="$DIR/control"
           
-          # ĐỒNG BỘ: TênDựÁn + headers (ví dụ: AutoACheaders)
+          # Kiểm tra sự tồn tại của nguyên liệu
+          if [ ! -f "$CTRL" ]; then
+            echo "❌ Không tìm thấy file control tại: $CTRL"
+            ls -R src/build-tweaks/
+            exit 1
+          fi
+
+          # Định danh nhãn dán & xác
+          SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | xargs | tr -d '() ')
           H_NAME="${PROJ}headers"
           
-          # Xử lý Version
+          # Xử lý Version (Ghi đè trực tiếp file gốc)
           OLD_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$OLD_VER" || echo "$OLD_VER-test$(date +%H%M)")
-          
-          # Cập nhật Control (Ngòi nổ)
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
-          sed -i '' "s/^Depends: .*/Depends: mobilesubstrate, firmware (>= 14.0)/" "$CTRL"
           
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
           echo "proj_ver=$NEW_VER" >> $GITHUB_OUTPUT
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "h_name=$H_NAME" >> $GITHUB_OUTPUT
 
-      - name: 🪄 4. Đúc Xác Vô Ảnh (Đồng bộ Tên Dự Án)
+      - name: 🪄 4. Đúc Xác Đồng Bộ
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           H_NAME="${{ steps.metadata.outputs.h_name }}"
           DEST="$THEOS/include/$H_NAME"
           mkdir -p "$DEST"
           
-          # 1. Ưu tiên bốc file headers.h thủ công nếu có
+          # Ưu tiên bốc file headers.h nằm cạnh Tweak.x
           if [ -f "$DIR/headers.h" ]; then
-            echo "🔮 Dùng Xác Chính Tông (.h)"
             cp "$DIR/headers.h" "$DEST/$H_NAME.h"
-          # 2. Hoặc xay từ headers.txt
-          elif [ -f "$DIR/headers.txt" ]; then
-            echo "🧪 Đang luyện xác từ .txt"
-            while IFS= read -r line || [ -n "$line" ]; do
-              CLASS=$(echo "$line" | cut -d':' -f1 | xargs)
-              BASE=$(echo "$line" | grep ":" | cut -d':' -f2 | xargs || echo "NSObject")
-              echo "@interface $CLASS : $BASE @end" > "$DEST/$CLASS.h"
-            done < "$DIR/headers.txt"
-            
-            INDEX="$DEST/$H_NAME.h"
-            echo "#import <UIKit/UIKit.h>" > "$INDEX"
-            for h in "$DEST"/*.h; do
-              [ "$(basename "$h")" != "$H_NAME.h" ] && echo "#import \"$(basename "$h")\"" >> "$INDEX"
-            done
           fi
 
-      - name: 🔨 5. Luyện Đan (Biên dịch Song Sinh)
+      - name: 🔨 5. Luyện Đan (Biên dịch Thông minh)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           H_NAME="${{ steps.metadata.outputs.h_name }}"
           
-          # Tối ưu FLAGS: Nhìn cả tại chỗ (-I.) và trong kho xác (-I$THEOS...)
+          # FLAGS: -I. tìm tại chỗ, -I$THEOS tìm trong kho xác, -Wl... chống văng
           DYNAMIC_FLAGS="-fobjc-arc -Wno-error -I. -I$THEOS/include/$H_NAME"
+          LDFLAGS="-Wl,-segalign,4000"
           
           make -C "$DIR" clean package FINALPACKAGE=1 \
-            TARGET=iphone:clang:14.5:14.5 \
+            TARGET=iphone:clang:14.5:14.0 \
             ADDITIONAL_CFLAGS="$DYNAMIC_FLAGS" \
-            ADDITIONAL_LDFLAGS="-Wl,-segalign,4000"
+            ADDITIONAL_LDFLAGS="$LDFLAGS"
           
           mkdir -p output && cp "$DIR/packages/"*.deb output/
 
-      - name: 📝 6. Đồng bộ Nhật ký (Changelog)
+      - name: 📝 6. Đồng bộ Nhật ký
         run: |
           git config user.name "PhapSuAction"
           git config user.email "action@github.com"
