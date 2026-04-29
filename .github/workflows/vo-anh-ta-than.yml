@@ -33,25 +33,36 @@ jobs:
           git clone --recursive https://github.com/theos/theos.git $THEOS
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: 🎯 3. Metadata (Gõ đầu file Gốc)
+      - name: 🎯 3.1 Metadata (Gõ đầu file Gốc)
         id: metadata
         run: |
           PROJ="${{ github.event.inputs.project }}"
           DIR="src/build-tweaks/$PROJ"
           CTRL="$DIR/control"
           
-          # Kiểm tra sự tồn tại của nguyên liệu
-          if [ ! -f "$CTRL" ]; then
-            echo "❌ Không tìm thấy file control tại: $CTRL"
-            ls -R src/build-tweaks/
+          echo "📍 Hiện tại đang đứng ở: $(pwd)"
+          echo "🔍 Đang tìm mục tiêu tại: $DIR"
+
+          # Kiểm tra xem thư mục cha có tồn tại không
+          if [ ! -d "$DIR" ]; then
+            echo "❌ Oái chưởng! Thư mục $DIR không tồn tại."
+            echo "📂 Danh sách thực tế trong src/build-tweaks/ là:"
+            ls -F src/build-tweaks/
             exit 1
           fi
 
-          # Định danh nhãn dán & xác
+          # Kiểm tra file control
+          if [ ! -f "$CTRL" ]; then
+            echo "❌ Không tìm thấy file control tại: $CTRL"
+            echo "📂 Trong thư mục $DIR đang có những file này:"
+            ls -a "$DIR"
+            exit 1
+          fi
+
+          # Nếu tìm thấy thì mới tiếp tục luyện đan...
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | xargs | tr -d '() ')
           H_NAME="${PROJ}headers"
           
-          # Xử lý Version (Ghi đè trực tiếp file gốc)
           OLD_VER=$(grep "^Version:" "$CTRL" | cut -d' ' -f2)
           NEW_VER=$([[ "${{ github.event.inputs.publish }}" == "true" ]] && echo "$OLD_VER" || echo "$OLD_VER-test$(date +%H%M)")
           sed -i '' "s/^Version: .*/Version: $NEW_VER/" "$CTRL"
