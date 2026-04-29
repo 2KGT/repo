@@ -1,13 +1,7 @@
 #import <UIKit/UIKit.h>
 
-// =============================================================
-// PHÁP SƯ TOÀN NĂNG: TỰ ĐÚC XÁC SETTINGS
-// =============================================================
-
-// 1. Khai báo danh tính (Chặt đứt đệ quy)
-@class YTAppSettingsPresentationData, YTSettingsSectionItem, YTSettingsSectionItemManager;
-
-// 2. Đúc khung xương cho những gì mình gọi tới
+// 1. Đúc khung xương (Thay thế hoàn toàn cho @class)
+@interface YTAppSettingsPresentationData : NSObject @end
 @interface YTSettingsSectionItem : NSObject
 + (id)switchItemWithTitle:(NSString *)title 
          titleDescription:(NSString *)description 
@@ -17,10 +11,14 @@
             settingItemId:(int)itemId;
 @end
 
-// Khai báo Delegate để Compiler không mắng
+// Đúc thêm thằng Manager này để không bị lỗi "forward declaration"
+@interface YTSettingsSectionItemManager : NSObject @end
+
+// Khai báo Delegate để gọi setSectionItems không bị mắng
 @interface NSObject (YTSettingsDelegate)
 - (void)setSectionItems:(id)items forCategory:(NSInteger)cat title:(id)title titleDescription:(id)desc;
 @end
+
 
 // =============================================================
 // LOGIC CHÈN MENU (GIỮ NGUYÊN NHƯNG SẠCH HEADERS)
