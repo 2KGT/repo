@@ -82,20 +82,20 @@ jobs:
       # =========================================================
       # CÔNG ĐOẠN 4: VẬN CHUYỂN HEADERS (CHỈ KHI CÓ ĐƠN)
       # =========================================================
-      - name: 🚀 Nhập kho Headers (Vạn Tiên Trận - Tháo Phanh 100%)
+      - name: 🚀 Nhập kho Headers (Vạn Tiên Trận - Đệ Quy 100%)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           [ ! -f "$DIR/headers.txt" ] && echo "🍃 Không có đơn hàng." && exit 0
           rm -rf $THEOS/include/*
           
-          # 1. Khởi tạo danh sách chờ từ đơn hàng
+          # 1. Khởi tạo danh sách chờ: Gọt sạch rác Windows (\r) và khoảng trắng
           sed -E 's/\.h//g; s/\r//g; s/ //g; /^\s*$/d' "$DIR/headers.txt" | sort -u > pending.txt
           touch processed.txt
 
           echo "🔥 KHỞI ĐỘNG VẠN TIÊN TRẬN: Truy quét đệ quy không giới hạn..."
           
           while [ -s pending.txt ]; do
-            echo "📊 Sớ còn: $(( $(wc -l < pending.txt) )) món. Đang lùng sục..."
+            echo "📊 Còn $(( $(wc -l < pending.txt) )) linh kiện cần truy vết. Đang xử lý..."
             cp pending.txt round.txt
             > pending.txt 
 
@@ -112,10 +112,10 @@ jobs:
                 DEST_DIR="$THEOS/include/$APP_NAME"
                 mkdir -p "$DEST_DIR"
 
-                # Tìm file .h lẻ
+                # Tìm file lẻ
                 TARGET=$(find "$KHO_APP" -maxdepth 1 -iname "${CLEAN_NAME}.h" | head -n 1)
                 
-                # Nếu không thấy, lục trong các file .zip
+                # Không thấy thì lục trong Zip
                 if [ -z "$TARGET" ]; then
                   for ZIP in "$KHO_APP"*.zip; do
                     [ -f "$ZIP" ] || continue
@@ -130,7 +130,7 @@ jobs:
                   cp -f "$TARGET" "$DEST_DIR/"
                 fi
 
-                # Nếu tìm được hàng xịn, SOI RUỘT tìm "con cháu" để vòng sau bốc tiếp
+                # Nếu bốc được hàng xịn, SOI RUỘT tìm "con/cháu" (#import hoặc #include)
                 if [ -f "$DEST_DIR/$CLEAN_NAME.h" ]; then
                   echo "  ✅ Nhặt xịn: $CLEAN_NAME (Kho $APP_NAME)"
                   grep -E '^[[:space:]]*#(import|include)[[:space:]]*["<]([^">/ ]+/)?([^"> ]+)\.h[">]' "$DEST_DIR/$CLEAN_NAME.h" | \
@@ -149,29 +149,28 @@ jobs:
                     mkdir -p "$THEOS/include/$APP_NAME"
                     BODY="@interface $CLEAN_NAME : NSObject\n@end"
                     echo -e "$BODY" > "$THEOS/include/$APP_NAME/$CLEAN_NAME.h"
-                    echo -e "$BODY" > "$THEOS/include/$CLEAN_NAME.h"
+                    echo -e "$BODY" > "$THEOS/include/$CLEAN_NAME.h" # Phẳng hóa cho #include ""
                     echo "  ✨ [Phong Thần] Triệu hồi: $CLEAN_NAME"
                     FOUND=true; break
                   fi
                 done
               fi
 
-              # --- LỚP 4: TỰ CHỮA LÀNH (Nếu tất cả đều không có) ---
+              # --- LỚP 4: TỰ CHỮA LÀNH (Hình nhân thế mạng) ---
               if [ "$FOUND" = false ]; then
-                echo "  ⚠️ Vô chủ: $CLEAN_NAME (Tự đúc hình nhân)"
+                echo "  ⚠️ Vô chủ: $CLEAN_NAME (Tự đúc xác rỗng)"
                 echo -e "@interface $CLEAN_NAME : NSObject\n@end" > "$THEOS/include/$CLEAN_NAME.h"
               fi
 
               echo "$CLEAN_NAME" >> processed.txt
             done < round.txt
 
-            # Làm sạch danh sách pending cho vòng lặp tiếp theo
+            # Dọn dẹp pending cho vòng sau
             [ -s pending.txt ] && sort -u pending.txt -o pending.txt
             [ -s pending.txt ] && comm -23 pending.txt <(sort -u processed.txt) > next.txt
             [ -f next.txt ] && mv next.txt pending.txt || > pending.txt
           done
-          echo "🏁 TRẬN PHÁP HOÀN TẤT. KHÔNG CÒN ĐƯỜNG THOÁT!"
-
+          echo "🏁 MA TRẬN ĐÃ GIẢI. KHAI HỎA!"
 
       # =========================================================
       # CÔNG ĐOẠN 5: THỰC THI BUILD
