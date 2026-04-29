@@ -38,23 +38,18 @@ jobs:
           mv "src/refinery/staging/$TARGET_BIN" src/refinery/staging/main_bin
 
 
-      - name: 💎 Chế tác Cầu nối (Bản Khảo Cổ Thô)
+      - name: 💎 Chế tác Cầu nối (Bản Phá Giới)
         run: |
           TARGET_BIN="src/refinery/staging/main_bin"
           OUT_DIR="headers/${{ github.event.inputs.folder_name }}"
           
-          echo "// Refinery Bridge Header (Brute Force)" > "$OUT_DIR/Bridge.h"
+          echo "// Refinery Bridge Header (Phá Giới)" > "$OUT_DIR/Bridge.h"
           echo "@import Foundation; @import UIKit;" >> "$OUT_DIR/Bridge.h"
           
-          # 1. Cố đấm ăn xôi với nm (vẫn giữ để lấy hàng xịn nếu có)
-          nm -gU "$TARGET_BIN" 2>/dev/null | grep -E "OBJC_CLASS_\$_" | sed 's/.*OBJC_CLASS_\$_\(.*\)/@class \1;/' >> "$OUT_DIR/Bridge.h"
+          # Quét sạch mọi chuỗi ký tự có khả năng là tên Class (viết liền, không dấu cách)
+          strings "$TARGET_BIN" | grep -E "^[A-Z][A-Za-z0-9_]{10,50}$" | sort -u | sed 's/.*/@class &;/' >> "$OUT_DIR/Bridge.h"
           
-          # 2. CHIÊU CUỐI: Quét thô toàn bộ chuỗi ký tự trong file
-          # Lọc những chuỗi bắt đầu bằng YT, ML, AS có độ dài từ 10-60 ký tự.
-          # Đây là nơi 'YTMainViewController' đang ẩn nấp.
-          strings "$TARGET_BIN" | grep -E "^(YT|ML|AS)[A-Z][A-Za-z0-9_]{5,60}$" | sort -u | sed 's/.*/@class &;/' >> "$OUT_DIR/Bridge.h"
-          
-          echo "📊 Thống kê: $(wc -l < "$OUT_DIR/Bridge.h") Class đã được tìm thấy."
+          echo "📊 Tổng cộng nhặt được: $(wc -l < "$OUT_DIR/Bridge.h") phôi."
 
       - name: 🎁 Nhập kho (Push)
         run: |
