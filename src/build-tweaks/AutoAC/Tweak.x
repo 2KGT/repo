@@ -1,16 +1,13 @@
-#import <UIKit/UIKit.h>
-#import "headers.txt"
+#import "Header.h"
 
-#define kPrefs [NSUserDefaults standardUserDefaults]
-
-// --- Hook Chặn Ads ---
+// Chặn Ads
 %hook YTAdSlotContainerView
 - (void)setHidden:(BOOL)hidden {
     %orig([kPrefs boolForKey:@"kHideEverything"] ? YES : hidden);
 }
 %end
 
-// --- Hook Nhấn giữ Logo (Hiện Dashboard) ---
+// Nhấn giữ Logo
 %hook YTHeaderLogoController
 - (void)viewDidLoad {
     %orig;
@@ -21,18 +18,17 @@
 %new
 - (void)handle2KGTMenu:(UILongPressGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateBegan) {
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"🚀 AutoAC Status" 
-                                    message:@"Mọi thứ đang hoạt động tốt!" 
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"🚀 AutoAC Dashboard" 
+                                    message:@"Trạng thái: Đang hoạt động\nCấu hình bởi 2KGT" 
                                     preferredStyle:UIAlertControllerStyleAlert];
-        [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
-        [((UIViewController *)self) presentViewController:alert animated:YES completion:nil];
+        [alert addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleCancel handler:nil]];
+        [self presentViewController:alert animated:YES completion:nil];
     }
 }
 %end
 
 %ctor {
-    %init;
-    // Tự động dọn rác nếu bật công tắc
+    %init(_ungrouped);
     if ([kPrefs boolForKey:@"kAutoClearCache"]) {
         [[NSFileManager defaultManager] removeItemAtPath:NSTemporaryDirectory() error:nil];
     }
