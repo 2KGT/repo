@@ -1,16 +1,1 @@
-{
-  "name": "AutoAC",
-  "package": "com.kyic.autoac",
-  "version": "0.0.1",
-  "description": "AutoAC - tự động xoá cache + xoá Ads, banner tag sản phẩm trong ứng dụng YouTube.",
-  "icon": "https://raw.githubusercontent.com/2KGT/repo/main/icons/AutoAC.png",
-  "banner": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC-banner.png",
-  "video": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC.mp4",
-  "screenshots": [
-    "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC1.png",
-    "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC2.png",
-    "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC3.png"
-  ],
-  "downloads": "https://raw.githubusercontent.com/2KGT/repo/main/debs/com.kyic.autoac_0.0.0.1_iphoneos-arm64.deb",
-  "changelog": [{"version": "0.0.1", "changes": "• Cập nhật phiên bản mới nhất\n• Tối ưu hóa quy trình sản xuất"}]
-}
+{"class":"DepictionTabView","tabs":[{"tabname":"Details","class":"DepictionStackView","views":[{"class":"DepictionHeaderView","title":"AutoAC"},{"class":"DepictionImageView","url":"https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC-banner.png","width":1242,"height":500,"cornerRadius":10},{"class":"DepictionScreenshotsView","itemCornerRadius":8,"screenshots":[]},{"class":"DepictionMarkdownView","markdown":"### ✨ Mới nhất (v0.0.1-test1642)\n- (BOOL)isAdInterrupting; (void)layoutSubviews { (BOOL)isAdInterrupting { (id)init {\n\n### 🐛 Sửa lỗi\n- \n\n---\n### 📜 Nhật ký đầy đủ\nXem tại CHANGELOG.md\n\n---\n### ⚠️ Lưu ý\n- iOS 14.0+\n- Xoá bản cũ trước khi cài.","useMargins":true}]}]}

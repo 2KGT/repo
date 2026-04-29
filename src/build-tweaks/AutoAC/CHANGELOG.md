@@ -1,3 +1,13 @@
+### 🚀 v0.0.1-test1642 (29/04/2026 16:42)
+#### ✨ Tính năng mới
+- (BOOL)isAdInterrupting;
+(void)layoutSubviews {
+(BOOL)isAdInterrupting {
+(id)init {
+#### 🐛 Sửa lỗi
+- 
+
+---
 ### ✨ Tính năng mới
 - [Tự động cập nhật từ script]
 ### 🐛 Sửa lỗi & Cải thiện
