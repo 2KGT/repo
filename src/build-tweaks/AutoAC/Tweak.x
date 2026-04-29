@@ -1,6 +1,4 @@
-#import "Header.h"
 #import <AutoACHeader/AutoACHeader.h>
-
 // Sau đó mới đến các logic Hook của ông giáo...
 
 // Chặn Ads
