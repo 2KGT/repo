@@ -47,8 +47,11 @@
             [topVC presentViewController:hello animated:YES completion:nil];
             
             [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"kHasShown71"];
+
+            }
         });
     }
+}
 
     // 2. Xoá cache tinh tế (đoạn cũ của ông giáo)
     if ([kPrefs boolForKey:@"kAutoClearCache"]) {
