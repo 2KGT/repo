@@ -16,6 +16,7 @@
     UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handle2KGTMenu:)];
     [self.view addGestureRecognizer:longPress];
 }
+%end
 
 %new
 - (void)handle2KGTMenu:(UILongPressGestureRecognizer *)sender {
