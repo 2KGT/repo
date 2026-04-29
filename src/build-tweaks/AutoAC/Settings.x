@@ -1,13 +1,6 @@
 #import <UIKit/UIKit.h>
 #import "headers.txt"
 
-@interface YTSettingsSectionItem : NSObject
-+ (id)switchItemWithTitle:(id)title titleDescription:(id)desc accessibilityIdentifier:(id)acc switchOn:(BOOL)on switchBlock:(id)block settingItemId:(int)id;
-@end
-
-@interface YTSettingsSectionItemManager : NSObject @end
-@interface YTAppSettingsPresentationData : NSObject @end
-
 static const NSInteger AutoACSection = 2026;
 #define kPrefs [NSUserDefaults standardUserDefaults]
 
