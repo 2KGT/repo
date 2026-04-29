@@ -1,10 +1,10 @@
-name: 🏭 Refinery - Mổ Trùm Cuối YouTube
+name: 🏭 Refinery - Lò Tinh Luyện Linh Hồn
 
 on:
   workflow_dispatch:
     inputs:
       ipa_url:
-        description: 'Dán Link IPA vào đây'
+        description: 'Dán Link IPA YouTube (Decrypted) vào đây'
         required: true
 
 jobs:
@@ -17,62 +17,49 @@ jobs:
       - name: 📥 Checkout Repo
         uses: actions/checkout@v4
 
-      - name: 🏗️ Setup Tools
+      - name: 🏗️ Setup Tools (Dọn xưởng)
         run: |
-          brew install blacktop/tap/ipsw
-          mkdir -p src/refinery/staging/headers
+          # Không cần ipsw nữa, dùng công cụ chính chủ Apple
+          mkdir -p src/refinery/staging
           mkdir -p headers-repo/YouTube
 
-      - name: 🚚 Bốc vác Trùm Cuối
+      - name: 🚚 Bốc vác Trùm Cuối (Input)
         run: |
+          # 1. Tải IPA
           curl -L "${{ github.event.inputs.ipa_url }}" -o app.ipa
-          # Tìm và gắp file thực thi chính 'YouTube' nhè vào staging
+          
+          # 2. Xẻ xác IPA gắp file thực thi chính 'YouTube'
           unzip -j app.ipa "Payload/*.app/YouTube" -d src/refinery/staging/
-          ls -l src/refinery/staging/
+          
+          # Kiểm tra xem Trùm đã vào lò chưa
+          ls -l src/refinery/staging/YouTube
 
-      - name: 🔪 Xẻ thịt bằng nm (Siêu nhẹ - Anti-Exit-9)
+      - name: 💎 Chế tác Linh hồn (.tbd) & Cầu nối (Bridge)
         run: |
-          # 1. Dùng nm để lọc ra tất cả các Class Objective-C (tiền tố OBJC_CLASS_$_)
-          nm -gU src/refinery/staging/YouTube | grep "OBJC_CLASS_$_" | sed 's/.*OBJC_CLASS_$_\(.*\)/\1/' > src/refinery/staging/classes.txt
-          
-          # 2. Tạo folder kho
-          mkdir -p headers-repo/YouTube
-          
-          # 3. Với mỗi Class tìm được, ta tạo một file .h "rỗng" nhưng đủ để bắc cầu
-          # Chỉ lấy 500 Class quan trọng nhất (hoặc lọc theo YT) để tránh làm loãng kho
-          grep "YT" src/refinery/staging/classes.txt | head -n 500 | while read -r className; do
-            echo -e "@interface $className : NSObject\n@end" > "headers-repo/YouTube/$className.h"
-          done
-          
-          echo "✅ Đã tạo xong 500 bản thiết kế bắc cầu cho YouTube!"
-
-          
-          # 3. Kiểm tra xem đã có nạc chưa
-          ls -R src/refinery/staging/headers | head -n 20
-
-
-      - name: 🥩 Lọc xương (Refinery Logic)
-        run: |
-          RAW_DIR="src/refinery/staging/headers"
+          TARGET_BIN="src/refinery/staging/YouTube"
           OUT_DIR="headers-repo/YouTube"
           
-          # Chỉ lọc những file .h có nội dung (tránh file 0kb)
-          find "$RAW_DIR" -type f -name "*.h" -size +1c | while read -r file; do
-            filename=$(basename "$file")
-            # Lọc xương dăm
-            sed -i '' -E '/#import ".*"/d; /#include ".*"/d' "$file"
-            # Tiêm forward declaration
-            echo -e "@class NSString, NSArray, NSDictionary, UIView, UIViewController, NSData, UIButton, UILabel;\n$(cat "$file")" > "$file"
-            # Nhập kho
-            mv "$file" "$OUT_DIR/$filename"
-          done
+          echo "🔨 Đang luyện file .tbd (Linh hồn)..."
+          # Chiêu 3: Tạo file .tbd cực nhẹ để Linker nhận mặt Class
+          xcrun tapi stubify "$TARGET_BIN" --out-file "$OUT_DIR/YouTube.tbd"
+          
+          echo "🌉 Đang bắc cầu (Bridge.h)..."
+          # Tạo file Header tổng chứa tất cả các Class để "nhận vơ" trong code
+          echo "// Refinery Auto-Generated Bridge Header" > "$OUT_DIR/YouTube-Bridge.h"
+          echo "@import Foundation;" >> "$OUT_DIR/YouTube-Bridge.h"
+          echo "@import UIKit;" >> "$OUT_DIR/YouTube-Bridge.h"
+          
+          # Lọc danh sách Class Objective-C và tiêm @class vào Header
+          nm -gU "$TARGET_BIN" | grep "OBJC_CLASS_$_" | sed 's/.*OBJC_CLASS_$_\(.*\)/@class \1;/' >> "$OUT_DIR/YouTube-Bridge.h"
+          
+          echo "✅ Đã chế tác xong tại: $OUT_DIR"
 
       - name: 🎁 Nhập kho (Push to Repo)
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add headers-repo/
-          git commit -m "🥩 Refinery: Đã mổ trùm cuối YouTube ($(date +'%Y-%m-%d'))" || exit 0
+          git commit -m "💎 Refinery: Luyện xong Linh hồn YouTube (.tbd & Bridge.h)" || exit 0
           git push
 
       - name: 🗑️ Dọn rác (-rf)
@@ -80,4 +67,4 @@ jobs:
         run: |
           rm -rf src/refinery/staging/
           rm -f app.ipa
-          echo "🧹 Xưởng sạch sẽ, trùm cuối đã bị xẻ thịt!"
+          echo "🧹 Xưởng sạch bong, nạc đã nằm trong kho!"
