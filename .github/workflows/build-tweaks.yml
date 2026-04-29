@@ -82,34 +82,50 @@ jobs:
       # =========================================================
       # CÔNG ĐOẠN 4: VẬN CHUYỂN HEADERS (CHỈ KHI CÓ ĐƠN)
       # =========================================================
-      - name: 🚛 Nhập kho Headers (Bản Đại Xá Thiên Hạ)
+      - name: 🚛 Nhập kho Headers (Bản Tam Lớp Hợp Nhất)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           [ ! -f "$DIR/headers.txt" ] && echo "🍃 Không có đơn hàng." && exit 0
           rm -rf $THEOS/include/*
           
-          # 1. Làm sạch danh sách: Đuổi hết rác, khoảng trắng, ký tự Windows (\r)
+          # 1. Làm sạch danh sách: Đuổi rác, khoảng trắng, ký tự Windows (\r)
           sed -E 's/\.h//g; s/\r//g; s/ //g; /^\s*$/d' "$DIR/headers.txt" | sort -u > pending.txt
           
-          echo "🔎 GIAI ĐOẠN 1: Càn quét hàng Chính Đạo (File .h xịn)..."
+          echo "🔎 GIAI ĐOẠN 1: Càn quét hàng Chính Đạo & Kho Lưu Trữ (.zip)..."
           for KHO_APP in headers/*/; do
             [ -d "$KHO_APP" ] || continue
             [ ! -s pending.txt ] && break
             
             APP_NAME=$(basename "$KHO_APP")
             DEST_DIR="$THEOS/include/$APP_NAME"
+            mkdir -p "$DEST_DIR"
             
-            # Quét từng file trong danh sách hiện tại
             while IFS= read -r NAME || [ -n "$NAME" ]; do
+              # --- LỚP 1: Tìm file .h xịn đã giải nén ---
               TARGET=$(find "$KHO_APP" -maxdepth 1 -iname "${NAME}.h" | head -n 1)
+              
               if [ -n "$TARGET" ]; then
-                mkdir -p "$DEST_DIR"
                 cp -f "$TARGET" "$DEST_DIR/"
                 echo "  ✅ Nhặt hàng xịn: $NAME.h"
-                # CHIÊU MỚI: Ghi đè file pending, chỉ giữ lại những thằng KHÔNG PHẢI tên này
-                grep -vix "$NAME" pending.txt > temp.txt || true
-                mv temp.txt pending.txt
+                grep -vix "$NAME" pending.txt > temp.txt || true; mv temp.txt pending.txt
+                continue
               fi
+              
+              # --- LỚP 2: Lục soát trong các tệp .zip ---
+              # Tìm tất cả file zip trong folder hiện tại
+              ZIP_FILES=$(find "$KHO_APP" -maxdepth 1 -name "*.zip")
+              for ZIP in $ZIP_FILES; do
+                # Kiểm tra xem trong zip có file này không (không giải nén toàn bộ)
+                INTERNAL_PATH=$(unzip -l "$ZIP" | grep -i "/${NAME}.h$" | awk '{print $NF}' | head -n 1)
+                
+                if [ -n "$INTERNAL_PATH" ]; then
+                  echo "  📦 Phát hiện $NAME.h trong $ZIP. Đang trích xuất..."
+                  unzip -j "$ZIP" "$INTERNAL_PATH" -d "$DEST_DIR/"
+                  echo "  ✅ Trích xuất thành công: $NAME.h"
+                  grep -vix "$NAME" pending.txt > temp.txt || true; mv temp.txt pending.txt
+                  break # Đã tìm thấy trong zip này, bỏ qua các zip khác
+                fi
+              done
             done < pending.txt
           done
 
@@ -123,16 +139,16 @@ jobs:
               
               APP_NAME=$(basename "$KHO_APP")
               DEST_DIR="$THEOS/include/$APP_NAME"
+              mkdir -p "$DEST_DIR"
               
               while IFS= read -r NAME || [ -n "$NAME" ]; do
-                # Tìm mờ trong Phong Thần Bảng
                 if grep -qiE "(^|[^a-zA-Z0-9_])$NAME($|[^a-zA-Z0-9_])" "$BRIDGE_FILE"; then
-                  mkdir -p "$DEST_DIR"
+                  # Đúc xác giả
                   echo -e "@interface $NAME : NSObject\n@end" > "$DEST_DIR/$NAME.h"
+                  # Hỗ trợ include chéo (không cần tiền tố folder)
+                  echo -e "@interface $NAME : NSObject\n@end" > "$THEOS/include/$NAME.h"
                   echo "  ✨ [Phong Thần] Đã triệu hồi: $NAME.h"
-                  # Ghi đè file pending, loại bỏ tên đã triệu hồi
-                  grep -vix "$NAME" pending.txt > temp.txt || true
-                  mv temp.txt pending.txt
+                  grep -vix "$NAME" pending.txt > temp.txt || true; mv temp.txt pending.txt
                 fi
               done < pending.txt
             done
@@ -141,10 +157,10 @@ jobs:
           # 📊 TỔNG KẾT
           if [ -s pending.txt ]; then
             echo "❌ LỖI: Vẫn mất tích các linh kiện sau:"
-            cat pending.txt
-            exit 1
+            cat pending.txt && exit 1
           fi
-          echo "🏁 Đã bốc đủ hàng. Khai hỏa!"
+          echo "🏁 Đã bốc đủ hàng. Nhà máy lên đèn, khai hỏa!"
+
 
       # =========================================================
       # CÔNG ĐOẠN 5: THỰC THI BUILD
