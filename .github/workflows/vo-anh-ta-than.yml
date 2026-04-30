@@ -112,46 +112,60 @@ jobs:
           echo "✔️ Dự án $PROJ đã tăng phiên bản: $NEW_VER"
 
       # ======== 3. BIÊN DỊCH ========
-      - name: 🔨 3.1 Build Tweak
+      - name: 🔨 3.1 Biên dịch Tweak (Universal Self-Healing)
         run: |
-          echo "🏗️ Tiến hành biên dịch tweak..."
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           export THEOS=$THEOS
 
-          # Xử lý auto-generating headers
-          AI_HEADER="$DIR/headers.h"
-          if [ ! -f "$AI_HEADER" ]; then
-            echo "🧠 Tạo tự động file headers cho $SAFE..."
-            echo "#import <UIKit/UIKit.h>" > "$AI_HEADER"
-            echo "#import <Foundation/Foundation.h>" >> "$AI_HEADER"
-            for CLASS in $(grep -r '^%hook' "$DIR" | awk '{print $2}' | sort -u); do
-              echo "@interface $CLASS : NSObject" >> "$AI_HEADER"
-              echo "- (void)autoAC_openSettings;" >> "$AI_HEADER"
-              echo "- (void)autoAC_clearCache;" >> "$AI_HEADER"
-              echo "- (void)autoAC_showDownloadStatus;" >> "$AI_HEADER"
-              echo "@end" >> "$AI_HEADER"
-            done
-            echo "✔️ Đã tạo file headers đầy đủ: $AI_HEADER"
-          fi
-
-          VIRTUAL_HDR="$THEOS/include/${SAFE}headers"
-          mkdir -p "$VIRTUAL_HDR"
-          cp "$AI_HEADER" "$VIRTUAL_HDR/${SAFE}headers.h"
-
-          # Build tweak
-          make -C "$DIR" clean package FINALPACKAGE=1 \
-            THEOS=$THEOS \
-            ADDITIONAL_CFLAGS="-I${VIRTUAL_HDR} -Wno-deprecated-declarations -fobjc-arc" || { echo "❌ Build thất bại! Kiểm tra debug logs."; exit 1; }
-
-          # Kết quả build
-          if ls "$DIR/packages/"*.deb &>/dev/null; then
-            cp "$DIR/packages/"*.deb output/
-            echo "✅ Build thành công! Gói .deb đã tạo."
-          else
-            echo "❌ Build thất bại, không tìm thấy file .deb."
+          # 1. TỔNG VỆ SINH & KIỂM TRA ĐẦU VÀO
+          if [ ! -f "$DIR/Makefile" ] || [ ! -f "$DIR/control" ]; then
+            echo "❌ Không tìm thấy cấu trúc dự án hợp lệ tại $DIR."
             exit 1
           fi
+          rm -rf "$DIR/.theos" "$DIR/packages" "$DIR/obj"
+          mkdir -p output
+
+          # 2. AI SCANNER (Hỗ trợ đa nguồn .x .xm .mm .m)
+          if [ ! -f "$DIR/headers.h" ]; then
+            echo "🧠 AI Scanner: Đang đúc hồn cho $SAFE..."
+            cat > "$DIR/headers.h" <<'EOF'
+#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
+#import <objc/runtime.h>
+@interface NSObject (UniversalAutomation) @end
+EOF
+            # Dùng find để quét an toàn, tránh lỗi rác shell
+            SOURCE_FILES=$(find "$DIR" -maxdepth 1 -type f \( -name "*.x" -o -name "*.xm" -o -name "*.mm" -o -name "*.m" \))
+            if [ -n "$SOURCE_FILES" ]; then
+              # Bắt Class sau %hook, bỏ qua comment và dấu cách thừa
+              sed -n 's/^[[:space:]]*%hook[[:space:]]\+\([A-Za-z0-9_]\+\).*/\1/p' $SOURCE_FILES | sort -u | while read -r CLASS; do
+                echo "@interface $CLASS : NSObject @end" >> "$DIR/headers.h"
+              done
+            fi
+            echo "✅ Headers.h đã sẵn sàng."
+          fi
+
+          # 3. NAMESPACE VÔ ẢNH (Gia cố đường dẫn)
+          VIRTUAL_HDR="${THEOS}/include/${SAFE}headers"
+          rm -rf "${VIRTUAL_HDR}" && mkdir -p "${VIRTUAL_HDR}"
+          cp "$DIR/headers.h" "${VIRTUAL_HDR}/${SAFE}headers.h"
+
+          # 4. KHAI HỎA (Cờ compiler tối ưu cho Sideload/Feather)
+          # Thêm -Wno-unused-command-line-argument để log sạch hơn nữa
+          make -C "$DIR" clean package FINALPACKAGE=1 \
+            THEOS=$THEOS \
+            ADDITIONAL_CFLAGS="-fobjc-arc -w -Wno-error -Wno-undeclared-selector -Wno-unused-command-line-argument -I${THEOS}/include -I${VIRTUAL_HDR}" \
+            ADDITIONAL_LDFLAGS="-Wl,-segalign,4000"
+
+          # 5. XUẤT XƯỞNG (Kiểm tra thực lực file DEB)
+          DEB_FILE=$(find "$DIR/packages" -name "*.deb" -type f -size +1k | head -n 1)
+          if [ -n "$DEB_FILE" ]; then
+            cp "$DEB_FILE" output/
+            echo "✅ Linh đan đã vào lò: $(basename "$DEB_FILE")"
+          else
+            echo "❌ Luyện đan thất bại hoặc file DEB rỗng!"
+            exit 1
 
       # ======== 4. ĐỒNG BỘ FILE HIỂN THỊ ========
       - name: 📃 4.1 Sync JSON Depictions
