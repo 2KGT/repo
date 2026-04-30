@@ -1,16 +1,14 @@
 #import <AutoACheaders/AutoACheaders.h>
 #import <UIKit/UIKit.h>
 
-// Nhật ký "mồi" để nhà máy tự động viết Changelog
-// - Cập nhật Menu cài đặt AutoAC trong YouTube Settings
-// - Thêm cử chỉ nhấn giữ (Long Press) vào nút Home để mở nhanh menu
-// + Tối ưu hóa tính năng xóa Cache giải phóng dung lượng
-// + Thêm bảng theo dõi trạng thái tải xuống và dung lượng bộ nhớ
+// - Cập nhật Menu cài đặt AutoAC tương thích ARC
+// - Sửa lỗi forward declaration cho YTSettingsSectionItemManager
+// + Loại bỏ hoàn toàn release/autorelease để build với -fobjc-arc
+// + Cập nhật UI_USER_INTERFACE_IDIOM sang UIDevice tiêu chuẩn
 
 #define kPrefs [NSUserDefaults standardUserDefaults]
 static const NSInteger AutoACSection = 2026;
 
-// MARK: - Khai báo bổ trợ cho AI Scanner (Nếu cần)
 @interface YTSettingsSectionItem : NSObject
 + (id)switchItemWithTitle:(id)arg1 titleDescription:(id)arg2 accessibilityIdentifier:(id)arg3 switchOn:(BOOL)arg4 switchBlock:(id)arg5 settingItemId:(int)arg6;
 @end
@@ -18,7 +16,7 @@ static const NSInteger AutoACSection = 2026;
 // MARK: - Settings Section
 %hook YTAppSettingsPresentationData
 + (NSArray *)settingsCategoryOrder {
-    NSMutableArray *order = [[%orig mutableCopy] autorelease];
+    NSMutableArray *order = [%orig mutableCopy];
     if (order && ![order containsObject:@(AutoACSection)]) {
         [order insertObject:@(AutoACSection) atIndex:1];
     }
@@ -55,8 +53,10 @@ static const NSInteger AutoACSection = 2026;
                                              return YES;
                                          } settingItemId:0]];
 
-        id settingsVC = [self valueForKey:@"_settingsViewControllerDelegate"] 
-                     ?: [self valueForKey:@"settingsViewControllerDelegate"];
+        // Sửa lỗi forward declaration bằng cách ép kiểu sang id
+        id currentSelf = (id)self;
+        id settingsVC = [currentSelf valueForKey:@"_settingsViewControllerDelegate"] 
+                     ?: [currentSelf valueForKey:@"settingsViewControllerDelegate"];
 
         if ([settingsVC respondsToSelector:@selector(setSectionItems:forCategory:title:titleDescription:)]) {
             [settingsVC setSectionItems:items 
@@ -80,8 +80,8 @@ static const NSInteger AutoACSection = 2026;
             initWithTarget:self action:@selector(autoAC_handleLongPress:)];
         longPress.minimumPressDuration = 0.5;
         [tabBar addGestureRecognizer:longPress];
-        [longPress release];
-        NSLog(@"[AutoAC] ✅ Đã gắn Long press vào TabBar");
+        // Đã xóa [longPress release] vì dùng ARC
+        NSLog(@"[AutoAC] ✅ Đã gắn Long press");
     }
 }
 
@@ -89,8 +89,8 @@ static const NSInteger AutoACSection = 2026;
 - (void)autoAC_handleLongPress:(UILongPressGestureRecognizer *)gesture {
     if (gesture.state != UIGestureRecognizerStateBegan) return;
     
-    CGPoint location = [gesture locationInView:self.tabBar];
     UITabBar *tabBar = self.tabBar;
+    CGPoint location = [gesture locationInView:tabBar];
     
     NSArray *tabBarItems = tabBar.items;
     if (tabBarItems.count == 0) return;
@@ -98,7 +98,7 @@ static const NSInteger AutoACSection = 2026;
     CGFloat itemWidth = tabBar.bounds.size.width / tabBarItems.count;
     NSInteger tappedIndex = (NSInteger)(location.x / itemWidth);
     
-    if (tappedIndex != 0) return; // Chỉ nút Home
+    if (tappedIndex != 0) return; 
     
     UIAlertController *alert = [UIAlertController 
         alertControllerWithTitle:@"AutoAC"
@@ -119,7 +119,7 @@ static const NSInteger AutoACSection = 2026;
     
     [alert addAction:[UIAlertAction actionWithTitle:@"Huỷ" style:UIAlertActionStyleCancel handler:nil]];
     
-    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+    if ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad) {
         alert.popoverPresentationController.sourceView = tabBar;
         alert.popoverPresentationController.sourceRect = CGRectMake(location.x, location.y, 1, 1);
     }
@@ -133,7 +133,7 @@ static const NSInteger AutoACSection = 2026;
         [self presentViewController:settingsVC animated:YES completion:^{
             [[NSNotificationCenter defaultCenter] postNotificationName:@"AutoACScrollToSection" object:@(AutoACSection)];
         }];
-        [settingsVC release];
+        // Đã xóa [settingsVC release] vì dùng ARC
     }
 }
 
@@ -176,9 +176,8 @@ static const NSInteger AutoACSection = 2026;
 }
 %end
 
-// MARK: - Constructor
 %ctor {
     if ([[NSBundle mainBundle].bundleIdentifier isEqualToString:@"com.google.ios.youtube"]) {
-        NSLog(@"[AutoAC] ✅ Linh đan AutoAC v2.0 đã sẵn sàng.");
+        NSLog(@"[AutoAC] ✅ AutoAC v2.0 ARC Ready");
     }
 }
