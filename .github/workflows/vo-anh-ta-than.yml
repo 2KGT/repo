@@ -75,15 +75,22 @@ jobs:
           echo "final_ver=$FINAL_VER" >> $GITHUB_OUTPUT
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
 
-      - name: 🔨 4. Luyện Đan (Dùng Theos Engine)
+      - name: 🔨 4. Luyện Đan (Sạch kho & Chống văng)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
+          PROJ="${{ github.event.inputs.project }}"
+          
           # Dọn sạch kho trước khi đúc
           rm -rf "$DIR/packages" && mkdir -p output
           
-          # Trỏ chính xác vào theos_engine
+          # Thiết lập môi trường Theos
           export THEOS=$THEOS
-          DYNAMIC_FLAGS="-fobjc-arc -Wno-error -I. -I$THEOS/include/${{ github.event.inputs.project }}headers"
+          
+          # ĐỊNH NGHĨA ĐƯỜNG DẪN HEADER CHUẨN
+          # Giả sử header nằm trong thư mục: src/build-tweaks/AutoAC/AutoACheaders/
+          HEADER_PATH="$GITHUB_WORKSPACE/$DIR/${PROJ}headers"
+          
+          DYNAMIC_FLAGS="-fobjc-arc -Wno-error -I. -I$HEADER_PATH"
           LDFLAGS="-Wl,-segalign,4000"
           
           make -C "$DIR" clean package FINALPACKAGE=1 \
@@ -93,6 +100,7 @@ jobs:
             ADDITIONAL_LDFLAGS="$LDFLAGS"
           
           cp "$DIR/packages/"*.deb output/
+
 
       - name: 📝 5. Đồng bộ Ngược
         run: |
