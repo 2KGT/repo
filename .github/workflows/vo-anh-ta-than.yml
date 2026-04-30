@@ -66,24 +66,34 @@ jobs:
           echo "final_ver=$FINAL_VER" >> $GITHUB_OUTPUT
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
 
-      # ======== 3. LUYỆN ĐAN (BUILD) ========
-      - name: 🔨 3.1 Biên dịch Tweak
+  # ======== 3. LUYỆN ĐAN (BUILD) ========
+
+      - name: 🔨 3.1 Biên dịch Tweak (Name-Header Logic)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
-          PROJ="${{ github.event.inputs.project }}"
           rm -rf "$DIR/packages" && mkdir -p output
           export THEOS=$THEOS
           
-          # TRỎ LÙI RA NGOÀI THƯ MỤC CHA
-          HEADER_PATH="$GITHUB_WORKSPACE/$DIR" 
+          # 🧠 BỐC TÊN: Lấy chính xác chữ "AutoAC" từ dòng Name: AutoAC
+          RAW_NAME=$(grep "^Name:" "$DIR/control" | cut -d: -f2- | xargs)
           
+          # Tạo Xác: $(THEOS)/include/AutoACheaders
+          VIRTUAL_HDR="$THEOS/include/${RAW_NAME}headers"
+          mkdir -p "$VIRTUAL_HDR"
+          
+          # 🏮 ĐỔ HỒN: Copy headers.h vào
+          cp $DIR/*.h "$VIRTUAL_HDR/" 2>/dev/null || true
+          
+          # Hỗ trợ cấu trúc folder con để code gọi <AutoACheaders/headers.h>
+          mkdir -p "$VIRTUAL_HDR/${RAW_NAME}headers"
+          cp $DIR/*.h "$VIRTUAL_HDR/${RAW_NAME}headers/" 2>/dev/null || true
+
+          # KÍCH HOẠT NHÀ MÁY
           make -C "$DIR" clean package FINALPACKAGE=1 \
-            TARGET=iphone:clang:14.5:14.0 \
-            THEOS=$THEOS \
-            ADDITIONAL_CFLAGS="-fobjc-arc -Wno-error -I. -I$HEADER_PATH" \
-            ADDITIONAL_LDFLAGS="-Wl,-segalign,4000"
+            THEOS=$THEOS
           
           cp "$DIR/packages/"*.deb output/
+
 
       # ======== 4. ĐỒNG BỘ NHẬT KÝ & HÌNH ẢNH ========
       - name: 📝 4.1 Sync Changelog & Depiction JSON
