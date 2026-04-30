@@ -1,7 +1,0 @@
-- name: Checkout repository
-  uses: actions/checkout@v4
-
-- name: Force Clean Submodule
-  run: |
-    git rm -rf --cached theos || true
-    rm -rf theos || true
