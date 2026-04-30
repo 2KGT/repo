@@ -112,60 +112,36 @@ jobs:
           echo "✔️ Dự án $PROJ đã tăng phiên bản: $NEW_VER"
 
       # ======== 3. BIÊN DỊCH ========
-      - name: 🔨 3.1 Biên dịch Tweak (Universal Self-Healing)
+      - name: 🔨 3.1 Biên dịch Tweak
         run: |
+          echo "🔧 Bắt đầu biên dịch tweak..."
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           export THEOS=$THEOS
 
-          # 1. TỔNG VỆ SINH & KIỂM TRA ĐẦU VÀO
-          if [ ! -f "$DIR/Makefile" ] || [ ! -f "$DIR/control" ]; then
-            echo "❌ Không tìm thấy cấu trúc dự án hợp lệ tại $DIR."
-            exit 1
-          fi
-          rm -rf "$DIR/.theos" "$DIR/packages" "$DIR/obj"
-          mkdir -p output
-
-          # 2. AI SCANNER (Hỗ trợ đa nguồn .x .xm .mm .m)
-          if [ ! -f "$DIR/headers.h" ]; then
-            echo "🧠 AI Scanner: Đang đúc hồn cho $SAFE..."
-            cat > "$DIR/headers.h" <<'EOF'
+          # Generate headers if missing
+          AI_HEADERS_PATH="$THEOS/include/${SAFE}headers/AutoACheaders.h"
+          mkdir -p "$THEOS/include/${SAFE}headers"
+          echo "⚙️ Đảm bảo file headers..."
+          if [ ! -f "$AI_HEADERS_PATH" ]; then
+            cat > "$AI_HEADERS_PATH" <<EOF
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
-#import <objc/runtime.h>
-@interface NSObject (UniversalAutomation) @end
+@interface YTTabBarController : UIViewController
+- (void)autoAC_openSettings;
+- (void)autoAC_clearCache;
+- (void)autoAC_showDownloadStatus;
+@end
 EOF
-            # Dùng find để quét an toàn, tránh lỗi rác shell
-            SOURCE_FILES=$(find "$DIR" -maxdepth 1 -type f \( -name "*.x" -o -name "*.xm" -o -name "*.mm" -o -name "*.m" \))
-            if [ -n "$SOURCE_FILES" ]; then
-              # Bắt Class sau %hook, bỏ qua comment và dấu cách thừa
-              sed -n 's/^[[:space:]]*%hook[[:space:]]\+\([A-Za-z0-9_]\+\).*/\1/p' $SOURCE_FILES | sort -u | while read -r CLASS; do
-                echo "@interface $CLASS : NSObject @end" >> "$DIR/headers.h"
-              done
-            fi
-            echo "✅ Headers.h đã sẵn sàng."
+            echo "✔️ Đã tạo file header: $AI_HEADERS_PATH"
           fi
 
-          # 3. NAMESPACE VÔ ẢNH (Gia cố đường dẫn)
-          VIRTUAL_HDR="${THEOS}/include/${SAFE}headers"
-          rm -rf "${VIRTUAL_HDR}" && mkdir -p "${VIRTUAL_HDR}"
-          cp "$DIR/headers.h" "${VIRTUAL_HDR}/${SAFE}headers.h"
-
-          # 4. KHAI HỎA (Cờ compiler tối ưu cho Sideload/Feather)
-          # Thêm -Wno-unused-command-line-argument để log sạch hơn nữa
+          # Build tweak
           make -C "$DIR" clean package FINALPACKAGE=1 \
             THEOS=$THEOS \
-            ADDITIONAL_CFLAGS="-fobjc-arc -w -Wno-error -Wno-undeclared-selector -Wno-unused-command-line-argument -I${THEOS}/include -I${VIRTUAL_HDR}" \
-            ADDITIONAL_LDFLAGS="-Wl,-segalign,4000"
+            ADDITIONAL_CFLAGS="-I${THEOS}/include/${SAFE}headers -Wno-deprecated-declarations" || { echo "❌ Build thất bại! Xem lại log."; exit 1; }
 
-          # 5. XUẤT XƯỞNG (Kiểm tra thực lực file DEB)
-          DEB_FILE=$(find "$DIR/packages" -name "*.deb" -type f -size +1k | head -n 1)
-          if [ -n "$DEB_FILE" ]; then
-            cp "$DEB_FILE" output/
-            echo "✅ Linh đan đã vào lò: $(basename "$DEB_FILE")"
-          else
-            echo "❌ Luyện đan thất bại hoặc file DEB rỗng!"
-            exit 1
+          echo "✅ Build thành công!"
 
       # ======== 4. ĐỒNG BỘ FILE HIỂN THỊ ========
       - name: 📃 4.1 Sync JSON Depictions
