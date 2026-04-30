@@ -68,25 +68,25 @@ jobs:
 
   # ======== 3. LUYỆN ĐAN (BUILD) ========
 
-      - name: 🔨 3.1 Biên dịch Tweak (Name-Header Logic)
+      - name: 🔨 3.1 Biên dịch Tweak (Auto-Header Logic)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           rm -rf "$DIR/packages" && mkdir -p output
           export THEOS=$THEOS
           
-          # 🧠 BỐC TÊN: Lấy chính xác chữ "AutoAC" từ dòng Name: AutoAC
+          # 🧠 BỐC TÊN: Lấy chính xác chữ "AutoAC" từ dòng Name
           RAW_NAME=$(grep "^Name:" "$DIR/control" | cut -d: -f2- | xargs)
           
           # Tạo Xác: $(THEOS)/include/AutoACheaders
           VIRTUAL_HDR="$THEOS/include/${RAW_NAME}headers"
-          mkdir -p "$VIRTUAL_HDR"
-          
-          # 🏮 ĐỔ HỒN: Copy headers.h vào
-          cp $DIR/*.h "$VIRTUAL_HDR/" 2>/dev/null || true
-          
-          # Hỗ trợ cấu trúc folder con để code gọi <AutoACheaders/headers.h>
           mkdir -p "$VIRTUAL_HDR/${RAW_NAME}headers"
-          cp $DIR/*.h "$VIRTUAL_HDR/${RAW_NAME}headers/" 2>/dev/null || true
+          
+          # 🏮 ĐỔ HỒN & NHÂN BẢN:
+          # Copy headers.h vào và đổi tên thành AutoACheaders.h để khớp với #import trong code
+          cp $DIR/headers.h "$VIRTUAL_HDR/${RAW_NAME}headers/${RAW_NAME}headers.h" 2>/dev/null || true
+          
+          # Copy bản gốc vào để Makefile vẫn tìm thấy nếu cần
+          cp $DIR/headers.h "$VIRTUAL_HDR/" 2>/dev/null || true
 
           # KÍCH HOẠT NHÀ MÁY
           make -C "$DIR" clean package FINALPACKAGE=1 \
