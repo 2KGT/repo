@@ -54,7 +54,7 @@ jobs:
           git clone --recursive https://github.com/theos/theos.git $THEOS
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      # ======== 2. ĐỊNH DANH & TĂNG PHIÊN BẢN ========
+      # ======== 2. ĐỊNH DANH & TĂNG PHIÊN BẢN (KHẮC NHẬP - KHẮC XUẤT) ========
       - name: 🎯 2.1 Metadata & Version Bump
         id: metadata
         run: |
@@ -63,12 +63,14 @@ jobs:
           DIR="src/build-tweaks/$PROJ"
           CTRL="$DIR/control"
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | xargs | tr -d '() ')
-          IMG_URL="${env.BASE_URL}/depictions/images"
+          IMG_URL="${{ env.BASE_URL }}/depictions/images"
 
+          # Hàm cập nhật control an toàn
           update_ctrl() {
             grep -q "^$1:" "$CTRL" && sed -i '' "s/^$1:.*/$1: $2/" "$CTRL" || echo "$1: $2" >> "$CTRL"
           }
 
+          # Tăng version
           CUR_VER=$(grep "^Version:" "$CTRL" | cut -d: -f2- | xargs)
           MAJOR=$(echo "$CUR_VER" | cut -d. -f1)
           MINOR=$(echo "$CUR_VER" | cut -d. -f2)
@@ -98,7 +100,7 @@ jobs:
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "final_ver=$NEW_VER" >> $GITHUB_OUTPUT
 
-      # ======== 3. LUYỆN ĐAN (AI SELF-HEALING) ========
+      # ======== 3. LUYỆN ĐAN (AI SELF-HEALING + NHÃN QUANG) ========
       - name: 🔨 3.1 Biên dịch Tweak (Universal Self-Healing)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
@@ -108,9 +110,12 @@ jobs:
           if [[ "${{ github.event.inputs.clean_build }}" == "true" ]]; then
             rm -rf "$DIR/.theos" "$DIR/packages" "$DIR/obj"
             echo "🧹 Đã dọn sạch cache build."
+          else
+            echo "ℹ️ Giữ lại cache cũ."
           fi
           mkdir -p output
 
+          # AI Scanner + file .m
           if [ ! -f "$DIR/headers.h" ]; then
             echo "🧠 AI Scanner: Đúc hồn cho $SAFE..."
             cat > "$DIR/headers.h" <<'EOF'
@@ -169,36 +174,38 @@ EOF
 
           mkdir -p depictions
           python3 << 'PYEOF'
-          import json, os
-          safe = os.environ['SAFE']
-          ver = os.environ['VER']
-          img_url = os.environ['IMG_URL']
-          feat = os.environ.get('FEAT_RAW', 'Cập nhật định kỳ')
-          fix = os.environ.get('FIX_RAW', 'Cải thiện ổn định')
+import json, os, html
 
-          desc = f"### ✨ Mới nhất (v{ver})\n- {feat}\n\n### 🐛 Sửa lỗi\n- {fix}"
-          screenshots = []
-          if os.path.isdir("depictions/images"):
-              for i in range(1, 6):
-                  fname = f"{safe}{i}.png"
-                  if os.path.exists(f"depictions/images/{fname}"):
-                      screenshots.append({"url": f"{img_url}/{fname}", "accessibilityText": f"Screenshot {i}"})
+safe = os.environ['SAFE']
+ver = os.environ['VER']
+img_url = os.environ['IMG_URL']
+feat_raw = os.environ.get('FEAT_RAW', 'Cập nhật định kỳ')
+fix_raw = os.environ.get('FIX_RAW', 'Cải thiện ổn định')
 
-          views = [{"class": "DepictionHeaderView", "title": safe}]
-          if os.path.exists(f"depictions/images/{safe}-banner.png"):
-              views.append({"class": "DepictionImageView", "url": f"{img_url}/{safe}-banner.png", "width": 1242, "height": 500, "cornerRadius": 10})
-          if os.path.exists(f"depictions/images/{safe}.mp4"):
-              views.append({"class": "DepictionVideoView", "videoURL": f"{img_url}/{safe}.mp4", "cornerRadius": 8})
-          views.append({"class": "DepictionMarkdownView", "markdown": desc, "useMargins": True})
-          views.append({"class": "DepictionSeparatorView"})
-          if screenshots:
-              views.append({"class": "DepictionHeaderView", "title": "Screenshots"})
-              views.append({"class": "DepictionScreenshotsView", "itemCornerRadius": 8, "screenshots": screenshots})
+desc = f"### ✨ Mới nhất (v{ver})\n- {feat_raw}\n\n### 🐛 Sửa lỗi\n- {fix_raw}"
 
-          depiction = {"class": "DepictionTabView", "tabs": [{"tabname": "Details", "class": "DepictionStackView", "views": views}]}
-          with open(f"depictions/{safe}.json", "w", encoding="utf-8") as f:
-              json.dump(depiction, f, indent=2, ensure_ascii=False)
-          PYEOF
+screenshots = []
+if os.path.isdir("depictions/images"):
+    for i in range(1, 6):
+        fname = f"{safe}{i}.png"
+        if os.path.exists(f"depictions/images/{fname}"):
+            screenshots.append({"url": f"{img_url}/{fname}", "accessibilityText": f"Screenshot {i}"})
+
+views = [{"class": "DepictionHeaderView", "title": safe}]
+if os.path.exists(f"depictions/images/{safe}-banner.png"):
+    views.append({"class": "DepictionImageView", "url": f"{img_url}/{safe}-banner.png", "width": 1242, "height": 500, "cornerRadius": 10})
+if os.path.exists(f"depictions/images/{safe}.mp4"):
+    views.append({"class": "DepictionVideoView", "videoURL": f"{img_url}/{safe}.mp4", "cornerRadius": 8})
+views.append({"class": "DepictionMarkdownView", "markdown": desc, "useMargins": True})
+views.append({"class": "DepictionSeparatorView"})
+if screenshots:
+    views.append({"class": "DepictionHeaderView", "title": "Screenshots"})
+    views.append({"class": "DepictionScreenshotsView", "itemCornerRadius": 8, "screenshots": screenshots})
+
+depiction = {"class": "DepictionTabView", "tabs": [{"tabname": "Details", "class": "DepictionStackView", "views": views}]}
+with open(f"depictions/{safe}.json", "w", encoding="utf-8") as f:
+    json.dump(depiction, f, indent=2, ensure_ascii=False)
+PYEOF
 
           git add "$DIR" depictions/
           if git diff --cached --quiet; then
@@ -208,12 +215,12 @@ EOF
               mkdir -p debs && cp output/*.deb debs/
               dpkg-scanpackages -m debs /dev/null > Packages
               python3 << 'PYEOF'
-              import os, bz2
-              with open("Packages", "r") as f: content = f.read()
-              content = content.replace("Filename: debs/", "Filename: ./debs/")
-              with open("Packages", "w") as f: f.write(content)
-              with open("Packages.bz2", "wb") as f: f.write(bz2.compress(content.encode()))
-              PYEOF
+with open("Packages", "r") as f: content = f.read()
+content = content.replace("Filename: debs/", "Filename: ./debs/")
+with open("Packages", "w") as f: f.write(content)
+import bz2
+with open("Packages.bz2", "wb") as f: f.write(bz2.compress(content.encode()))
+PYEOF
               git add debs/ Packages Packages.bz2
               MSG="🌟 Release: $SAFE v$VER"
             else
@@ -231,18 +238,20 @@ EOF
           name: ${{ steps.metadata.outputs.safe_name }}_v${{ steps.metadata.outputs.final_ver }}
           path: output/
 
-      # ======== 6. THÔNG BÁO TELEGRAM ========
+      # ======== 6. THÔNG BÁO TELEGRAM (LÁ CHẮN RÁC) ========
       - name: 🤖 6.1 Telegram Notification
         if: always()
         run: |
-          export SAFE_NAME="${{ steps.metadata.outputs.safe_name }}"
-          export FINAL_VER="${{ steps.metadata.outputs.final_ver }}"
-          export JOB_STATUS="${{ job.status }}"
-          export RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          export REPO_LINK="${{ env.BASE_URL }}"
-          export TOKEN="${{ secrets.TELEGRAM_TOKEN }}"
-          export CHAT_ID="${{ secrets.TELEGRAM_TO }}"
-          export SEND_DEB="${{ github.event.inputs.send_deb }}"
+          SAFE_NAME="${{ steps.metadata.outputs.safe_name }}"
+          FINAL_VER="${{ steps.metadata.outputs.final_ver }}"
+          JOB_STATUS="${{ job.status }}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          REPO_LINK="${{ env.BASE_URL }}"
+          TOKEN="${{ secrets.TELEGRAM_TOKEN }}"
+          CHAT_ID="${{ secrets.TELEGRAM_TO }}"
+          SEND_DEB="${{ github.event.inputs.send_deb }}"
+
+          export SAFE_NAME FINAL_VER
 
           SAFE_ESC=$(python3 -c "import html, os; print(html.escape(os.environ['SAFE_NAME']))")
           VER_ESC=$(python3 -c "import html, os; print(html.escape(os.environ['FINAL_VER']))")
@@ -264,15 +273,21 @@ EOF
                   -F "chat_id=${CHAT_ID}" -F "document=@${DEB_FILES[0]}" -F "caption=📦 ${SAFE_ESC} v${VER_ESC}"
               elif [ ${#DEB_FILES[@]} -gt 1 ]; then
                 ZIP_NAME="${SAFE_NAME}_v${FINAL_VER}_debs.zip"
-                python3 << 'PYEOF'
-                import os, zipfile
-                safe, ver = os.environ['SAFE_NAME'], os.environ['FINAL_VER']
-                zip_name = f"{safe}_v{ver}_debs.zip"
-                with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zf:
-                    for f in os.listdir("output"):
-                        if f.endswith(".deb") and not f.startswith("."):
-                            zf.write(os.path.join("output", f), f)
-                PYEOF
+                python3 - << 'PYEOF'
+import os, zipfile, sys
+
+safe = os.environ['SAFE_NAME']
+ver = os.environ['FINAL_VER']
+zip_name = f"{safe}_v{ver}_debs.zip"
+
+output_dir = "output"
+debs = [f for f in os.listdir(output_dir) if f.endswith('.deb') and not f.startswith('.')]
+with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zf:
+    for f in debs:
+        zf.write(os.path.join(output_dir, f), f)
+
+print(f"✅ Đã nén {len(debs)} file vào {zip_name}")
+PYEOF
                 curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendDocument" \
                   -F "chat_id=${CHAT_ID}" -F "document=@${ZIP_NAME}" -F "caption=📦 ${SAFE_ESC} v${VER_ESC} (${#DEB_FILES[@]} gói)"
                 rm -f "$ZIP_NAME"
