@@ -1,4 +1,4 @@
-name: Auto Sync Releases+apps/ apps.json
+name: Auto Sync Releases + apps/ apps.json
 
 on:
   push:
@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Lấy toàn bộ lịch sử để tránh lỗi push
 
       - name: Install IPA Parser
         run: npm install app-info-parser
@@ -65,6 +67,7 @@ jobs:
               }
             };
 
+            // Quét thư mục apps/
             if (fs.existsSync('apps')) {
               const files = fs.readdirSync('apps').filter(f => f.toLowerCase().endsWith('.ipa'));
               for (const file of files) {
@@ -84,7 +87,6 @@ jobs:
                 } catch (e) { console.log(`⚠️ Lỗi parse ${file}`); }
 
                 const stats = fs.statSync(`apps/${file}`);
-                
                 addAppVersion(name, bundleId, category, perms, {
                   version: version,
                   date: stats.mtime.toISOString(),
@@ -95,6 +97,7 @@ jobs:
               }
             }
 
+            // Quét Releases
             try {
               const { data: releases } = await github.rest.repos.listReleases({ owner: context.repo.owner, repo: context.repo.repo });
               for (const release of releases) {
@@ -102,7 +105,6 @@ jobs:
                   if (asset.name.toLowerCase().endsWith('.ipa')) {
                     const name = cleanAppName(asset.name);
                     const version = release.tag_name.replace(/^v/i, '');
-                    
                     addAppVersion(name, "com.unknown.app", "Utilities", undefined, {
                       version: version,
                       date: release.published_at || new Date().toISOString(),
@@ -115,6 +117,7 @@ jobs:
               }
             } catch (e) { console.log("No releases found"); }
 
+            // Merge thủ công
             const manualApps = [
               {
                 "name": "Turrit",
@@ -134,14 +137,10 @@ jobs:
                 ]
               }
             ];
-
-            manualApps.forEach(app => {
-               appsMap[app.name.toLowerCase()] = app;
-            });
+            manualApps.forEach(app => { appsMap[app.name.toLowerCase()] = app; });
 
             const finalApps = Object.values(appsMap).map(app => {
               app.versions.sort((a, b) => b.version.localeCompare(a.version, undefined, { numeric: true, sensitivity: 'base' }));
-              
               const latest = app.versions[0];
               app.version = latest.version;
               app.versionDate = latest.date;
@@ -149,7 +148,6 @@ jobs:
               app.downloadURL = latest.downloadURL;
               app.description = `${app.name} v${app.version}`;
               app.localizedDescription = latest.localizedDescription;
-              
               return app;
             });
 
@@ -161,11 +159,10 @@ jobs:
             };
 
             fs.writeFileSync('apps.json', JSON.stringify(finalJson, null, 2));
-            console.log(`✅ Đã xuất apps.json với ${finalApps.length} ứng dụng.`);
 
-      - name: Commit and push apps.json
-        run: |
-          git config --local user.name "github-actions[bot]"
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git add apps.json
-          git diff-index --quiet HEAD || (git commit -m "Auto-update apps.json" && git push origin HEAD:main)
+      - name: Auto Commit and Push
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto-update apps.json [skip ci]"
+          file_pattern: 'apps.json'
+          branch: main
