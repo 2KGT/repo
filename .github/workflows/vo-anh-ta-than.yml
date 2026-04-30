@@ -124,64 +124,157 @@ EOF
             exit 1
           fi
   # ======== 4. ĐỒNG BỘ NHẬT KÝ & HÌNH ẢNH ========
-     - name: 📝 4.1 Sync Changelog & Depiction JSON
+# ===============================================
+      # GIAI ĐOẠN 4: ĐỒNG BỘ NHẬT KÝ & HÌNH ẢNH (BẤT DIỆT)
+      # ===============================================
+      - name: 📝 4.1 Sync Changelog & Depiction JSON
         run: |
           git config user.name "PhapSuAction"
           git config user.email "action@github.com"
+
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           VER="${{ steps.metadata.outputs.final_ver }}"
           IMG_URL="${{ env.BASE_URL }}/depictions/images"
-          
-          # 1. Quét Nhật ký
-          SRC_FILE=$(find "$DIR" -name "*.x" -o -name "*.xm" | head -n 1)
-          FEAT=$(grep "^// -" "$SRC_FILE" | sed 's/^\/\/ - //' | sed ':a;N;$!ba;s/\n/\\n- /g' || echo "Cập nhật định kỳ")
-          FIX=$(grep "^// +" "$SRC_FILE" | sed 's/^\/\/ + //' | sed ':a;N;$!ba;s/\n/\\n+ /g' || echo "Cải thiện ổn định")
-          
-          # 2. Tạo danh sách Screenshots (AutoAC1.png -> AutoAC5.png)
-          SS_JSON=""
-          for i in {1..5}; do
-            SS_JSON+='{"url": "'$IMG_URL'/'$SAFE$i'.png", "accessibilityText": "Screenshot '$i'"},'
-          done
-          SS_JSON=${SS_JSON%,}
 
-          # 3. Tạo JSON (Banner: -banner, Video: .mp4)
-          DESC="### ✨ Mới nhất (v$VER)\n- $FEAT\n\n### 🐛 Sửa lỗi\n- $FIX"
-          mkdir -p depictions
-          echo '{
-            "class": "DepictionTabView",
-            "tabs": [{
-              "tabname": "Details",
-              "class": "DepictionStackView",
-              "views": [
-                {"class": "DepictionHeaderView", "title": "'$SAFE'"},
-                {"class": "DepictionImageView", "url": "'$IMG_URL'/'$SAFE'-banner.png", "width": 1242, "height": 500, "cornerRadius": 10},
-                {"class": "DepictionVideoView", "videoURL": "'$IMG_URL'/'$SAFE'.mp4", "cornerRadius": 8},
-                {"class": "DepictionMarkdownView", "markdown": "'$DESC'", "useMargins": true},
-                {"class": "DepictionSeparatorView"},
-                {"class": "DepictionHeaderView", "title": "Screenshots"},
-                {"class": "DepictionScreenshotsView", "itemCornerRadius": 8, "screenshots": ['$SS_JSON']}
-              ]
-            }]
-          }' > "depictions/${SAFE}.json"
+          # Truyền biến an toàn cho Python
+          export SAFE VER IMG_URL DIR
 
-          git add "$DIR" depictions/
-          # ... (Phần commit & push giữ nguyên) ...
-
-          if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then
-            mkdir -p debs && cp output/*.deb debs/
-            dpkg-scanpackages -m debs /dev/null > Packages && bzip2 -fks Packages
-            git add debs/ Packages Packages.bz2
-            MSG="🌟 Release: $SAFE v$VER"
+          # 1. Quét changelog
+          SRC_FILE=$(find "$DIR" -maxdepth 1 \( -name "*.x" -o -name "*.xm" \) | head -n 1)
+          if [ -n "$SRC_FILE" ]; then
+            FEAT_RAW=$(grep "^// -" "$SRC_FILE" | sed 's/^\/\/ - //' || echo "Cập nhật định kỳ")
+            FIX_RAW=$(grep "^// +" "$SRC_FILE" | sed 's/^\/\/ + //' || echo "Cải thiện ổn định")
           else
-            MSG="🛠️ Build Test: $SAFE v$VER"
+            FEAT_RAW="Cập nhật định kỳ"
+            FIX_RAW="Cải thiện ổn định"
           fi
-          git commit -m "$MSG" || exit 0
-          git push origin main
+          export FEAT_RAW FIX_RAW
 
-      # ======== 5. XUẤT XƯỞNG ========
-      - name: 📦 5.1 Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.metadata.outputs.safe_name }}_v${{ steps.metadata.outputs.final_ver }}
-          path: output/
+          # 2. Tạo Depiction JSON (Python với báo lỗi rõ ràng)
+          mkdir -p depictions
+          python3 << 'PYEOF'
+import json, os, sys
+
+try:
+    safe = os.environ['SAFE']
+    ver = os.environ['VER']
+    img_url = os.environ['IMG_URL']
+    feat_raw = os.environ.get('FEAT_RAW', 'Cập nhật định kỳ')
+    fix_raw = os.environ.get('FIX_RAW', 'Cải thiện ổn định')
+
+    desc = f"### ✨ Mới nhất (v{ver})\n- {feat_raw}\n\n### 🐛 Sửa lỗi\n- {fix_raw}"
+
+    screenshots = []
+    if os.path.isdir("depictions/images"):
+        for i in range(1, 6):
+            fname = f"{safe}{i}.png"
+            if os.path.exists(f"depictions/images/{fname}"):
+                screenshots.append({
+                    "url": f"{img_url}/{fname}",
+                    "accessibilityText": f"Screenshot {i}"
+                })
+
+    views = [{"class": "DepictionHeaderView", "title": safe}]
+
+    if os.path.exists(f"depictions/images/{safe}-banner.png"):
+        views.append({"class": "DepictionImageView", "url": f"{img_url}/{safe}-banner.png",
+                      "width": 1242, "height": 500, "cornerRadius": 10})
+    if os.path.exists(f"depictions/images/{safe}.mp4"):
+        views.append({"class": "DepictionVideoView", "videoURL": f"{img_url}/{safe}.mp4",
+                      "cornerRadius": 8})
+
+    views.append({"class": "DepictionMarkdownView", "markdown": desc, "useMargins": True})
+    views.append({"class": "DepictionSeparatorView"})
+    if screenshots:
+        views.append({"class": "DepictionHeaderView", "title": "Screenshots"})
+        views.append({"class": "DepictionScreenshotsView", "itemCornerRadius": 8, "screenshots": screenshots})
+
+    depiction = {
+        "class": "DepictionTabView",
+        "tabs": [{
+            "tabname": "Details",
+            "class": "DepictionStackView",
+            "views": views
+        }]
+    }
+
+    out_path = f"depictions/{safe}.json"
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(depiction, f, indent=2, ensure_ascii=False)
+
+    print(f"✅ Đã tạo depiction: {out_path}")
+
+except Exception as e:
+    print(f"❌ Lỗi tạo depiction: {e}", file=sys.stderr)
+    exit(1)
+PYEOF
+
+          # 3. Commit & Packages (có bảo hiểm .deb, làm sạch, rebase)
+          git add "$DIR" depictions/
+          if git diff --cached --quiet; then
+            echo "📝 Không có thay đổi để commit."
+          else
+            if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then
+              # Bảo hiểm file .deb: kiểm tra tồn tại và không rỗng
+              DEB_COUNT=0
+              for deb in output/*.deb; do
+                if [ -s "$deb" ]; then
+                  ((DEB_COUNT++))
+                fi
+              done
+              if [ "$DEB_COUNT" -eq 0 ]; then
+                echo "❌ Không có file .deb hợp lệ (thiếu hoặc 0KB). Dừng release."
+                exit 1
+              fi
+
+              mkdir -p debs
+              cp output/*.deb debs/ || { echo "❌ Lỗi copy .deb"; exit 1; }
+              echo "✅ Đã copy $DEB_COUNT file .deb hợp lệ."
+
+              # Làm sạch Repo: xóa chỉ mục cũ tuyệt đối
+              rm -f Packages Packages.bz2
+
+              # Tạo Packages mới
+              dpkg-scanpackages -m debs /dev/null > Packages
+              python3 << 'PYEOF'
+import os, sys, bz2
+
+try:
+    if not os.path.exists("Packages"):
+        raise FileNotFoundError("❌ Không tìm thấy file Packages sau scan!")
+
+    with open("Packages", "r", encoding="utf-8") as f:
+        content = f.read()
+
+    if not content.strip():
+        print("⚠️ Cảnh báo: Packages trống (có thể debs/ không hợp lệ).")
+
+    new_content = content.replace("Filename: debs/", "Filename: ./debs/")
+    if new_content == content:
+        print("ℹ️ Đường dẫn đã chuẩn, không cần sửa.")
+
+    with open("Packages", "w", encoding="utf-8") as f:
+        f.write(new_content)
+
+    with open("Packages.bz2", "wb") as f:
+        f.write(bz2.compress(new_content.encode("utf-8")))
+
+    print("✅ Chỉ mục Repo đã được cập nhật.")
+
+except Exception as e:
+    print(f"❌ Lỗi xử lý Packages: {e}", file=sys.stderr)
+    exit(1)
+PYEOF
+
+              git add debs/ Packages Packages.bz2
+              MSG="🌟 Release: $SAFE v$VER"
+            else
+              MSG="🛠️ Build Test: $SAFE v$VER"
+            fi
+
+            git commit -m "$MSG" || exit 0
+            # Hồi mã thương: đồng bộ trước khi push
+            git pull --rebase origin main
+            git push origin main
+          fi
