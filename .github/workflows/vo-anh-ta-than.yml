@@ -91,7 +91,7 @@ jobs:
           # Tạo Headers giả lập để tránh lỗi biên dịch
           HDR_DIR="$THEOS/include/${SAFE}headers"
           mkdir -p "$HDR_DIR"
-                    cat > "$HDR_DIR/${SAFE}headers.h" <<EOF
+          cat > "$HDR_DIR/${SAFE}headers.h" <<EOF
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 
