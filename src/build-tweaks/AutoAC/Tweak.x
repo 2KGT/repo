@@ -1,45 +1,55 @@
 #import <AutoACheaders/AutoACheaders.h>
+#import <AudioToolbox/AudioToolbox.h>
 
-#define kPrefs [NSUserDefaults standardUserDefaults]
+// --- 1. HOOK VÀO THANH ĐIỀU HƯỚNG DƯỚI (PIVOT BAR) ---
+%hook YTPivotBarItemView
 
-// --- 1. CHẶN ADS ---
-%hook YTAdSlotContainerView
-- (void)setHidden:(BOOL)hidden {
-    %orig([kPrefs boolForKey:@"kHideEverything"] ? YES : hidden);
-}
-%end
-
-// --- 2. GÕ 3 PHÁT VÀO LOGO HIỆN DASHBOARD ---
-%hook YTHeaderLogoController
-
-- (void)viewDidLoad {
+- (void)layoutSubviews {
     %orig;
-    // Dùng UITapGestureRecognizer thay cho LongPress
-    UITapGestureRecognizer *tripleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handle2KGTMenu:)];
     
-    // Đặt số lần chạm là 3 (cho chắc ăn, tránh bấm nhầm)
-    tripleTap.numberOfTapsRequired = 3;
-    
-    [self.view addGestureRecognizer:tripleTap];
+    // Kiểm tra nếu đây là nút "Trang chủ" (thường có accessibilityIdentifier hoặc label là "Trang chủ" hoặc "Home")
+    NSString *label = [self accessibilityLabel];
+    if ([label isEqualToString:@"Trang chủ"] || [label isEqualToString:@"Home"]) {
+        
+        // Kiểm tra xem đã gắn cử chỉ chưa (tránh gắn trùng nhiều lần)
+        BOOL hasGesture = NO;
+        for (UIGestureRecognizer *gest in self.gestureRecognizers) {
+            if ([gest isKindOfClass:[UILongPressGestureRecognizer class]]) {
+                hasGesture = YES;
+                break;
+            }
+        }
+        
+        if (!hasGesture) {
+            UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handle2KGTMenu:)];
+            longPress.minimumPressDuration = 0.8; // Nhấn giữ 0.8 giây là hiện
+            [self addGestureRecognizer:longPress];
+        }
+    }
 }
 
 %new
-- (void)handle2KGTMenu:(UITapGestureRecognizer *)sender {
-    if (sender.state == UIGestureRecognizerStateEnded) {
+- (void)handle2KGTMenu:(UILongPressGestureRecognizer *)sender {
+    if (sender.state == UIGestureRecognizerStateBegan) {
+        // Rung máy báo hiệu "linh nghiệm"
+        AudioServicesPlaySystemSound(1519);
+        
         UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"🚀 AutoAC Dashboard" 
-                                    message:@"Cấu hình bởi 2KGT\nTrạng thái: Sẵn sàng" 
+                                    message:@"Cấu hình bởi 2KGT\nNhấn giữ Trang chủ thành công!" 
                                     preferredStyle:UIAlertControllerStyleAlert];
         
         [alert addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleCancel handler:nil]];
         
-        // Hiện Alert
-        [(UIViewController *)self presentViewController:alert animated:YES completion:nil];
+        // Tìm ViewController để hiển thị
+        UIViewController *root = [UIApplication sharedApplication].keyWindow.rootViewController;
+        if (!root) root = [[[[UIApplication sharedApplication] connectedScenes] allObjects].firstObject.windows.firstObject rootViewController];
+        
+        [root presentViewController:alert animated:YES completion:nil];
     }
 }
 %end
 
-// --- 3. NGÒI NỔ ---
 %ctor {
     %init(_ungrouped);
-    NSLog(@"--- [2KGT] AutoAC: Da xoa long vu, chuyen sang go cua ---");
+    NSLog(@"--- [2KGT] Chuyen sang he Cam coc Trang chu ---");
 }
