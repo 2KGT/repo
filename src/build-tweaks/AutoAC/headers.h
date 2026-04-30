@@ -1,22 +1,32 @@
+#import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-// Định nghĩa chuẩn chỉ, không sợ "máy xay" làm hỏng
-@interface YTSettingsSectionItem : NSObject
-+ (id)switchItemWithTitle:(id)title titleDescription:(id)desc accessibilityIdentifier:(id)acc switchOn:(BOOL)on switchBlock:(id)block settingItemId:(int)id;
+// YouTube Settings Section
+@interface YTAppSettingsPresentationData : NSObject
++ (NSArray *)settingsCategoryOrder;
 @end
 
 @interface YTSettingsSectionItemManager : NSObject
-- (void)setSectionItems:(id)items forCategory:(NSInteger)category title:(id)title titleDescription:(id)desc;
+- (void)updateSectionForCategory:(NSUInteger)category withEntry:(id)entry;
 @end
 
-@interface YTAppSettingsPresentationData : NSObject
+@interface YTSettingsSectionItem : NSObject
++ (id)switchItemWithTitle:(NSString *)title
+         titleDescription:(NSString *)description
+   accessibilityIdentifier:(NSString *)identifier
+                 switchOn:(BOOL)switchOn
+              switchBlock:(id)block
+            settingItemId:(NSInteger)itemId;
 @end
 
-@interface YTHeaderLogoController : UIViewController
+@interface YTSettingsViewController : UIViewController
+- (void)setSectionItems:(NSArray *)items 
+            forCategory:(NSInteger)category 
+                  title:(NSString *)title 
+       titleDescription:(NSString *)description;
 @end
 
-@interface YTAdSlotContainerView : UIView
+// YouTube Tab Bar
+@interface YTTabBarController : UIViewController
+@property (nonatomic, strong) UITabBar *tabBar;
 @end
-
-// Tiện ích dùng chung
-#define kPrefs [NSUserDefaults standardUserDefaults]
