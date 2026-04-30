@@ -2,10 +2,10 @@
 #import <AudioToolbox/AudioToolbox.h>
 #import <objc/runtime.h>
 
-// --- Interface tối giản để tránh lỗi Forward Declaration ---
-// Chỉ giữ lại những thứ KHÔNG có trong headers.h của ông giáo
-@interface YTPivotBarItemView (Extra)
+// --- Khai báo Interface chuẩn ---
+@interface YTPivotBarItemView : UIView
 - (NSString *)accessibilityLabel;
+- (void)handle2KGTMenu:(UILongPressGestureRecognizer *)sender;
 @end
 
 %hook YTPivotBarItemView
@@ -32,7 +32,7 @@
 %new
 - (void)handle2KGTMenu:(UILongPressGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateBegan) {
-        AudioServicesPlaySystemSound(1519); // Rung Haptic nhẹ
+        AudioServicesPlaySystemSound(1519);
         
         UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"🚀 AutoAC Dashboard" 
                                     message:@"🏮 VÔ ẢNH PHONG THẦN\nCấu hình bởi 2KGT" 
@@ -40,7 +40,7 @@
         
         [alert addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleCancel handler:nil]];
         
-        // --- Lấy Window chuẩn nhất cho iPhone 12 Pro (iOS 14+) ---
+        // --- Cách lấy Window an toàn tuyệt đối ---
         UIWindow *window = nil;
         if (@available(iOS 13.0, *)) {
             for (UIWindowScene* windowScene in [UIApplication sharedApplication].connectedScenes) {
@@ -51,7 +51,16 @@
                 }
             }
         }
-        if (!window) window = [UIApplication sharedApplication].keyWindow;
+        
+        // Nếu vẫn không thấy thì dùng cách dự phòng
+        if (!window) {
+            #pragma clang diagnostic push
+            #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+            window = [UIApplication sharedApplication].keyWindow;
+            #pragma clang diagnostic pop
+        }
+        
+        if (!window) window = [UIApplication sharedApplication].windows.firstObject;
         
         UIViewController *topVC = window.rootViewController;
         while (topVC.presentedViewController) topVC = topVC.presentedViewController;
@@ -63,5 +72,5 @@
 
 %ctor {
     %init(_ungrouped);
-    AudioServicesPlaySystemSound(1521); // Rung báo hiệu nạp Tweak
+    AudioServicesPlaySystemSound(1521);
 }
