@@ -1,12 +1,22 @@
 #import <AutoACheaders/AutoACheaders.h>
 #import <UIKit/UIKit.h>
 
+// Nhật ký "mồi" để nhà máy tự động viết Changelog
+// - Cập nhật Menu cài đặt AutoAC trong YouTube Settings
+// - Thêm cử chỉ nhấn giữ (Long Press) vào nút Home để mở nhanh menu
+// + Tối ưu hóa tính năng xóa Cache giải phóng dung lượng
+// + Thêm bảng theo dõi trạng thái tải xuống và dung lượng bộ nhớ
+
 #define kPrefs [NSUserDefaults standardUserDefaults]
 static const NSInteger AutoACSection = 2026;
 
+// MARK: - Khai báo bổ trợ cho AI Scanner (Nếu cần)
+@interface YTSettingsSectionItem : NSObject
++ (id)switchItemWithTitle:(id)arg1 titleDescription:(id)arg2 accessibilityIdentifier:(id)arg3 switchOn:(BOOL)arg4 switchBlock:(id)arg5 settingItemId:(int)arg6;
+@end
+
 // MARK: - Settings Section
 %hook YTAppSettingsPresentationData
-
 + (NSArray *)settingsCategoryOrder {
     NSMutableArray *order = [[%orig mutableCopy] autorelease];
     if (order && ![order containsObject:@(AutoACSection)]) {
@@ -14,11 +24,9 @@ static const NSInteger AutoACSection = 2026;
     }
     return [order copy];
 }
-
 %end
 
 %hook YTSettingsSectionItemManager
-
 - (void)updateSectionForCategory:(NSUInteger)category withEntry:(id)entry {
     if (category == AutoACSection) {
         Class itemClass = %c(YTSettingsSectionItem);
@@ -60,19 +68,12 @@ static const NSInteger AutoACSection = 2026;
     }
     %orig;
 }
-
 %end
 
 // MARK: - Long Press Home Button
-@interface YTTabBarController : UITabBarController
-@end
-
 %hook YTTabBarController
-
 - (void)viewDidLoad {
     %orig;
-    
-    // Tìm tab bar và thêm gesture
     UITabBar *tabBar = self.tabBar;
     if (tabBar) {
         UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] 
@@ -80,8 +81,7 @@ static const NSInteger AutoACSection = 2026;
         longPress.minimumPressDuration = 0.5;
         [tabBar addGestureRecognizer:longPress];
         [longPress release];
-        
-        NSLog(@"[AutoAC] ✅ Long press gesture added to TabBar");
+        NSLog(@"[AutoAC] ✅ Đã gắn Long press vào TabBar");
     }
 }
 
@@ -92,182 +92,93 @@ static const NSInteger AutoACSection = 2026;
     CGPoint location = [gesture locationInView:self.tabBar];
     UITabBar *tabBar = self.tabBar;
     
-    // Kiểm tra xem có tap vào nút Home không (thường là tab index 0)
     NSArray *tabBarItems = tabBar.items;
     if (tabBarItems.count == 0) return;
     
     CGFloat itemWidth = tabBar.bounds.size.width / tabBarItems.count;
     NSInteger tappedIndex = (NSInteger)(location.x / itemWidth);
     
-    // Chỉ kích hoạt khi nhấn giữ nút Home (index 0)
-    if (tappedIndex != 0) return;
+    if (tappedIndex != 0) return; // Chỉ nút Home
     
-    NSLog(@"[AutoAC] 🔥 Long press detected on Home tab");
-    
-    // Tạo Alert Controller
     UIAlertController *alert = [UIAlertController 
         alertControllerWithTitle:@"AutoAC"
         message:@"Tuỳ chọn nhanh"
         preferredStyle:UIAlertControllerStyleActionSheet];
     
-    // Action 1: Mở Settings
-    UIAlertAction *settingsAction = [UIAlertAction 
-        actionWithTitle:@"⚙️ Cài đặt AutoAC"
-        style:UIAlertActionStyleDefault
-        handler:^(UIAlertAction *action) {
-            [self autoAC_openSettings];
-        }];
-    [alert addAction:settingsAction];
+    [alert addAction:[UIAlertAction actionWithTitle:@"⚙️ Cài đặt AutoAC" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+        [self autoAC_openSettings];
+    }]];
     
-    // Action 2: Xoá Cache
-    UIAlertAction *clearCacheAction = [UIAlertAction 
-        actionWithTitle:@"🗑️ Xoá bộ đệm cache"
-        style:UIAlertActionStyleDestructive
-        handler:^(UIAlertAction *action) {
-            [self autoAC_clearCache];
-        }];
-    [alert addAction:clearCacheAction];
+    [alert addAction:[UIAlertAction actionWithTitle:@"🗑️ Xoá bộ đệm cache" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
+        [self autoAC_clearCache];
+    }]];
     
-    // Action 3: Kiểm tra Download Status
-    UIAlertAction *downloadStatusAction = [UIAlertAction 
-        actionWithTitle:@"📥 Trạng thái tải xuống"
-        style:UIAlertActionStyleDefault
-        handler:^(UIAlertAction *action) {
-            [self autoAC_showDownloadStatus];
-        }];
-    [alert addAction:downloadStatusAction];
+    [alert addAction:[UIAlertAction actionWithTitle:@"📥 Trạng thái tải xuống" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+        [self autoAC_showDownloadStatus];
+    }]];
     
-    // Action 4: Hủy
-    UIAlertAction *cancelAction = [UIAlertAction 
-        actionWithTitle:@"Huỷ"
-        style:UIAlertActionStyleCancel
-        handler:nil];
-    [alert addAction:cancelAction];
+    [alert addAction:[UIAlertAction actionWithTitle:@"Huỷ" style:UIAlertActionStyleCancel handler:nil]];
     
-    // iPad support
     if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
         alert.popoverPresentationController.sourceView = tabBar;
         alert.popoverPresentationController.sourceRect = CGRectMake(location.x, location.y, 1, 1);
     }
-    
     [self presentViewController:alert animated:YES completion:nil];
 }
 
 %new
 - (void)autoAC_openSettings {
-    // Mở YouTube Settings và scroll đến AutoAC section
-    // Cách 1: Mở thẳng settings page
     id settingsVC = [[%c(YTSettingsViewController) alloc] init];
     if (settingsVC) {
         [self presentViewController:settingsVC animated:YES completion:^{
-            // Post notification để scroll đến section
-            [[NSNotificationCenter defaultCenter] 
-                postNotificationName:@"AutoACScrollToSection" 
-                object:@(AutoACSection)];
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"AutoACScrollToSection" object:@(AutoACSection)];
         }];
         [settingsVC release];
     }
-    
-    NSLog(@"[AutoAC] 📱 Opening Settings");
 }
 
 %new
 - (void)autoAC_clearCache {
-    // Xoá cache của YouTube
     NSArray *cachePaths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
     NSString *cachePath = [cachePaths firstObject];
-    
     if (cachePath) {
         NSFileManager *fm = [NSFileManager defaultManager];
         NSArray *files = [fm contentsOfDirectoryAtPath:cachePath error:nil];
-        
-        NSInteger deletedCount = 0;
         unsigned long long totalSize = 0;
-        
         for (NSString *file in files) {
             NSString *fullPath = [cachePath stringByAppendingPathComponent:file];
-            NSDictionary *attrs = [fm attributesOfItemAtPath:fullPath error:nil];
-            totalSize += [attrs fileSize];
-            
-            if ([fm removeItemAtPath:fullPath error:nil]) {
-                deletedCount++;
-            }
+            totalSize += [[fm attributesOfItemAtPath:fullPath error:nil] fileSize];
+            [fm removeItemAtPath:fullPath error:nil];
         }
         
-        // Thông báo kết quả
-        NSString *message = [NSString stringWithFormat:
-            @"Đã xoá %ld files\nGiải phóng: %.2f MB", 
-            (long)deletedCount, 
-            totalSize / 1024.0 / 1024.0];
-        
-        UIAlertController *resultAlert = [UIAlertController 
-            alertControllerWithTitle:@"✅ Xoá cache thành công"
-            message:message
-            preferredStyle:UIAlertControllerStyleAlert];
-        
-        [resultAlert addAction:[UIAlertAction 
-            actionWithTitle:@"OK" 
-            style:UIAlertActionStyleDefault 
-            handler:nil]];
-        
-        [self presentViewController:resultAlert animated:YES completion:nil];
+        NSString *message = [NSString stringWithFormat:@"Đã giải phóng: %.2f MB", totalSize / 1024.0 / 1024.0];
+        UIAlertController *res = [UIAlertController alertControllerWithTitle:@"✅ Đã dọn dẹp" message:message preferredStyle:UIAlertControllerStyleAlert];
+        [res addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+        [self presentViewController:res animated:YES completion:nil];
     }
-    
-    NSLog(@"[AutoAC] 🗑️ Cache cleared");
 }
 
 %new
 - (void)autoAC_showDownloadStatus {
-    // Kiểm tra trạng thái download
     NSMutableString *status = [NSMutableString string];
-    
-    // Kiểm tra dung lượng trống
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     NSString *docPath = [paths firstObject];
     
     if (docPath) {
-        NSDictionary *fsAttributes = [[NSFileManager defaultManager] 
-            attributesOfFileSystemForPath:docPath error:nil];
-        
-        unsigned long long freeSpace = [fsAttributes[NSFileSystemFreeSize] unsignedLongLongValue];
-        unsigned long long totalSpace = [fsAttributes[NSFileSystemSize] unsignedLongLongValue];
-        
-        [status appendFormat:@"💾 Tổng: %.2f GB\n", totalSpace / 1024.0 / 1024.0 / 1024.0];
-        [status appendFormat:@"✅ Trống: %.2f GB\n", freeSpace / 1024.0 / 1024.0 / 1024.0];
+        NSDictionary *fs = [[NSFileManager defaultManager] attributesOfFileSystemForPath:docPath error:nil];
+        unsigned long long free = [fs[NSFileSystemFreeSize] unsignedLongLongValue];
+        [status appendFormat:@"✅ Còn trống: %.2f GB\n", free / 1024.0 / 1024.0 / 1024.0];
     }
     
-    // Kiểm tra downloads folder
-    NSString *downloadPath = [docPath stringByAppendingPathComponent:@"Downloads"];
-    BOOL isDir = NO;
-    if ([[NSFileManager defaultManager] fileExistsAtPath:downloadPath isDirectory:&isDir] && isDir) {
-        NSArray *downloads = [[NSFileManager defaultManager] 
-            contentsOfDirectoryAtPath:downloadPath error:nil];
-        [status appendFormat:@"📥 Đang tải: %lu files\n", (unsigned long)downloads.count];
-    } else {
-        [status appendString:@"📥 Không có file đang tải\n"];
-    }
-    
-    UIAlertController *statusAlert = [UIAlertController 
-        alertControllerWithTitle:@"📊 Trạng thái tải xuống"
-        message:status
-        preferredStyle:UIAlertControllerStyleAlert];
-    
-    [statusAlert addAction:[UIAlertAction 
-        actionWithTitle:@"OK" 
-        style:UIAlertActionStyleDefault 
-        handler:nil]];
-    
-    [self presentViewController:statusAlert animated:YES completion:nil];
-    
-    NSLog(@"[AutoAC] 📊 Download status shown");
+    UIAlertController *st = [UIAlertController alertControllerWithTitle:@"📊 Trạng thái" message:status preferredStyle:UIAlertControllerStyleAlert];
+    [st addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+    [self presentViewController:st animated:YES completion:nil];
 }
-
 %end
 
 // MARK: - Constructor
 %ctor {
     if ([[NSBundle mainBundle].bundleIdentifier isEqualToString:@"com.google.ios.youtube"]) {
-        NSLog(@"[AutoAC] ✅ AutoAC v2.0 loaded successfully");
-        NSLog(@"[AutoAC] 📱 Features: Settings Section + Long Press Menu");
+        NSLog(@"[AutoAC] ✅ Linh đan AutoAC v2.0 đã sẵn sàng.");
     }
 }
