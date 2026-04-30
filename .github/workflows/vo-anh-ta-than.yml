@@ -1,4 +1,4 @@
-name: 🏮 VÔ ẢNH PHONG THẦN - PRO (SYNC)
+name:🪶 VÔ ẢNH PHONG THẦN (SYNC)
 
 on:
   workflow_dispatch:
@@ -10,12 +10,12 @@ on:
         default: 'None'
         options: [ None, AutoAC, AutoDL ]
       ver_type:
-        description: 'Cấp độ nâng cấp (Khi Publish)'
+        description: 'Cấp độ nâng cấp'
         type: choice
         default: 'Patch (Vá lỗi)'
         options: [ 'Patch (Vá lỗi)', 'Minor (Tính năng)', 'Major (Đại tu)' ]
       publish:
-        description: 'Release Official (Tăng Ver & Sync Repo)'
+        description: 'Release Official (Ver & Sync)'
         type: boolean
         default: false
 
