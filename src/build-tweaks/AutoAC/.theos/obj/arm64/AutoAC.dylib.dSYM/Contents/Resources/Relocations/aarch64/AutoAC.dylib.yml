@@ -3,8 +3,8 @@ triple:          'arm64-apple-darwin'
 binary-path:     '/Users/runner/work/repo/repo/src/build-tweaks/AutoAC/.theos/obj/arm64/AutoAC.dylib'
 relocations:
   - { offset: 0x1E, size: 0x8, addend: 0x0, symName: __logosLocalInit, symObjAddr: 0x0, symBinAddr: 0x4000, symSize: 0x60 }
-  - { offset: 0x45, size: 0x8, addend: 0x0, symName: '__logos_meta_orig$_ungrouped$YTAppSettingsPresentationData$settingsCategoryOrder', symObjAddr: 0x1BD0, symBinAddr: 0xC168, symSize: 0x0 }
-  - { offset: 0xE5, size: 0x8, addend: 0x0, symName: '__logos_orig$_ungrouped$YTSettingsSectionItemManager$updateSectionForCategory$withEntry$', symObjAddr: 0x1BD8, symBinAddr: 0xC170, symSize: 0x0 }
+  - { offset: 0x45, size: 0x8, addend: 0x0, symName: '__logos_meta_orig$_ungrouped$YTAppSettingsPresentationData$settingsCategoryOrder', symObjAddr: 0x1BD0, symBinAddr: 0xC0F8, symSize: 0x0 }
+  - { offset: 0xE5, size: 0x8, addend: 0x0, symName: '__logos_orig$_ungrouped$YTSettingsSectionItemManager$updateSectionForCategory$withEntry$', symObjAddr: 0x1BD8, symBinAddr: 0xC100, symSize: 0x0 }
   - { offset: 0x17C, size: 0x8, addend: 0x0, symName: __logosLocalInit, symObjAddr: 0x0, symBinAddr: 0x4000, symSize: 0x60 }
   - { offset: 0x204, size: 0x8, addend: 0x0, symName: '__logos_meta_method$_ungrouped$YTAppSettingsPresentationData$settingsCategoryOrder', symObjAddr: 0x60, symBinAddr: 0x4060, symSize: 0x80 }
   - { offset: 0x257, size: 0x8, addend: 0x0, symName: '__logos_meta_method$_ungrouped$YTAppSettingsPresentationData$settingsCategoryOrder', symObjAddr: 0x60, symBinAddr: 0x4060, symSize: 0x80 }
@@ -12,13 +12,11 @@ relocations:
   - { offset: 0x385, size: 0x8, addend: 0x0, symName: '____logos_method$_ungrouped$YTSettingsSectionItemManager$updateSectionForCategory$withEntry$_block_invoke', symObjAddr: 0x2C8, symBinAddr: 0x42C8, symSize: 0x50 }
   - { offset: 0x38F, size: 0x8, addend: 0x0, symName: '____logos_method$_ungrouped$YTSettingsSectionItemManager$updateSectionForCategory$withEntry$_block_invoke', symObjAddr: 0x2C8, symBinAddr: 0x42C8, symSize: 0x50 }
   - { offset: 0x3D2, size: 0x8, addend: 0x0, symName: '____logos_method$_ungrouped$YTSettingsSectionItemManager$updateSectionForCategory$withEntry$_block_invoke_2', symObjAddr: 0x318, symBinAddr: 0x4318, symSize: 0x50 }
-  - { offset: 0x539, size: 0x8, addend: 0x0, symName: __logosLocalCtor_715d0a9a, symObjAddr: 0x0, symBinAddr: 0x4368, symSize: 0x188 }
-  - { offset: 0x560, size: 0x8, addend: 0x0, symName: '__logos_orig$_ungrouped$YTAdSlotContainerView$setHidden$', symObjAddr: 0x7A80, symBinAddr: 0xC180, symSize: 0x0 }
-  - { offset: 0xED1, size: 0x8, addend: 0x0, symName: '__logos_orig$_ungrouped$YTHeaderLogoController$viewDidLoad', symObjAddr: 0x7A88, symBinAddr: 0xC188, symSize: 0x0 }
-  - { offset: 0x18FA, size: 0x8, addend: 0x0, symName: __logosLocalCtor_715d0a9a, symObjAddr: 0x0, symBinAddr: 0x4368, symSize: 0x188 }
-  - { offset: 0x1B69, size: 0x8, addend: 0x0, symName: '__logos_method$_ungrouped$YTAdSlotContainerView$setHidden$', symObjAddr: 0x188, symBinAddr: 0x44F0, symSize: 0x74 }
-  - { offset: 0x1BC4, size: 0x8, addend: 0x0, symName: '__logos_method$_ungrouped$YTHeaderLogoController$viewDidLoad', symObjAddr: 0x1FC, symBinAddr: 0x4564, symSize: 0x70 }
-  - { offset: 0x1C21, size: 0x8, addend: 0x0, symName: '__logos_method$_ungrouped$YTHeaderLogoController$handle2KGTMenu$', symObjAddr: 0x26C, symBinAddr: 0x45D4, symSize: 0xC4 }
-  - { offset: 0x1C7D, size: 0x8, addend: 0x0, symName: ____logosLocalCtor_715d0a9a_block_invoke, symObjAddr: 0x330, symBinAddr: 0x4698, symSize: 0x360 }
-  - { offset: 0x1D07, size: 0x8, addend: 0x0, symName: ____logosLocalCtor_715d0a9a_block_invoke_2, symObjAddr: 0x690, symBinAddr: 0x49F8, symSize: 0x1B4 }
+  - { offset: 0x539, size: 0x8, addend: 0x0, symName: __logosLocalCtor_d26df6f8, symObjAddr: 0x0, symBinAddr: 0x4368, symSize: 0xD8 }
+  - { offset: 0x560, size: 0x8, addend: 0x0, symName: '__logos_orig$_ungrouped$YTAdSlotContainerView$setHidden$', symObjAddr: 0x4B90, symBinAddr: 0xC110, symSize: 0x0 }
+  - { offset: 0xED1, size: 0x8, addend: 0x0, symName: '__logos_orig$_ungrouped$YTHeaderLogoController$viewDidLoad', symObjAddr: 0x4B98, symBinAddr: 0xC118, symSize: 0x0 }
+  - { offset: 0x1751, size: 0x8, addend: 0x0, symName: __logosLocalCtor_d26df6f8, symObjAddr: 0x0, symBinAddr: 0x4368, symSize: 0xD8 }
+  - { offset: 0x1898, size: 0x8, addend: 0x0, symName: '__logos_method$_ungrouped$YTAdSlotContainerView$setHidden$', symObjAddr: 0xD8, symBinAddr: 0x4440, symSize: 0x74 }
+  - { offset: 0x18F3, size: 0x8, addend: 0x0, symName: '__logos_method$_ungrouped$YTHeaderLogoController$viewDidLoad', symObjAddr: 0x14C, symBinAddr: 0x44B4, symSize: 0x78 }
+  - { offset: 0x1950, size: 0x8, addend: 0x0, symName: '__logos_method$_ungrouped$YTHeaderLogoController$handle2KGTMenu$', symObjAddr: 0x1C4, symBinAddr: 0x452C, symSize: 0xC4 }
 ...
