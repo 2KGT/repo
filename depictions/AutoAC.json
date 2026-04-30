@@ -1,1 +1,16 @@
-{"class":"DepictionTabView","tabs":[{"tabname":"Details","class":"DepictionStackView","views":[{"class":"DepictionHeaderView","title":"AutoAC"},{"class":"DepictionImageView","url":"https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC-banner.png","width":1242,"height":500,"cornerRadius":10},{"class":"DepictionScreenshotsView","itemCornerRadius":8,"screenshots":[]},{"class":"DepictionMarkdownView","markdown":"### ✨ Mới nhất (v0.0.1-test1825)\n- (void)setHidden:(BOOL)hidden { (void)viewDidLoad { (void)handle2KGTMenu:(UILongPressGestureRecognizer *)sender {\n\n### 🐛 Sửa lỗi\n- \n\n---\n### 📜 Nhật ký đầy đủ\nXem tại CHANGELOG.md\n\n---\n### ⚠️ Lưu ý\n- iOS 14.0+\n- Xoá bản cũ trước khi cài.","useMargins":true}]}]}
+{
+  "class": "DepictionTabView",
+  "tabs": [{
+    "tabname": "Details",
+    "class": "DepictionStackView",
+    "views": [
+      {"class": "DepictionHeaderView", "title": "AutoAC"},
+      {"class": "DepictionImageView", "url": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC-banner.png", "width": 1242, "height": 500, "cornerRadius": 10},
+      {"class": "DepictionVideoView", "videoURL": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC.mp4", "cornerRadius": 8},
+      {"class": "DepictionMarkdownView", "markdown": "### ✨ Mới nhất (v)\n- // --- Khai báo Interface chuẩn ---\n\n### 🐛 Sửa lỗi\n- ", "useMargins": true},
+      {"class": "DepictionSeparatorView"},
+      {"class": "DepictionHeaderView", "title": "Screenshots"},
+      {"class": "DepictionScreenshotsView", "itemCornerRadius": 8, "screenshots": [{"url": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC1.png", "accessibilityText": "Screenshot 1"},{"url": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC2.png", "accessibilityText": "Screenshot 2"},{"url": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC3.png", "accessibilityText": "Screenshot 3"},{"url": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC4.png", "accessibilityText": "Screenshot 4"},{"url": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC5.png", "accessibilityText": "Screenshot 5"}]}
+    ]
+  }]
+}
