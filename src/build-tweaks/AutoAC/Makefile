@@ -10,4 +10,5 @@ AutoAC_FILES = Tweak.x
 AutoAC_CFLAGS = -fobjc-arc
 AutoAC_FRAMEWORKS = UIKit Foundation
 
-include $(THEOS_MAKE_PATH)/tweak.mk
+# Dùng $(THEOS) thay vì $(THEOS_MAKE_PATH) để đồng bộ với env của Workflow
+include $(THEOS)/makefiles/tweak.mk
