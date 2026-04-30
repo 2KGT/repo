@@ -42,206 +42,124 @@ jobs:
     permissions:
       contents: write
     steps:
-      # ======== 1. KHỞI TẠO ========
       - name: 📥 1.1 Checkout Source
         uses: actions/checkout@v4
         with:
-          submodules: false
+          fetch-depth: 0
 
       - name: 🛠️ 1.2 Setup Theos Engine
         run: |
-          echo "🔧 Cài đặt môi trường Theos..."
-          brew install make ldid dpkg || { echo "❌ Cài đặt thất bại"; exit 1; }
-          git clone --recursive https://github.com/theos/theos.git $THEOS || { echo "❌ Clone Theos thất bại"; exit 1; }
-          curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks || { echo "❌ Cài SDK thất bại"; exit 1; }
+          brew install make ldid dpkg
+          git clone --recursive https://github.com/theos/theos.git $THEOS
+          curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      # ======== 2. ĐỊNH DANH & TĂNG PHIÊN BẢN ========
       - name: 🎯 2.1 Metadata & Version Bump
         id: metadata
         run: |
-          echo "🔍 Bắt đầu định danh dự án và tăng phiên bản..."
           PROJ="${{ github.event.inputs.project }}"
-          if [ "$PROJ" = "None" ]; then
-            echo "❌ Dự án không hợp lệ, dừng lại."
-            exit 1
-          fi
-
+          [ "$PROJ" = "None" ] && exit 1
           DIR="src/build-tweaks/$PROJ"
           CTRL="$DIR/control"
-          if [ ! -f "$CTRL" ]; then
-            echo "❌ Không tìm thấy file control ở: $CTRL"
-            exit 1
-          fi
-
-          # Xử lý tăng phiên bản
-          CUR_VER=$(grep "^Version:" "$CTRL" | cut -d: -f2- | xargs || echo "0.0.0")
-          MAJOR=$(echo "$CUR_VER" | cut -d. -f1)
-          MINOR=$(echo "$CUR_VER" | cut -d. -f2)
-          PATCH=$(echo "$CUR_VER" | cut -d. -f3)
-
+          
+          # Tăng phiên bản
+          CUR_VER=$(grep "^Version:" "$CTRL" | cut -d: -f2- | xargs)
+          IFS='.' read -r -a v <<< "$CUR_VER"
+          MAJ=${v[0]}; MIN=${v[1]}; PAT=${v[2]}
+          
           case "${{ github.event.inputs.ver_type }}" in
-            "Major (Đại tu)")
-              MAJOR=$((MAJOR + 1))
-              MINOR=0
-              PATCH=0
-              ;;
-            "Minor (Tính năng)")
-              MINOR=$((MINOR + 1))
-              PATCH=0
-              ;;
-            "Patch (Vá lỗi)")
-              PATCH=$((PATCH + 1))
-              ;;
+            "Major (Đại tu)") MAJ=$((MAJ + 1)); MIN=0; PAT=0 ;;
+            "Minor (Tính năng)") MIN=$((MIN + 1)); PAT=0 ;;
+            "Patch (Vá lỗi)") PAT=$((PAT + 1)) ;;
           esac
-          NEW_VER="$MAJOR.$MINOR.$PATCH"
-
-          # Hàm cập nhật thông tin control
-          update_ctrl() {
-            grep -q "^$1:" "$CTRL" && sed -i '' "s/^$1:.*/$1: $2/" "$CTRL" || echo "$1: $2" >> "$CTRL"
-          }
-          update_ctrl "Version" "$NEW_VER"
-
+          NEW_VER="$MAJ.$MIN.$PAT"
+          
+          # Cập nhật control
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | xargs | tr -d '() ')
-          IMG_URL="${{ env.BASE_URL }}/depictions/images"
-          update_ctrl "SileoDepiction" "${{ env.BASE_URL }}/depictions/${SAFE}.json"
-          update_ctrl "Icon" "$IMG_URL/${SAFE}.png"
-
+          sed -i '' "s/^Version:.*/Version: $NEW_VER/" "$CTRL"
+          grep -q "^SileoDepiction:" "$CTRL" && sed -i '' "s|^SileoDepiction:.*|SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json|" "$CTRL" || echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
+          
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "final_ver=$NEW_VER" >> $GITHUB_OUTPUT
-          echo "✔️ Dự án $PROJ đã tăng phiên bản: $NEW_VER"
 
-      # ======== 3. BIÊN DỊCH ========
       - name: 🔨 3.1 Biên dịch Tweak
         run: |
-          echo "🔧 Bắt đầu biên dịch tweak..."
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           export THEOS=$THEOS
-
-          # Generate headers if missing
-          AI_HEADERS_PATH="$THEOS/include/${SAFE}headers/AutoACheaders.h"
-          mkdir -p "$THEOS/include/${SAFE}headers"
-          echo "⚙️ Đảm bảo file headers..."
-          if [ ! -f "$AI_HEADERS_PATH" ]; then
-            cat > "$AI_HEADERS_PATH" <<EOF
-#import <UIKit/UIKit.h>
-#import <Foundation/Foundation.h>
-@interface YTTabBarController : UIViewController
-- (void)autoAC_openSettings;
-- (void)autoAC_clearCache;
-- (void)autoAC_showDownloadStatus;
-@end
-EOF
-            echo "✔️ Đã tạo file header: $AI_HEADERS_PATH"
+          
+          # Tạo Headers giả lập để tránh lỗi biên dịch
+          HDR_DIR="$THEOS/include/${SAFE}headers"
+          mkdir -p "$HDR_DIR"
+          cat > "$HDR_DIR/${SAFE}headers.h" <<EOF
+          #import <UIKit/UIKit.h>
+          #import <Foundation/Foundation.h>
+          @interface YTTabBarController : UIViewController
+          - (void)autoAC_openSettings;
+          - (void)autoAC_clearCache;
+          - (void)autoAC_showDownloadStatus;
+          @end
+          EOF
+          
+          if [[ "${{ github.event.inputs.clean_build }}" == "true" ]]; then
+            make -C "$DIR" clean THEOS=$THEOS
           fi
+          
+          make -C "$DIR" package FINALPACKAGE=1 THEOS=$THEOS \
+            ADDITIONAL_CFLAGS="-I$HDR_DIR -fobjc-arc"
+          
+          mkdir -p output && cp "$DIR/packages/"*.deb output/
 
-          # Build tweak
-          make -C "$DIR" clean package FINALPACKAGE=1 \
-            THEOS=$THEOS \
-            ADDITIONAL_CFLAGS="-I${THEOS}/include/${SAFE}headers -Wno-deprecated-declarations" || { echo "❌ Build thất bại! Xem lại log."; exit 1; }
-
-          echo "✅ Build thành công!"
-
-      # ======== 4. ĐỒNG BỘ NHẬT KÝ & DEPICTION ========
-      - name: 📝 4.1 Sync Changelog & Depiction JSON
-        if: ${{ github.event.inputs.skip_depiction == 'false' }}
+      - name: 📝 4.1 Sync Depiction
+        if: github.event.inputs.skip_depiction == 'false'
+        env:
+          SAFE: ${{ steps.metadata.outputs.safe_name }}
+          VER: ${{ steps.metadata.outputs.final_ver }}
         run: |
-          echo "📝 Bắt đầu đồng bộ Changelog & JSON Depiction..."
+          mkdir -p depictions
+          python3 -c "
+          import json, os
+          safe, ver = os.environ['SAFE'], os.environ['VER']
+          data = {
+              'class': 'DepictionTabView',
+              'tabs': [{
+                  'tabname': 'Details',
+                  'class': 'DepictionStackView',
+                  'views': [
+                      {'class': 'DepictionHeaderView', 'title': safe},
+                      {'class': 'DepictionMarkdownView', 'markdown': f'### Phiên bản {ver}\n- Tối ưu bởi Vô Ảnh Phong Thần', 'useMargins': True}
+                  ]
+              }]
+          }
+          with open(f'depictions/{safe}.json', 'w') as f:
+              json.dump(data, f, indent=2)
+          "
+
+      - name: 🚀 5.1 Publish to Repo
+        if: github.event.inputs.publish == 'true'
+        run: |
           git config user.name "PhapSuAction"
           git config user.email "action@github.com"
+          mkdir -p debs && cp output/*.deb debs/
+          dpkg-scanpackages -m debs /dev/null > Packages
+          bzip2 -c Packages > Packages.bz2
+          git add debs/ Packages Packages.bz2 depictions/
+          git commit -m "🌟 Release ${{ steps.metadata.outputs.safe_name }} v${{ steps.metadata.outputs.final_ver }}"
+          git push origin main
 
-          DIR="${{ steps.metadata.outputs.proj_dir }}"
-          SAFE="${{ steps.metadata.outputs.safe_name }}"
-          VER="${{ steps.metadata.outputs.final_ver }}"
-          IMG_URL="${{ env.BASE_URL }}/depictions/images"
-
-          SRC_FILE=$(find "$DIR" -maxdepth 1 \( -name "*.x" -o -name "*.xm" \) | head -n 1)
-          if [ -n "$SRC_FILE" ]; then
-            FEAT_RAW=$(grep "^// -" "$SRC_FILE" | sed 's/^\/\/ - //' || echo "Cập nhật định kỳ")
-            FIX_RAW=$(grep "^// +" "$SRC_FILE" | sed 's/^\/\/ + //' || echo "Cải thiện ổn định")
-          else
-            FEAT_RAW="Cập nhật định kỳ"
-            FIX_RAW="Cải thiện ổn định"
-          fi
-
-          mkdir -p depictions
-          python3 << 'PYEOF'
-import json, os
-
-safe, ver, img_url = os.environ['SAFE'], os.environ['VER'], os.environ['IMG_URL']
-feat_raw, fix_raw = os.environ.get('FEAT_RAW', 'Cập nhật định kỳ'), os.environ.get('FIX_RAW', 'Cải thiện ổn định')
-
-desc = f"### ✨ Mới nhất (v{ver})\n- {feat_raw}\n\n### 🐛 Sửa lỗi\n- {fix_raw}"
-
-screenshots = []
-if os.path.isdir("depictions/images"):
-    for i in range(1, 6):
-        fname = f"{safe}{i}.png"
-        if os.path.exists(f"depictions/images/{fname}"):
-            screenshots.append({"url": f"{img_url}/{fname}", "accessibilityText": f"Screenshot {i}"})
-
-views = [{"class": "DepictionHeaderView", "title": safe}]
-if os.path.exists(f"depictions/images/{safe}-banner.png"):
-    views.append({"class": "DepictionImageView", "url": f"{img_url}/{safe}-banner.png", "width": 1242, "height": 500, "cornerRadius": 10})
-if os.path.exists(f"depictions/images/{safe}.mp4"):
-    views.append({"class": "DepictionVideoView", "videoURL": f"{img_url}/{safe}.mp4", "cornerRadius": 8})
-views.append({"class": "DepictionMarkdownView", "markdown": desc, "useMargins": True})
-views.append({"class": "DepictionSeparatorView"})
-if screenshots:
-    views.append({"class": "DepictionHeaderView", "title": "Screenshots"})
-    views.append({"class": "DepictionScreenshotsView", "itemCornerRadius": 8, "screenshots": screenshots})
-
-depiction = {"class": "DepictionTabView", "tabs": [{"tabname": "Details", "class": "DepictionStackView", "views": views}]}
-os.makedirs("depictions", exist_ok=True)
-with open(f"depictions/{safe}.json", "w", encoding="utf-8") as f:
-    json.dump(depiction, f, indent=2, ensure_ascii=False)
-PYEOF
-
-          # Git kiểm tra và commit
-          git add "$DIR" depictions/
-          if git diff --cached --quiet; then
-            echo "📝 Không tìm thấy thay đổi."
-          else
-            if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then
-              mkdir -p debs && cp output/*.deb debs/
-              dpkg-scanpackages -m debs /dev/null > Packages 2>/dev/null || echo "⚠️ Lỗi khi tạo Packages"
-              python3 << 'PYEOF'
-with open("Packages", "r") as f:
-    content = f.read()
-content = content.replace("Filename: debs/", "Filename: ./debs/")
-with open("Packages", "w") as f:
-    f.write(content)
-import bz2
-with open("Packages.bz2", "wb") as f:
-    f.write(bz2.compress(content.encode()))
-PYEOF
-              git add debs/ Packages Packages.bz2
-              MSG="🌟 Release: $SAFE v$VER"
-            else
-              MSG="🛠️ Build Test: $SAFE v$VER"
+      - name: 🤖 6.1 Telegram Notification
+        if: always()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TO: ${{ secrets.TELEGRAM_TO }}
+        run: |
+          STATUS="${{ job.status }}"
+          MSG="🚀 Dự án: ${{ steps.metadata.outputs.safe_name }}%0A📦 Phiên bản: ${{ steps.metadata.outputs.final_ver }}%0A🏮 Trạng thái: $STATUS"
+          if [ -n "$TOKEN" ]; then
+            curl -s "https://api.telegram.org/bot$TOKEN/sendMessage?chat_id=$TO&text=$MSG&parse_mode=HTML"
+            if [[ "$STATUS" == "success" && "${{ github.event.inputs.send_deb }}" == "true" ]]; then
+              for file in output/*.deb; do
+                curl -v -F "chat_id=$TO" -F "document=@$file" "https://api.telegram.org/bot$TOKEN/sendDocument"
+              done
             fi
-
-            set +e  # Không khởi động lại nếu rebase lỗi
-            git commit -m "$MSG" || echo "❌ Không thể commit, kiểm tra quyền repository."
-            git pull --rebase origin main || echo "⚠️ Rebase thất bại, vui lòng kiểm tra nhánh chính."
-            git push origin main || echo "⚠️ Push thất bại, kiểm tra quyền để đẩy lên nhánh chính."
-            set -e
           fi
-
-      # ======== 5. PUBLISH ========
-      - name: 📤 5.1 Đẩy gói lên Repo (Nếu Được Yêu Cầu)
-        if: ${{ github.event.inputs.publish }}
-        run: |
-          echo "🚀 Đang xuất bản .deb lên Repository..."
-          # Tích hợp logic tận nơi kho cần
-
-      # ======== 6. THÔNG BÁO QUA TELEGRAM ========
-      - name: 🤖 6.1 Thông báo trên Telegram
-        run: |
-          SAFE_NAME="${{ steps.metadata.outputs.safe_name }}"
-          FINAL_VER="${{ steps.metadata.outputs.final_ver }}"
-          JOB_STATUS="${{ job.status }}"
-          if [[ "${{ github.event.inputs.send_deb }}" == "true" && "$JOB_STATUS" == "success" ]]; then
-            echo "✅ Thông báo và gửi file qua Telegram!"
-            # Gửi file bằng Telegram API
