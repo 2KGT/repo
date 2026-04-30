@@ -1,4 +1,4 @@
-name: Auto Generate Packages
+name: Auto sync sileo Packages
 
 on:
   push:
