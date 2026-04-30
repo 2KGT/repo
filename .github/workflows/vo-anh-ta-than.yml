@@ -85,19 +85,27 @@ jobs:
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           export THEOS=$THEOS
+          
+          # Tạo thư mục và header bằng printf để tránh lỗi thụt dòng YAML
           HDR_DIR="$THEOS/include/${SAFE}headers"
           mkdir -p "$HDR_DIR"
-          
-          cat > "$HDR_DIR/${SAFE}headers.h" <<EOF
-#import <UIKit/UIKit.h>
-#import <Foundation/Foundation.h>
-EOF
+          printf "#import <UIKit/UIKit.h>\n#import <Foundation/Foundation.h>\n" > "$HDR_DIR/${SAFE}headers.h"
+
+          # Kiểm tra và dọn dẹp trước khi đúc
           if [[ "${{ github.event.inputs.clean_build }}" == "true" ]]; then
             make -C "$DIR" clean THEOS=$THEOS
           fi
           
+          # Đúc linh đan (Build)
+          # Lưu ý: ADDITIONAL_CFLAGS phải viết liền mạch
           make -C "$DIR" package FINALPACKAGE=1 THEOS=$THEOS ADDITIONAL_CFLAGS="-I$THEOS/include -fobjc-arc"
-          mkdir -p output && cp "$DIR/packages/"*.deb output/
+          
+          # Gom hàng ra đầu ra
+          mkdir -p output
+          if [ -d "$DIR/packages" ]; then
+            cp "$DIR/packages/"*.deb output/
+          fi
+
 
       - name: 📝 4.1 Sync Depiction
         if: github.event.inputs.skip_depiction == 'false'
