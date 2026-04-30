@@ -1,17 +1,22 @@
 #import <AutoACheaders/AutoACheaders.h>
 #import <UIKit/UIKit.h>
 
-// - Cập nhật Menu cài đặt AutoAC tương thích ARC
-// - Sửa lỗi forward declaration cho YTSettingsSectionItemManager
-// + Loại bỏ hoàn toàn release/autorelease để build với -fobjc-arc
-// + Cập nhật UI_USER_INTERFACE_IDIOM sang UIDevice tiêu chuẩn
-
-#define kPrefs [NSUserDefaults standardUserDefaults]
-static const NSInteger AutoACSection = 2026;
-
-@interface YTSettingsSectionItem : NSObject
-+ (id)switchItemWithTitle:(id)arg1 titleDescription:(id)arg2 accessibilityIdentifier:(id)arg3 switchOn:(BOOL)arg4 switchBlock:(id)arg5 settingItemId:(int)arg6;
+// --- ĐỊNH NGHĨA RIÊNG CHO AutoAC (Đa phương dự án) ---
+@interface YTTabBarController : UITabBarController
+@property (nonatomic, readonly) UITabBar *tabBar;
+- (void)autoAC_handleLongPress:(UILongPressGestureRecognizer *)gesture;
+- (void)autoAC_openSettings;
+- (void)autoAC_clearCache;
+- (void)autoAC_showDownloadStatus;
 @end
+
+@interface YTSettingsSectionItemManager : NSObject
+- (id)valueForKey:(NSString *)key;
+@end
+// --------------------------------------------------
+
+// Tiếp tục code của dự án...
+
 
 // MARK: - Settings Section
 %hook YTAppSettingsPresentationData
