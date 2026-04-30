@@ -88,25 +88,23 @@ jobs:
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           export THEOS=$THEOS
           
-          # Tạo Headers giả lập để tránh lỗi biên dịch
+          # Chỉ tạo thư mục và file header cơ bản
           HDR_DIR="$THEOS/include/${SAFE}headers"
           mkdir -p "$HDR_DIR"
+          
           cat > "$HDR_DIR/${SAFE}headers.h" <<EOF
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
-
-@interface YTTabBarController : UITabBarController
-@property (nonatomic, readonly) UITabBar *tabBar;
-- (void)autoAC_handleLongPress:(UILongPressGestureRecognizer *)gesture;
-- (void)autoAC_openSettings;
-- (void)autoAC_clearCache;
-- (void)autoAC_showDownloadStatus;
-@end
-
-@interface YTSettingsSectionItemManager : NSObject
-- (id)valueForKey:(NSString *)key;
-@end
+// Tệp này được tạo tự động bởi VÔ ẢNH PHONG THẦN
+// Các định nghĩa cụ thể hãy đặt trong file Tweak.x của dự án
 EOF
+
+          if [[ "${{ github.event.inputs.clean_build }}" == "true" ]]; then
+            make -C "$DIR" clean THEOS=$THEOS
+          fi
+          
+          make -C "$DIR" package FINALPACKAGE=1 THEOS=$THEOS \
+            ADDITIONAL_CFLAGS="-I$HDR_DIR -fobjc-arc"
 
           
           if [[ "${{ github.event.inputs.clean_build }}" == "true" ]]; then
