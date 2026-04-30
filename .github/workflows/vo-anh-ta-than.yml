@@ -34,7 +34,7 @@ on:
 env:
   BASE_URL: "https://raw.githubusercontent.com/${{ github.repository }}/main"
   TZ: "Asia/Ho_Chi_Minh"
-  THEOS: ${{ github.workspace }}/theos_engine 
+  THEOS: ${{ github.workspace }}/theos_engine
 
 jobs:
   forge:
@@ -50,18 +50,29 @@ jobs:
 
       - name: 🛠️ 1.2 Setup Theos Engine
         run: |
-          brew install make ldid dpkg
-          git clone --recursive https://github.com/theos/theos.git $THEOS
-          curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
+          echo "🔧 Đang cài đặt môi trường Theos Engine..."
+          brew install make ldid dpkg || { echo "❌ Không thể cài đặt các thư viện cơ bản"; exit 1; }
+          git clone --recursive https://github.com/theos/theos.git $THEOS || { echo "❌ Không thể clone Theos repo"; exit 1; }
+          curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks || { echo "❌ Không thể cài đặt SDK của Theos"; exit 1; }
 
       # ======== 2. ĐỊNH DANH & TĂNG PHIÊN BẢN ========
       - name: 🎯 2.1 Metadata & Version Bump
         id: metadata
         run: |
+          echo "🔍 Định danh và tăng phiên bản..."
           PROJ="${{ github.event.inputs.project }}"
-          [ "$PROJ" = "None" ] && exit 1
+          if [ "$PROJ" = "None" ]; then
+            echo "❌ Không có dự án hợp lệ được chọn. Vui lòng chỉnh sửa input 'project'."
+            exit 1
+          fi
+
           DIR="src/build-tweaks/$PROJ"
           CTRL="$DIR/control"
+          if [ ! -f "$CTRL" ]; then
+            echo "❌ File '$CTRL' không tồn tại. Hãy kiểm tra lại cây dự án."
+            exit 1
+          fi
+
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | xargs | tr -d '() ')
           IMG_URL="${{ env.BASE_URL }}/depictions/images"
 
@@ -69,15 +80,24 @@ jobs:
             grep -q "^$1:" "$CTRL" && sed -i '' "s/^$1:.*/$1: $2/" "$CTRL" || echo "$1: $2" >> "$CTRL"
           }
 
-          CUR_VER=$(grep "^Version:" "$CTRL" | cut -d: -f2- | xargs)
+          CUR_VER=$(grep "^Version:" "$CTRL" | cut -d: -f2- | xargs || echo "0.0.0")
           MAJOR=$(echo "$CUR_VER" | cut -d. -f1)
           MINOR=$(echo "$CUR_VER" | cut -d. -f2)
           PATCH=$(echo "$CUR_VER" | cut -d. -f3)
 
           case "${{ github.event.inputs.ver_type }}" in
-            "Major (Đại tu)") MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
-            "Minor (Tính năng)") MINOR=$((MINOR + 1)); PATCH=0 ;;
-            "Patch (Vá lỗi)") PATCH=$((PATCH + 1)) ;;
+            "Major (Đại tu)")
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            "Minor (Tính năng)")
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            "Patch (Vá lỗi)")
+              PATCH=$((PATCH + 1))
+              ;;
           esac
           NEW_VER="${MAJOR}.${MINOR}.${PATCH}"
 
@@ -88,10 +108,12 @@ jobs:
           echo "proj_dir=$DIR" >> $GITHUB_OUTPUT
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "final_ver=$NEW_VER" >> $GITHUB_OUTPUT
+          echo "✔️ Định danh và tăng phiên bản thành công."
 
-      # ======== 3. LUYỆN ĐAN (AI SELF-HEALING) ========
+      # ======== 3. LUYỆN ĐAN ========
       - name: 🔨 3.1 Biên dịch Tweak (Universal Self-Healing)
         run: |
+          echo "🏭 Bắt đầu biên dịch tweak..."
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           export THEOS=$THEOS
@@ -99,6 +121,8 @@ jobs:
           if [[ "${{ github.event.inputs.clean_build }}" == "true" ]]; then
             rm -rf "$DIR/.theos" "$DIR/packages" "$DIR/obj"
             echo "🧹 Đã dọn sạch cache build."
+          else
+            echo "ℹ️ Giữ lại cache cũ."
           fi
           mkdir -p output
 
@@ -123,116 +147,12 @@ EOF
           cp "$DIR/headers.h" "${VIRTUAL_HDR}/${SAFE}headers.h"
 
           make -C "$DIR" clean package FINALPACKAGE=1 \
-            THEOS=$THEOS \
-            ADDITIONAL_CFLAGS="-fobjc-arc -w -Wno-error -Wno-undeclared-selector -I${THEOS}/include -I${VIRTUAL_HDR}" \
-            ADDITIONAL_LDFLAGS="-Wl,-segalign,4000"
+            THEOS=$THEOS || { echo "❌ Build thất bại!"; exit 1; }
 
           if [ -d "$DIR/packages" ] && compgen -G "$DIR/packages/*.deb" > /dev/null; then
             cp "$DIR/packages/"*.deb output/
             echo "✅ Build thành công!"
           else
-            echo "❌ Build thất bại!"
+            echo "❌ Không tìm thấy file .deb sau khi build."
             exit 1
-          fi
-
-      # ======== 4. ĐỒNG BỘ NHẬT KÝ & DEPICTION ========
-      - name: 📝 4.1 Sync Changelog & Depiction JSON
-        if: ${{ github.event.inputs.skip_depiction == 'false' }}
-        run: |
-          git config user.name "PhapSuAction"
-          git config user.email "action@github.com"
-
-          DIR="${{ steps.metadata.outputs.proj_dir }}"
-          SAFE="${{ steps.metadata.outputs.safe_name }}"
-          VER="${{ steps.metadata.outputs.final_ver }}"
-          IMG_URL="${{ env.BASE_URL }}/depictions/images"
-          export SAFE VER IMG_URL DIR
-
-          SRC_FILE=$(find "$DIR" -maxdepth 1 \( -name "*.x" -o -name "*.xm" \) | head -n 1)
-          if [ -n "$SRC_FILE" ]; then
-            FEAT_RAW=$(grep "^// -" "$SRC_FILE" | sed 's/^\/\/ - //' || echo "Cập nhật định kỳ")
-            FIX_RAW=$(grep "^// +" "$SRC_FILE" | sed 's/^\/\/ + //' || echo "Cải thiện ổn định")
-          else
-            FEAT_RAW="Cập nhật định kỳ"
-            FIX_RAW="Cải thiện ổn định"
-          fi
-          export FEAT_RAW FIX_RAW
-
-          mkdir -p depictions
-          python3 - << 'PYEOF'
-import json, os, html
-safe = os.environ['SAFE']
-ver = os.environ['VER']
-img_url = os.environ['IMG_URL']
-feat_raw = os.environ.get('FEAT_RAW', 'Cập nhật định kỳ')
-fix_raw = os.environ.get('FIX_RAW', 'Cải thiện ổn định')
-desc = f"### ✨ Mới nhất (v{ver})\n- {feat_raw}\n\n### 🐛 Sửa lỗi\n- {fix_raw}"
-screenshots = []
-if os.path.isdir("depictions/images"):
-    for i in range(1, 6):
-        fname = f"{safe}{i}.png"
-        if os.path.exists(f"depictions/images/{fname}"):
-            screenshots.append({"url": f"{img_url}/{fname}", "accessibilityText": f"Screenshot {i}"})
-views = [{"class": "DepictionHeaderView", "title": safe}]
-if os.path.exists(f"depictions/images/{safe}-banner.png"):
-    views.append({"class": "DepictionImageView", "url": f"{img_url}/{safe}-banner.png", "width": 1242, "height": 500, "cornerRadius": 10})
-views.append({"class": "DepictionMarkdownView", "markdown": desc, "useMargins": True})
-if screenshots:
-    views.append({"class": "DepictionScreenshotsView", "itemCornerRadius": 8, "screenshots": screenshots})
-depiction = {"class": "DepictionTabView", "tabs": [{"tabname": "Details", "class": "DepictionStackView", "views": views}]}
-with open(f"depictions/{safe}.json", "w", encoding="utf-8") as f:
-    json.dump(depiction, f, indent=2, ensure_ascii=False)
-PYEOF
-
-          git add "$DIR" depictions/
-          if git diff --cached --quiet; then
-            echo "📝 Không có thay đổi."
-          else
-            if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then
-              mkdir -p debs && cp output/*.deb debs/
-              dpkg-scanpackages -m debs /dev/null > Packages
-              python3 -c 'import bz2; f=open("Packages","r"); c=f.read().replace("Filename: debs/", "Filename: ./debs/"); f.close(); open("Packages","w").write(c); open("Packages.bz2","wb").write(bz2.compress(c.encode()))'
-              git add debs/ Packages Packages.bz2
-              MSG="🌟 Release: $SAFE v$VER"
-            else
-              MSG="🛠️ Build Test: $SAFE v$VER"
-            fi
-            git commit -m "$MSG" || exit 0
-            git pull --rebase origin main
-            git push origin main
-          fi
-
-      # ======== 5. XUẤT XƯỞNG ========
-      - name: 📦 5.1 Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.metadata.outputs.safe_name }}_v${{ steps.metadata.outputs.final_ver }}
-          path: output/
-
-      # ======== 6. THÔNG BÁO TELEGRAM ========
-      - name: 🤖 6.1 Telegram Notification
-        if: always()
-        run: |
-          SAFE_NAME="${{ steps.metadata.outputs.safe_name }}"
-          FINAL_VER="${{ steps.metadata.outputs.final_ver }}"
-          STATUS="${{ job.status }}"
-          TOKEN="${{ secrets.TELEGRAM_TOKEN }}"
-          CHAT_ID="${{ secrets.TELEGRAM_TO }}"
-          
-          if [ "$STATUS" = "success" ]; then
-            TEXT="<b>[NHÀ MÁY]</b>%0A🚀 Tweak: <b>$SAFE_NAME</b>%0A📦 Ver: <code>$FINAL_VER</code>%0A🏮 Trạng thái: <b>THÀNH CÔNG</b>"
-          else
-            TEXT="<b>[CẢNH BÁO]</b>%0A🚀 Tweak: <b>$SAFE_NAME</b>%0A🏮 Trạng thái: <b>THẤT BẠI</b>"
-          fi
-
-          if [ -z "$TOKEN" ] || [ -z "$CHAT_ID" ]; then exit 0; fi
-          curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" -d "chat_id=${CHAT_ID}" -d "text=${TEXT}" -d "parse_mode=HTML"
-
-          if [ "$STATUS" = "success" ] && [ "${{ github.event.inputs.send_deb }}" = "true" ]; then
-            DEB_FILES=(output/*.deb)
-            if [ ${#DEB_FILES[@]} -gt 0 ]; then
-              for f in "${DEB_FILES[@]}"; do
-                curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendDocument" -F "chat_id=${CHAT_ID}" -F "document=@$f"
-              done
-            fi
           fi
