@@ -119,40 +119,39 @@ jobs:
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           export THEOS=$THEOS
 
-          if [[ "${{ github.event.inputs.clean_build }}" == "true" ]]; then
-            echo "🧹 Đang xóa cache cũ..."
-            rm -rf "$DIR/.theos" "$DIR/packages" "$DIR/obj"
-          fi
-          mkdir -p output
-
+          # Xử lý auto-generating headers
           AI_HEADER="$DIR/headers.h"
           if [ ! -f "$AI_HEADER" ]; then
-            echo "🧠 Tạo auto headers cho $SAFE..."
+            echo "🧠 Tạo tự động file headers cho $SAFE..."
             echo "#import <UIKit/UIKit.h>" > "$AI_HEADER"
             echo "#import <Foundation/Foundation.h>" >> "$AI_HEADER"
             for CLASS in $(grep -r '^%hook' "$DIR" | awk '{print $2}' | sort -u); do
-              echo "@interface $CLASS : NSObject @end" >> "$AI_HEADER"
+              echo "@interface $CLASS : NSObject" >> "$AI_HEADER"
+              echo "- (void)autoAC_openSettings;" >> "$AI_HEADER"
+              echo "- (void)autoAC_clearCache;" >> "$AI_HEADER"
+              echo "- (void)autoAC_showDownloadStatus;" >> "$AI_HEADER"
+              echo "@end" >> "$AI_HEADER"
             done
-            echo "✔️ Tạo headers thành công: $AI_HEADER"
+            echo "✔️ Đã tạo file headers đầy đủ: $AI_HEADER"
           fi
 
-          # Setup virtual header paths
           VIRTUAL_HDR="$THEOS/include/${SAFE}headers"
-          mkdir -p "$VIRTUAL_HDR" 
+          mkdir -p "$VIRTUAL_HDR"
           cp "$AI_HEADER" "$VIRTUAL_HDR/${SAFE}headers.h"
 
           # Build tweak
           make -C "$DIR" clean package FINALPACKAGE=1 \
             THEOS=$THEOS \
-            ADDITIONAL_CFLAGS="-I${VIRTUAL_HDR}" || { echo "❌ Build thất bại! Kiểm tra debug logs."; exit 1; }
+            ADDITIONAL_CFLAGS="-I${VIRTUAL_HDR} -Wno-deprecated-declarations -fobjc-arc" || { echo "❌ Build thất bại! Kiểm tra debug logs."; exit 1; }
 
+          # Kết quả build
           if ls "$DIR/packages/"*.deb &>/dev/null; then
             cp "$DIR/packages/"*.deb output/
-            echo "✅ Build thành công! File .deb đã được tạo."
+            echo "✅ Build thành công! Gói .deb đã tạo."
           else
-            echo "❌ Không tìm thấy file .deb nào trong thư mục output."
+            echo "❌ Build thất bại, không tìm thấy file .deb."
             exit 1
-          fifi
+          fi
 
       # ======== 4. ĐỒNG BỘ FILE HIỂN THỊ ========
       - name: 📃 4.1 Sync JSON Depictions
