@@ -15,7 +15,7 @@ on:
         default: 'Patch (Vá lỗi)'
         options: [ 'Patch (Vá lỗi)', 'Minor (Tính năng)', 'Major (Đại tu)' ]
       publish:
-        description: '🚀 Đưa lên Repo (Bật = Publish, Tắt = Build Test)'
+        description: '🚀 Đưa lên sileo (Test-Publish)'
         type: boolean
         default: false
       clean_build:
