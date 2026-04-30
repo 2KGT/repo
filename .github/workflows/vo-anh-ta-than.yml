@@ -73,7 +73,9 @@ jobs:
           PROJ="${{ github.event.inputs.project }}"
           rm -rf "$DIR/packages" && mkdir -p output
           export THEOS=$THEOS
-          HEADER_PATH="$GITHUB_WORKSPACE/$DIR/${PROJ}headers"
+          
+          # TRỎ LÙI RA NGOÀI THƯ MỤC CHA
+          HEADER_PATH="$GITHUB_WORKSPACE/$DIR" 
           
           make -C "$DIR" clean package FINALPACKAGE=1 \
             TARGET=iphone:clang:14.5:14.0 \
