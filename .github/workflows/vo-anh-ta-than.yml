@@ -1,4 +1,4 @@
-name: 🪶 VÔ ẢNH PHONG THẦN (SYNC)
+name: 🏮 VÔ ẢNH PHONG THẦN - FINAL (STRUCT)
 
 on:
   workflow_dispatch:
@@ -10,19 +10,21 @@ on:
         default: 'None'
         options: [ None, AutoAC, AutoDL ]
       ver_type:
-        description: 'Cấp độ nâng cấp'
+        description: 'Cấp độ nâng cấp (Khi Publish)'
         type: choice
         default: 'Patch (Vá lỗi)'
         options: [ 'Patch (Vá lỗi)', 'Minor (Tính năng)', 'Major (Đại tu)' ]
       publish:
-        description: 'Release Official (Ver & Sync)'
+        description: 'Release Official (Tăng Ver & Sync Repo)'
         type: boolean
         default: false
 
+# -----------------------------------------------
+          # CẤU HÌNH MÔI TRƯỜNG CHUNG
+# -----------------------------------------------
 env:
   BASE_URL: "https://raw.githubusercontent.com/${{ github.repository }}/main"
   TZ: "Asia/Ho_Chi_Minh"
-  # ĐỔI TÊN Ở ĐÂY ĐỂ NÉ LỖI SUBMODULE
   THEOS: ${{ github.workspace }}/theos_engine 
 
 jobs:
@@ -31,19 +33,24 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: 📥 1. Triệu hồi Source
+        # ===============================================
+  # GIAI ĐOẠN 1: KHỞI TẠO & CHUẨN BỊ PHÁP KHÍ
+      # ===============================================
+      - name: 📥 1.1 Checkout Source
         uses: actions/checkout@v4
         with:
-          submodules: false # Tuyệt đối không quét submodule
+          submodules: false
 
-      - name: 🛠️ 2. Chuẩn bị Pháp khí
+      - name: 🛠️ 1.2 Cài đặt Tools & Theos Engine
         run: |
           brew install make ldid dpkg
-          # Clone vào thư mục mới hoàn toàn
           git clone --recursive https://github.com/theos/theos.git $THEOS
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
 
-      - name: 🎯 3. Metadata & Logic Tăng Ver
+      # ===============================================
+      # GIAI ĐOẠN 2: XỬ LÝ METADATA & ĐỊNH DANH PHIÊN BẢN
+      # ===============================================
+      - name: 🎯 2.1 Metadata & Logic Tăng Version
         id: metadata
         run: |
           PROJ="${{ github.event.inputs.project }}"
@@ -75,19 +82,16 @@ jobs:
           echo "final_ver=$FINAL_VER" >> $GITHUB_OUTPUT
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
 
-      - name: 🔨 4. Luyện Đan (Sạch kho & Chống văng)
+      # ===============================================
+      # GIAI ĐOẠN 3: CÔNG ĐOẠN LUYỆN ĐAN (BUILD DEB)
+      # ===============================================
+      - name: 🔨 3.1 Biên dịch Tweak (Fix Header Path)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           PROJ="${{ github.event.inputs.project }}"
-          
-          # Dọn sạch kho trước khi đúc
           rm -rf "$DIR/packages" && mkdir -p output
           
-          # Thiết lập môi trường Theos
           export THEOS=$THEOS
-          
-          # ĐỊNH NGHĨA ĐƯỜNG DẪN HEADER CHUẨN
-          # Giả sử header nằm trong thư mục: src/build-tweaks/AutoAC/AutoACheaders/
           HEADER_PATH="$GITHUB_WORKSPACE/$DIR/${PROJ}headers"
           
           DYNAMIC_FLAGS="-fobjc-arc -Wno-error -I. -I$HEADER_PATH"
@@ -101,8 +105,10 @@ jobs:
           
           cp "$DIR/packages/"*.deb output/
 
-
-      - name: 📝 5. Đồng bộ Ngược
+      # ===============================================
+      # GIAI ĐOẠN 4: ĐỒNG BỘ NGƯỢC & QUÉT NHẬT KÝ (CHANGELOG)
+      # ===============================================
+      - name: 📝 4.1 Auto-Changelog & Sync Repo
         run: |
           git config user.name "PhapSuAction"
           git config user.email "action@github.com"
@@ -113,26 +119,20 @@ jobs:
           CLOG_PATH="$DIR/CHANGELOG.md"
           JSON_PATH="depictions/${SAFE}.json"
           
-          # Quét dấu - và + theo kiểu "Pháp sư thực thụ"
-          # Chỉ lấy những dòng bắt đầu bằng // - hoặc // +
           SRC_FILE=$(find "$DIR" -name "*.x" -o -name "*.xm" | head -n 1)
-          
           FEAT=$(grep "^// -" "$SRC_FILE" | sed 's/^\/\/ - //' | sed ':a;N;$!ba;s/\n/\\n- /g' || echo "Cập nhật định kỳ")
           FIX=$(grep "^// +" "$SRC_FILE" | sed 's/^\/\/ + //' | sed ':a;N;$!ba;s/\n/\\n+ /g' || echo "Cải thiện ổn định")
-
 
           TIMESTAMP=$(date "+%d/%m/%Y %H:%M")
           OLD_CONTENT=$(cat "$CLOG_PATH" 2>/dev/null || echo "---")
           echo -e "### 🚀 v$VER ($TIMESTAMP)\n#### ✨ Tính năng mới\n- $FEAT\n#### 🐛 Sửa lỗi\n- $FIX\n\n---\n$OLD_CONTENT" > "$CLOG_PATH"
 
           mkdir -p depictions
+          DESC="### ✨ Mới nhất (v$VER)\n- $FEAT\n\n### 🐛 Sửa lỗi\n- $FIX\n\n---\n### 📜 Nhật ký đầy đủ\nXem tại CHANGELOG.md"
           IMG_BASE="${{ env.BASE_URL }}/depictions/images"
-          echo '{"class":"DepictionTabView","tabs":[{"tabname":"Details","class":"DepictionStackView","views":[{"class":"DepictionHeaderView","title":"'$SAFE'"},{"class":"DepictionImageView","url":"'$IMG_BASE/${SAFE}-banner.png'","width":1242,"height":500,"cornerRadius":10},{"class":"DepictionMarkdownView","markdown":"'$DESC'","useMargins":true}]}]}' > "$JSON_PATH"
+          echo '{"class":"DepictionTabView","tabs":[{"tabname":"Details","class":"DepictionStackView","views":[{"class":"DepictionHeaderView","title":"'$SAFE'"},{"class":"DepictionImageView","url":"'$IMG_BASE/${SAFE}-banner.png'","width":1242,"height":500,"cornerRadius":10},{"class":"DepictionScreenshotsView","itemCornerRadius":8,"screenshots":[]},{"class":"DepictionMarkdownView","markdown":"'$DESC'","useMargins":true}]}]}' > "$JSON_PATH"
 
-          # Xử lý commit: Loại bỏ thư mục theos (nếu có) ra khỏi commit để tránh tạo lỗi mới
-          git rm -r --cached theos || echo "Clean"
           git add "$DIR" depictions/
-          
           if [ "${{ github.event.inputs.publish }}" == "true" ]; then
             mkdir -p debs && cp output/*.deb debs/
             dpkg-scanpackages -m debs /dev/null > Packages && bzip2 -fks Packages
@@ -144,7 +144,10 @@ jobs:
           git commit -m "$MSG" || exit 0
           git push origin main
 
-      - name: 📦 6. Artifacts
+      # ===============================================
+      # GIAI ĐOẠN 5: XUẤT XƯỞNG THÀNH PHẨM (ARTIFACTS)
+      # ===============================================
+      - name: 📦 5.1 Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.metadata.outputs.safe_name }}_v${{ steps.metadata.outputs.final_ver }}
