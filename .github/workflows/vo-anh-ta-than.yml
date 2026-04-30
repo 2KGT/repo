@@ -124,9 +124,6 @@ EOF
             exit 1
           fi
   # ======== 4. ĐỒNG BỘ NHẬT KÝ & HÌNH ẢNH ========
-# ===============================================
-      # GIAI ĐOẠN 4: ĐỒNG BỘ NHẬT KÝ & HÌNH ẢNH (BẤT DIỆT)
-      # ===============================================
       - name: 📝 4.1 Sync Changelog & Depiction JSON
         run: |
           git config user.name "PhapSuAction"
