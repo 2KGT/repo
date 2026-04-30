@@ -68,31 +68,62 @@ jobs:
 
   # ======== 3. LUYỆN ĐAN (BUILD) ========
 
-      - name: 🔨 3.1 Biên dịch Tweak (Auto-Header Logic)
+      - name: 🔨 3.1 Biên dịch Tweak (Universal Self-Healing)
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
-          rm -rf "$DIR/packages" && mkdir -p output
+          SAFE="${{ steps.metadata.outputs.safe_name }}"
           export THEOS=$THEOS
-          
-          # 🧠 BỐC TÊN: Lấy chính xác chữ "AutoAC" từ dòng Name
-          RAW_NAME=$(grep "^Name:" "$DIR/control" | cut -d: -f2- | xargs)
-          
-          # Tạo Xác: $(THEOS)/include/AutoACheaders
-          VIRTUAL_HDR="$THEOS/include/${RAW_NAME}headers"
-          mkdir -p "$VIRTUAL_HDR/${RAW_NAME}headers"
-          
-          # 🏮 ĐỔ HỒN & NHÂN BẢN:
-          # Copy headers.h vào và đổi tên thành AutoACheaders.h để khớp với #import trong code
-          cp $DIR/headers.h "$VIRTUAL_HDR/${RAW_NAME}headers/${RAW_NAME}headers.h" 2>/dev/null || true
-          
-          # Copy bản gốc vào để Makefile vẫn tìm thấy nếu cần
-          cp $DIR/headers.h "$VIRTUAL_HDR/" 2>/dev/null || true
 
-          # KÍCH HOẠT NHÀ MÁY
+          # 1. TỔNG VỆ SINH & KIỂM TRA ĐẦU VÀO
+          if [ ! -f "$DIR/Makefile" ] || [ ! -f "$DIR/control" ]; then
+            echo "❌ Không tìm thấy cấu trúc dự án hợp lệ tại $DIR."
+            exit 1
+          fi
+          rm -rf "$DIR/.theos" "$DIR/packages" "$DIR/obj"
+          mkdir -p output
+
+          # 2. AI SCANNER (Hỗ trợ đa nguồn .x .xm .mm .m)
+          if [ ! -f "$DIR/headers.h" ]; then
+            echo "🧠 AI Scanner: Đang đúc hồn cho $SAFE..."
+            cat > "$DIR/headers.h" <<'EOF'
+#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
+#import <objc/runtime.h>
+@interface NSObject (UniversalAutomation) @end
+EOF
+            # Dùng find để quét an toàn, tránh lỗi rác shell
+            SOURCE_FILES=$(find "$DIR" -maxdepth 1 -type f \( -name "*.x" -o -name "*.xm" -o -name "*.mm" -o -name "*.m" \))
+            if [ -n "$SOURCE_FILES" ]; then
+              # Bắt Class sau %hook, bỏ qua comment và dấu cách thừa
+              sed -n 's/^[[:space:]]*%hook[[:space:]]\+\([A-Za-z0-9_]\+\).*/\1/p' $SOURCE_FILES | sort -u | while read -r CLASS; do
+                echo "@interface $CLASS : NSObject @end" >> "$DIR/headers.h"
+              done
+            fi
+            echo "✅ Headers.h đã sẵn sàng."
+          fi
+
+          # 3. NAMESPACE VÔ ẢNH (Gia cố đường dẫn)
+          VIRTUAL_HDR="${THEOS}/include/${SAFE}headers"
+          rm -rf "${VIRTUAL_HDR}" && mkdir -p "${VIRTUAL_HDR}"
+          cp "$DIR/headers.h" "${VIRTUAL_HDR}/${SAFE}headers.h"
+
+          # 4. KHAI HỎA (Cờ compiler tối ưu cho Sideload/Feather)
+          # Thêm -Wno-unused-command-line-argument để log sạch hơn nữa
           make -C "$DIR" clean package FINALPACKAGE=1 \
-            THEOS=$THEOS
-          
-          cp "$DIR/packages/"*.deb output/
+            THEOS=$THEOS \
+            ADDITIONAL_CFLAGS="-fobjc-arc -w -Wno-error -Wno-undeclared-selector -Wno-unused-command-line-argument -I${THEOS}/include -I${VIRTUAL_HDR}" \
+            ADDITIONAL_LDFLAGS="-Wl,-segalign,4000"
+
+          # 5. XUẤT XƯỞNG (Kiểm tra thực lực file DEB)
+          DEB_FILE=$(find "$DIR/packages" -name "*.deb" -type f -size +1k | head -n 1)
+          if [ -n "$DEB_FILE" ]; then
+            cp "$DEB_FILE" output/
+            echo "✅ Linh đan đã vào lò: $(basename "$DEB_FILE")"
+          else
+            echo "❌ Luyện đan thất bại hoặc file DEB rỗng!"
+            exit 1
+          fi
+
 
 
       # ======== 4. ĐỒNG BỘ NHẬT KÝ & HÌNH ẢNH ========
