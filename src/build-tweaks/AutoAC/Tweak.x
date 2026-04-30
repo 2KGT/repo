@@ -1,29 +1,25 @@
 #import <AutoACheaders/AutoACheaders.h>
 #import <AudioToolbox/AudioToolbox.h>
 
-// --- 1. HOOK VÀO THANH ĐIỀU HƯỚNG DƯỚI (PIVOT BAR) ---
 %hook YTPivotBarItemView
 
 - (void)layoutSubviews {
     %orig;
     
-    // Kiểm tra nếu đây là nút "Trang chủ" (thường có accessibilityIdentifier hoặc label là "Trang chủ" hoặc "Home")
+    // Feather + Dev Cert đôi khi làm chậm quá trình nạp, dùng thêm check tên class cho chắc
     NSString *label = [self accessibilityLabel];
-    if ([label isEqualToString:@"Trang chủ"] || [label isEqualToString:@"Home"]) {
+    if ([label isEqualToString:@"Trang chủ"] || [label isEqualToString:@"Home"] || [label isEqualToString:@"首页"]) {
         
-        // Kiểm tra xem đã gắn cử chỉ chưa (tránh gắn trùng nhiều lần)
-        BOOL hasGesture = NO;
-        for (UIGestureRecognizer *gest in self.gestureRecognizers) {
-            if ([gest isKindOfClass:[UILongPressGestureRecognizer class]]) {
-                hasGesture = YES;
-                break;
-            }
-        }
+        static char const * const k2KGTGestureKey = "k2KGTGestureKey";
+        UILongPressGestureRecognizer *existingGesture = objc_getAssociatedObject(self, k2KGTGestureKey);
         
-        if (!hasGesture) {
+        if (!existingGesture) {
             UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handle2KGTMenu:)];
-            longPress.minimumPressDuration = 0.8; // Nhấn giữ 0.8 giây là hiện
+            longPress.minimumPressDuration = 0.7; // Giảm xuống 0.7s cho nhạy
             [self addGestureRecognizer:longPress];
+            
+            // Dùng Associated Object để chặn trùng lặp cử chỉ
+            objc_setAssociatedObject(self, k2KGTGestureKey, longPress, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         }
     }
 }
@@ -31,25 +27,28 @@
 %new
 - (void)handle2KGTMenu:(UILongPressGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateBegan) {
-        // Rung máy báo hiệu "linh nghiệm"
-        AudioServicesPlaySystemSound(1519);
+        AudioServicesPlaySystemSound(1519); // Rung báo hiệu
         
         UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"🚀 AutoAC Dashboard" 
-                                    message:@"Cấu hình bởi 2KGT\nNhấn giữ Trang chủ thành công!" 
+                                    message:@"🏮 VÔ ẢNH PHONG THẦN\nCấu hình bởi 2KGT" 
                                     preferredStyle:UIAlertControllerStyleAlert];
         
         [alert addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleCancel handler:nil]];
         
-        // Tìm ViewController để hiển thị
-        UIViewController *root = [UIApplication sharedApplication].keyWindow.rootViewController;
-        if (!root) root = [[[[UIApplication sharedApplication] connectedScenes] allObjects].firstObject.windows.firstObject rootViewController];
+        // Cách hiện Alert "bất tử" cho mọi loại chứng chỉ
+        UIWindow *window = [UIApplication sharedApplication].keyWindow;
+        if (!window) window = [UIApplication sharedApplication].windows.firstObject;
         
-        [root presentViewController:alert animated:YES completion:nil];
+        UIViewController *topVC = window.rootViewController;
+        while (topVC.presentedViewController) topVC = topVC.presentedViewController;
+        
+        [topVC presentViewController:alert animated:YES completion:nil];
     }
 }
 %end
 
 %ctor {
     %init(_ungrouped);
-    NSLog(@"--- [2KGT] Chuyen sang he Cam coc Trang chu ---");
+    // Rung máy ngay khi nạp xong để ông giáo biết Feather đã tiêm thành công
+    AudioServicesPlaySystemSound(1521); 
 }
