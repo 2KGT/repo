@@ -1,4 +1,4 @@
-name: Auto Generate Packages
+name: Auto sync sileo Packages
 
 on:
   push:
@@ -13,24 +13,31 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Đảm bảo lấy đủ lịch sử để push không lỗi
 
-      - name: Install dpkg
+      - name: Install dpkg-dev
         run: sudo apt-get update && sudo apt-get install -y dpkg-dev
 
-      - name: Generate Packages (hỗ trợ arm + arm64)
+      - name: Generate Packages
         run: |
-          cd debs
-          # Scan tất cả file .deb, hỗ trợ multi-architecture
-          dpkg-scanpackages -m . /dev/null > ../Packages
-          cd ..
-          # Nén Packages.bz2
-          bzip2 -kf Packages
-          echo "✅ Packages & Packages.bz2 đã được tạo tự động!"
-          ls -l Packages*
+          # Kiểm tra nếu thư mục debs tồn tại
+          if [ -d "debs" ]; then
+            cd debs
+            dpkg-scanpackages -m . /dev/null > ../Packages
+            cd ..
+            bzip2 -kf Packages
+            echo "✅ Đã tạo Packages & Packages.bz2"
+          else
+            echo "❌ Không tìm thấy thư mục debs"
+            exit 1
+          fi
 
-      - name: Commit Packages
+      - name: Commit and Push
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Auto update Packages & Packages.bz2 from debs/"
+          commit_message: "Auto update Packages & Packages.bz2 [skip ci]"
           file_pattern: "Packages*"
+          branch: main # Đảm bảo push đúng vào nhánh chính
