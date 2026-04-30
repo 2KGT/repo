@@ -7,6 +7,7 @@ static const NSInteger AutoACSection = 2026;
 + (NSArray *)settingsCategoryOrder {
     NSMutableArray *order = [%orig mutableCopy];
     if (![order containsObject:@(AutoACSection)]) {
+        // Chèn vào ngay dưới mục đầu tiên của YouTube
         [order insertObject:@(AutoACSection) atIndex:1];
     }
     return [order copy];
@@ -18,9 +19,10 @@ static const NSInteger AutoACSection = 2026;
     if (category == AutoACSection) {
         NSMutableArray *items = [NSMutableArray array];
         
+        // Sử dụng runtime để lấy class Switch Item
         Class itemClass = %c(YTSettingsSectionItem);
 
-        // Khôi phục đầy đủ 7 tham số để Compiler nhận diện đúng Selector
+        // Tham số đầy đủ 7 dòng để tránh lỗi 'no known class method'
         [items addObject:[itemClass switchItemWithTitle:@"Xoá cache tự động" 
             titleDescription:@"Tự dọn dẹp khi mở App" 
             accessibilityIdentifier:nil 
@@ -40,7 +42,11 @@ static const NSInteger AutoACSection = 2026;
             } settingItemId:0]];
 
         id settingsVC = [self valueForKey:@"_settingsViewControllerDelegate"];
-        [settingsVC setSectionItems:items forCategory:AutoACSection title:@"AutoAC Settings" titleDescription:@"Cấu hình bởi 2KGT"];
+        
+        // Gọi hàm hiển thị của YouTube
+        if ([settingsVC respondsToSelector:@selector(setSectionItems:forCategory:title:titleDescription:)]) {
+            [settingsVC setSectionItems:items forCategory:AutoACSection title:@"AutoAC Settings" titleDescription:@"Cấu hình bởi 2KGT"];
+        }
         return;
     }
     %orig;
