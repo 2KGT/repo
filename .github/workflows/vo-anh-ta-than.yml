@@ -118,20 +118,41 @@ jobs:
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           export THEOS=$THEOS
+
           if [[ "${{ github.event.inputs.clean_build }}" == "true" ]]; then
+            echo "🧹 Đang xóa cache cũ..."
             rm -rf "$DIR/.theos" "$DIR/packages" "$DIR/obj"
-            echo "🧹 Đã xóa sạch cache cũ."
+          fi
+          mkdir -p output
+
+          AI_HEADER="$DIR/headers.h"
+          if [ ! -f "$AI_HEADER" ]; then
+            echo "🧠 Tạo auto headers cho $SAFE..."
+            echo "#import <UIKit/UIKit.h>" > "$AI_HEADER"
+            echo "#import <Foundation/Foundation.h>" >> "$AI_HEADER"
+            for CLASS in $(grep -r '^%hook' "$DIR" | awk '{print $2}' | sort -u); do
+              echo "@interface $CLASS : NSObject @end" >> "$AI_HEADER"
+            done
+            echo "✔️ Tạo headers thành công: $AI_HEADER"
           fi
 
-          make -C "$DIR" clean package FINALPACKAGE=1 THEOS=$THEOS || { echo "❌ Build thất bại!"; exit 1; }
+          # Setup virtual header paths
+          VIRTUAL_HDR="$THEOS/include/${SAFE}headers"
+          mkdir -p "$VIRTUAL_HDR" 
+          cp "$AI_HEADER" "$VIRTUAL_HDR/${SAFE}headers.h"
+
+          # Build tweak
+          make -C "$DIR" clean package FINALPACKAGE=1 \
+            THEOS=$THEOS \
+            ADDITIONAL_CFLAGS="-I${VIRTUAL_HDR}" || { echo "❌ Build thất bại! Kiểm tra debug logs."; exit 1; }
 
           if ls "$DIR/packages/"*.deb &>/dev/null; then
             cp "$DIR/packages/"*.deb output/
-            echo "✅ Build thành công!"
+            echo "✅ Build thành công! File .deb đã được tạo."
           else
-            echo "❌ Không tạo ra gói .deb nào, kiểm tra lại cấu hình và source."
+            echo "❌ Không tìm thấy file .deb nào trong thư mục output."
             exit 1
-          fi
+          fifi
 
       # ======== 4. ĐỒNG BỘ FILE HIỂN THỊ ========
       - name: 📃 4.1 Sync JSON Depictions
