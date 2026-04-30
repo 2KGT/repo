@@ -57,11 +57,10 @@ jobs:
         id: metadata
         run: |
           PROJ="${{ github.event.inputs.project }}"
-          [ "$PROJ" = "None" ] && exit 1
+          if [ "$PROJ" = "None" ]; then exit 1; fi
           DIR="src/build-tweaks/$PROJ"
           CTRL="$DIR/control"
           
-          # Tăng phiên bản
           CUR_VER=$(grep "^Version:" "$CTRL" | cut -d: -f2- | xargs)
           IFS='.' read -r -a v <<< "$CUR_VER"
           MAJ=${v[0]}; MIN=${v[1]}; PAT=${v[2]}
@@ -73,7 +72,6 @@ jobs:
           esac
           NEW_VER="$MAJ.$MIN.$PAT"
           
-          # Cập nhật control
           SAFE=$(grep "^Name:" "$CTRL" | cut -d: -f2- | xargs | tr -d '() ')
           sed -i '' "s/^Version:.*/Version: $NEW_VER/" "$CTRL"
           grep -q "^SileoDepiction:" "$CTRL" && sed -i '' "s|^SileoDepiction:.*|SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json|" "$CTRL" || echo "SileoDepiction: ${{ env.BASE_URL }}/depictions/${SAFE}.json" >> "$CTRL"
@@ -87,29 +85,19 @@ jobs:
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           export THEOS=$THEOS
-          
-          # Tạo đường dẫn Header linh hoạt theo từng dự án
           HDR_DIR="$THEOS/include/${SAFE}headers"
           mkdir -p "$HDR_DIR"
           
           cat > "$HDR_DIR/${SAFE}headers.h" <<EOF
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
-// File header tu dong - Moi dinh nghia hay dat trong Tweak.x
 EOF
-
-          # Thuc hien build (Chi build 1 lan duy nhat)
           if [[ "${{ github.event.inputs.clean_build }}" == "true" ]]; then
             make -C "$DIR" clean THEOS=$THEOS
           fi
           
-          # Them -I de compiler tim thay thu muc Header rieng cua du an
-          make -C "$DIR" package FINALPACKAGE=1 THEOS=$THEOS \
-            ADDITIONAL_CFLAGS="-I$THEOS/include -fobjc-arc"
-          
-          # Gom file deb ra ngoai
-          mkdir -p output
-          cp "$DIR/packages/"*.deb output/
+          make -C "$DIR" package FINALPACKAGE=1 THEOS=$THEOS ADDITIONAL_CFLAGS="-I$THEOS/include -fobjc-arc"
+          mkdir -p output && cp "$DIR/packages/"*.deb output/
 
       - name: 📝 4.1 Sync Depiction
         if: github.event.inputs.skip_depiction == 'false'
@@ -121,19 +109,8 @@ EOF
           python3 -c "
           import json, os
           safe, ver = os.environ['SAFE'], os.environ['VER']
-          data = {
-              'class': 'DepictionTabView',
-              'tabs': [{
-                  'tabname': 'Details',
-                  'class': 'DepictionStackView',
-                  'views': [
-                      {'class': 'DepictionHeaderView', 'title': safe},
-                      {'class': 'DepictionMarkdownView', 'markdown': f'### Phiên bản {ver}\n- Tối ưu bởi Vô Ảnh Phong Thần', 'useMargins': True}
-                  ]
-              }]
-          }
-          with open(f'depictions/{safe}.json', 'w') as f:
-              json.dump(data, f, indent=2)
+          data = {'class': 'DepictionTabView', 'tabs': [{'tabname': 'Details', 'class': 'DepictionStackView', 'views': [{'class': 'DepictionHeaderView', 'title': safe}, {'class': 'DepictionMarkdownView', 'markdown': f'### Phiên bản {ver}\n- Tối ưu bởi Vô Ảnh Phong Thần', 'useMargins': True}]}]}
+          with open(f'depictions/{safe}.json', 'w') as f: json.dump(data, f, indent=2)
           "
 
       - name: 🚀 5.1 Publish to Repo
@@ -155,7 +132,9 @@ EOF
           TO: ${{ secrets.TELEGRAM_TO }}
         run: |
           STATUS="${{ job.status }}"
-          MSG="🚀 Dự án: ${{ steps.metadata.outputs.safe_name }}%0A📦 Phiên bản: ${{ steps.metadata.outputs.final_ver }}%0A🏮 Trạng thái: $STATUS"
+          SAFE_NAME="${{ steps.metadata.outputs.safe_name }}"
+          FINAL_VER="${{ steps.metadata.outputs.final_ver }}"
+          MSG="🚀 Dự án: ${SAFE_NAME}%0A📦 Phiên bản: ${FINAL_VER}%0A🏮 Trạng thái: ${STATUS}"
           if [ -n "$TOKEN" ]; then
             curl -s "https://api.telegram.org/bot$TOKEN/sendMessage?chat_id=$TO&text=$MSG&parse_mode=HTML"
             if [[ "$STATUS" == "success" && "${{ github.event.inputs.send_deb }}" == "true" ]]; then
