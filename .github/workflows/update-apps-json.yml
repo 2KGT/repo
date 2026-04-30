@@ -1,5 +1,5 @@
-name: Auto Sync Releases + apps/ apps.json
-
+name: Auto Sync Esign apps.json
+# Updeta IPA Releases + apps/ 
 on:
   push:
     paths:
