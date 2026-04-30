@@ -2,17 +2,17 @@
 #import <AudioToolbox/AudioToolbox.h>
 #import <objc/runtime.h>
 
-@interface UIView (AutoAC)
-- (id)_accessibilityViewController;
+@interface YTPivotBarItemView : UIView
+- (NSString *)accessibilityLabel;
+- (void)handle2KGTMenu:(UILongPressGestureRecognizer *)sender;
 @end
 
-// Hook vào lớp cha UIView để dò tìm YTPivotBarItemView
-%hook UIView
+%hook YTPivotBarItemView
 - (void)layoutSubviews {
     %orig;
     
-    // Kiểm tra nếu class này là nút Menu dưới đáy
-    if ([NSStringFromClass([self class]) containsString:@"YTPivotBarItemView"]) {
+    // Thêm check Class Name cho chắc chắn là trúng đích
+    if ([self.class.description containsString:@"YTPivotBarItemView"]) {
         NSString *label = [self accessibilityLabel];
         if ([label isEqualToString:@"Trang chủ"] || [label isEqualToString:@"Home"] || [label isEqualToString:@"首页"]) {
             
@@ -32,14 +32,23 @@
 - (void)handle2KGTMenu:(UILongPressGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateBegan) {
         AudioServicesPlaySystemSound(1519);
+        
         UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"🚀 AutoAC Dashboard" 
                                     message:@"🏮 VÔ ẢNH PHONG THẦN\nCấu hình bởi 2KGT" 
                                     preferredStyle:UIAlertControllerStyleAlert];
         [alert addAction:[UIAlertAction actionWithTitle:@"Đóng" style:UIAlertActionStyleCancel handler:nil]];
         
-        UIViewController *topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
+        UIWindow *window = [UIApplication sharedApplication].keyWindow;
+        if (!window) window = [UIApplication sharedApplication].windows.firstObject;
+        
+        UIViewController *topVC = window.rootViewController;
         while (topVC.presentedViewController) topVC = topVC.presentedViewController;
         [topVC presentViewController:alert animated:YES completion:nil];
     }
 }
 %end
+
+%ctor {
+    %init(_ungrouped);
+    AudioServicesPlaySystemSound(1521); 
+}
