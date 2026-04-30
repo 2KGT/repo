@@ -93,8 +93,7 @@ jobs:
           mkdir -p "$HDR_DIR"
           
           cat > "$HDR_DIR/${SAFE}headers.h" <<EOF
-#import <UIKit/UIKit.h>
-#import <Foundation/Foundation.h>
+
 // Tệp này được tạo tự động bởi VÔ ẢNH PHONG THẦN
 // Các định nghĩa cụ thể hãy đặt trong file Tweak.x của dự án
 EOF
