@@ -113,9 +113,13 @@ jobs:
           CLOG_PATH="$DIR/CHANGELOG.md"
           JSON_PATH="depictions/${SAFE}.json"
           
+          # Quét dấu - và + theo kiểu "Pháp sư thực thụ"
+          # Chỉ lấy những dòng bắt đầu bằng // - hoặc // +
           SRC_FILE=$(find "$DIR" -name "*.x" -o -name "*.xm" | head -n 1)
-          FEAT=$(grep "^-" "$SRC_FILE" | sed 's/^- //' | sed ':a;N;$!ba;s/\n/\\n- /g' || echo "Cập nhật định kỳ")
-          FIX=$(grep "^+" "$SRC_FILE" | sed 's/^+ //' | sed ':a;N;$!ba;s/\n/\\n+ /g' || echo "Cải thiện ổn định")
+          
+          FEAT=$(grep "^// -" "$SRC_FILE" | sed 's/^\/\/ - //' | sed ':a;N;$!ba;s/\n/\\n- /g' || echo "Cập nhật định kỳ")
+          FIX=$(grep "^// +" "$SRC_FILE" | sed 's/^\/\/ + //' | sed ':a;N;$!ba;s/\n/\\n+ /g' || echo "Cải thiện ổn định")
+
 
           TIMESTAMP=$(date "+%d/%m/%Y %H:%M")
           OLD_CONTENT=$(cat "$CLOG_PATH" 2>/dev/null || echo "---")
