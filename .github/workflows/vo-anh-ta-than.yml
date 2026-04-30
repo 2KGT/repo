@@ -147,6 +147,7 @@ EOF
       - name: 📝 4.1 Sync Changelog & Depiction JSON
         if: ${{ github.event.inputs.skip_depiction == 'false' }}
         run: |
+          echo "📝 Bắt đầu đồng bộ Changelog & JSON Depiction..."
           git config user.name "PhapSuAction"
           git config user.email "action@github.com"
 
@@ -154,7 +155,6 @@ EOF
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           VER="${{ steps.metadata.outputs.final_ver }}"
           IMG_URL="${{ env.BASE_URL }}/depictions/images"
-          export SAFE VER IMG_URL DIR
 
           SRC_FILE=$(find "$DIR" -maxdepth 1 \( -name "*.x" -o -name "*.xm" \) | head -n 1)
           if [ -n "$SRC_FILE" ]; then
@@ -164,17 +164,13 @@ EOF
             FEAT_RAW="Cập nhật định kỳ"
             FIX_RAW="Cải thiện ổn định"
           fi
-          export FEAT_RAW FIX_RAW
 
           mkdir -p depictions
           python3 << 'PYEOF'
-import json, os, html
+import json, os
 
-safe = os.environ['SAFE']
-ver = os.environ['VER']
-img_url = os.environ['IMG_URL']
-feat_raw = os.environ.get('FEAT_RAW', 'Cập nhật định kỳ')
-fix_raw = os.environ.get('FIX_RAW', 'Cải thiện ổn định')
+safe, ver, img_url = os.environ['SAFE'], os.environ['VER'], os.environ['IMG_URL']
+feat_raw, fix_raw = os.environ.get('FEAT_RAW', 'Cập nhật định kỳ'), os.environ.get('FIX_RAW', 'Cải thiện ổn định')
 
 desc = f"### ✨ Mới nhất (v{ver})\n- {feat_raw}\n\n### 🐛 Sửa lỗi\n- {fix_raw}"
 
@@ -197,34 +193,41 @@ if screenshots:
     views.append({"class": "DepictionScreenshotsView", "itemCornerRadius": 8, "screenshots": screenshots})
 
 depiction = {"class": "DepictionTabView", "tabs": [{"tabname": "Details", "class": "DepictionStackView", "views": views}]}
+os.makedirs("depictions", exist_ok=True)
 with open(f"depictions/{safe}.json", "w", encoding="utf-8") as f:
     json.dump(depiction, f, indent=2, ensure_ascii=False)
 PYEOF
 
+          # Git kiểm tra và commit
           git add "$DIR" depictions/
           if git diff --cached --quiet; then
-            echo "📝 Không có thay đổi."
+            echo "📝 Không tìm thấy thay đổi."
           else
             if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then
               mkdir -p debs && cp output/*.deb debs/
-              dpkg-scanpackages -m debs /dev/null > Packages
+              dpkg-scanpackages -m debs /dev/null > Packages 2>/dev/null || echo "⚠️ Lỗi khi tạo Packages"
               python3 << 'PYEOF'
-with open("Packages", "r") as f: content = f.read()
+with open("Packages", "r") as f:
+    content = f.read()
 content = content.replace("Filename: debs/", "Filename: ./debs/")
-with open("Packages", "w") as f: f.write(content)
+with open("Packages", "w") as f:
+    f.write(content)
 import bz2
-with open("Packages.bz2", "wb") as f: f.write(bz2.compress(content.encode()))
+with open("Packages.bz2", "wb") as f:
+    f.write(bz2.compress(content.encode()))
 PYEOF
               git add debs/ Packages Packages.bz2
               MSG="🌟 Release: $SAFE v$VER"
             else
               MSG="🛠️ Build Test: $SAFE v$VER"
             fi
-            git commit -m "$MSG" || exit 0
-            git pull --rebase origin main
-            git push origin main
+
+            set +e  # Không khởi động lại nếu rebase lỗi
+            git commit -m "$MSG" || echo "❌ Không thể commit, kiểm tra quyền repository."
+            git pull --rebase origin main || echo "⚠️ Rebase thất bại, vui lòng kiểm tra nhánh chính."
+            git push origin main || echo "⚠️ Push thất bại, kiểm tra quyền để đẩy lên nhánh chính."
+            set -e
           fi
-          # Đồng bộ JSON với thông tin phiên bản mới
 
       # ======== 5. PUBLISH ========
       - name: 📤 5.1 Đẩy gói lên Repo (Nếu Được Yêu Cầu)
