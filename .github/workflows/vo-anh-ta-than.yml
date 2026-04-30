@@ -88,32 +88,28 @@ jobs:
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           export THEOS=$THEOS
           
-          # Chỉ tạo thư mục và file header cơ bản
+          # Tạo đường dẫn Header linh hoạt theo từng dự án
           HDR_DIR="$THEOS/include/${SAFE}headers"
           mkdir -p "$HDR_DIR"
           
           cat > "$HDR_DIR/${SAFE}headers.h" <<EOF
-
-// Tệp này được tạo tự động bởi VÔ ẢNH PHONG THẦN
-// Các định nghĩa cụ thể hãy đặt trong file Tweak.x của dự án
+#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
+// File header tu dong - Moi dinh nghia hay dat trong Tweak.x
 EOF
 
+          # Thuc hien build (Chi build 1 lan duy nhat)
           if [[ "${{ github.event.inputs.clean_build }}" == "true" ]]; then
             make -C "$DIR" clean THEOS=$THEOS
           fi
           
+          # Them -I de compiler tim thay thu muc Header rieng cua du an
           make -C "$DIR" package FINALPACKAGE=1 THEOS=$THEOS \
-            ADDITIONAL_CFLAGS="-I$HDR_DIR -fobjc-arc"
-
+            ADDITIONAL_CFLAGS="-I$THEOS/include -fobjc-arc"
           
-          if [[ "${{ github.event.inputs.clean_build }}" == "true" ]]; then
-            make -C "$DIR" clean THEOS=$THEOS
-          fi
-          
-          make -C "$DIR" package FINALPACKAGE=1 THEOS=$THEOS \
-            ADDITIONAL_CFLAGS="-I$HDR_DIR -fobjc-arc"
-          
-          mkdir -p output && cp "$DIR/packages/"*.deb output/
+          # Gom file deb ra ngoai
+          mkdir -p output
+          cp "$DIR/packages/"*.deb output/
 
       - name: 📝 4.1 Sync Depiction
         if: github.event.inputs.skip_depiction == 'false'
