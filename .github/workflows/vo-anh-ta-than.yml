@@ -1,4 +1,4 @@
-name:🪶 VÔ ẢNH PHONG THẦN (SYNC)
+name: 🪶 VÔ ẢNH PHONG THẦN (SYNC)
 
 on:
   workflow_dispatch:
