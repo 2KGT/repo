@@ -146,7 +146,6 @@ jobs:
           path: output/*.deb
           retention-days: 7
 
-        #----------7.1----------
       - name: 🤖 7.1 Telegram Notification
         if: always()
         env:
