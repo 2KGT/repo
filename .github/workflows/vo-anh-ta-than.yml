@@ -146,9 +146,9 @@ jobs:
           path: output/*.deb
           retention-days: 7
 
-    - name: 🤖 7.1 Telegram Notification
-      if: always()
-      env:
+      - name: 🤖 7.1 Telegram Notification
+        if: always()
+        env:
         TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
         TO: ${{ secrets.TELEGRAM_TO }}
       run: |
@@ -156,34 +156,22 @@ jobs:
         SAFE_NAME="${{ steps.metadata.outputs.safe_name }}"
         FINAL_VER="${{ steps.metadata.outputs.final_ver }}"
         
-        # 1. Gửi tin nhắn trạng thái
+        # Tạo nội dung tin nhắn (Dùng mã hóa URL cho xuống dòng)
         MSG="🚀 <b>Dự án:</b> ${SAFE_NAME}%0A📦 <b>Phiên bản:</b> ${FINAL_VER}%0A🏮 <b>Trạng thái:</b> ${STATUS^^}"
         
+        # Gửi tin nhắn văn bản
         curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
           -d "chat_id=$TO" \
           -d "text=$(printf "$MSG")" \
           -d "parse_mode=HTML"
         
-        # 2. Gửi file .deb (Kiểm tra kỹ điều kiện)
+        # Gửi file .deb
         if [[ "$STATUS" == "success" ]]; then
-          # Tìm tất cả file .deb trong thư mục output hoặc thư mục hiện tại
-          FILES=$(find . -name "*.deb")
-          
-          if [ -z "$FILES" ]; then
-            curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
-              -d "chat_id=$TO" \
-              -d "text=⚠️ Không tìm thấy file .deb nào trong thư mục build!"
-          else
-            for file in $FILES; do
-              echo "Đang gửi: $file"
-              curl -s -F "chat_id=$TO" \
-                -F "document=@$file" \
-                -F "caption=✅ Build thành công: $(basename $file)" \
-                "https://api.telegram.org/bot$TOKEN/sendDocument"
-            done
-          fi
+          # Tìm file .deb trong mọi thư mục con
+          find . -name "*.deb" -type f | while read -r file; do
+            curl -s -F "chat_id=$TO" \
+              -F "document=@$file" \
+              -F "caption=✅ Build thành công: $(basename "$file")" \
+              "https://api.telegram.org/bot$TOKEN/sendDocument"
+          done
         fi
-fi
-
-
-
