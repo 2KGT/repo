@@ -162,13 +162,27 @@ jobs:
             fs.writeFileSync('apps.json', JSON.stringify(finalJson, null, 2));
 
       - name: 🚀 6.2 Auto Commit and Push
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Auto-update apps.json [skip ci]"
-          file_pattern: 'apps.json'
-          branch: main
-          # Thêm tùy chọn để tránh lỗi conflict cục bộ
-          push_options: '--force'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          # Thêm file vào vùng chờ
+          git add apps.json
+          
+          # Kiểm tra xem có thay đổi thực sự không để tránh lỗi commit trống
+          if git diff --staged --quiet; then
+            echo "Không có thay đổi nào trong apps.json"
+          else
+            # Tạm thời cất các thay đổi để pull không bị lỗi
+            git stash
+            git pull --rebase origin main
+            git stash pop
+            
+            # Commit và Push
+            git add apps.json
+            git commit -m "Auto-update apps.json [skip ci]"
+            git push origin main
+          fi
 
       - name: 🤖 7.1 Telegram Notification
         if: success()
