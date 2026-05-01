@@ -146,44 +146,31 @@ jobs:
           path: output/*.deb
           retention-days: 7
 
-    - name: 🤖 7.1 Telegram Notification
-      if: always()
-      env:
+      - name: 🤖 7.1 Telegram Notification
+        if: always()
+        env:
         TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
         TO: ${{ secrets.TELEGRAM_TO }}
       run: |
-        # 1. Thu thập dữ liệu từ các bước trước
         STATUS="${{ job.status }}"
-        SAFE_NAME="${{ steps.metadata.outputs.safe_name || 'Unknown Project' }}"
-        FINAL_VER="${{ steps.metadata.outputs.final_ver || '1.0.0' }}"
+        SAFE_NAME="${{ steps.metadata.outputs.safe_name || 'N/A' }}"
+        FINAL_VER="${{ steps.metadata.outputs.final_ver || 'N/A' }}"
         
-        # 2. Xử lý Icon và Trạng thái
-        [ "$STATUS" == "success" ] && ICON="✅" || ICON="❌"
-        
-        # 3. Tạo nội dung tin nhắn (Dùng \n chuẩn cho Shell)
-        MSG=$(printf "<b>$ICON BÁO CÁO BUILD</b>\n\n🚀 <b>Dự án:</b> %s\n📦 <b>Phiên bản:</b> %s\n🏮 <b>Trạng thái:</b> %s" "$SAFE_NAME" "$FINAL_VER" "${STATUS^^}")
+        # Tạo nội dung tin nhắn an toàn
+        MSG=$(printf "🚀 <b>Dự án:</b> %s\n📦 <b>Phiên bản:</b> %s\n🏮 <b>Trạng thái:</b> %s" "$SAFE_NAME" "$FINAL_VER" "${STATUS^^}")
 
-        # 4. Gửi tin nhắn (Sử dụng --data-urlencode là cách an toàn nhất trên GitHub Actions)
-        if [ -n "$TOKEN" ] && [ -n "$TO" ]; then
-          curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
-            --data-urlencode "chat_id=$TO" \
-            --data-urlencode "text=$MSG" \
-            -d "parse_mode=HTML"
-          
-          # 5. Gửi file .deb (Chỉ gửi khi success và có file)
-          if [ "$STATUS" == "success" ]; then
-            # Tìm file .deb (không phân biệt hoa thường)
-            FILES=$(find . -maxdepth 3 -name "*.deb" -type f)
-            for file in $FILES; do
-              echo "Đang gửi: $file"
-              curl -s -F "chat_id=$TO" \
-                -F "document=@$file" \
-                -F "caption=✅ Build thành công: $(basename "$file")" \
-                "https://api.telegram.org/bot$TOKEN/sendDocument"
-            done
-          fi
-        else
-          echo "Thiếu Secrets: TELEGRAM_TOKEN hoặc TELEGRAM_TO"
-          exit 1
+        # Gửi tin nhắn văn bản
+        curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
+          -d "chat_id=$TO" \
+          --data-urlencode "text=$MSG" \
+          -d "parse_mode=HTML"
+        
+        # Gửi file .deb nếu build thành công
+        if [ "$STATUS" == "success" ]; then
+          find . -maxdepth 2 -name "*.deb" -type f | while read -r file; do
+            curl -s -F "chat_id=$TO" \
+              -F "document=@$file" \
+              -F "caption=✅ Build thành công: $(basename "$file")" \
+              "https://api.telegram.org/bot$TOKEN/sendDocument"
+          done
         fi
-
