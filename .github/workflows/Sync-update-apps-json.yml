@@ -190,22 +190,28 @@ jobs:
           TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TO: ${{ secrets.TELEGRAM_TO }}
         run: |
-          # Dùng jq để lấy app mới nhất dựa trên thời gian (nếu apps.json có nội dung)
-          LATEST_APP=$(jq -r '.apps[0].name // "N/A"' apps.json)
-          LATEST_VER=$(jq -r '.apps[0].version // "N/A"' apps.json)
-          IPA_LINK=$(jq -r '.apps[0].downloadURL // "#"' apps.json)
+          # 1. Dùng jq để tìm ứng dụng có versionDate mới nhất
+          # Sắp xếp các app theo versionDate giảm dần và lấy app đầu tiên
+          LATEST_JSON=$(jq -c '.apps | sort_by(.versionDate) | reverse | .[0]' apps.json)
+          
+          # 2. Trích xuất thông tin cụ thể
+          APP_NAME=$(echo $LATEST_JSON | jq -r '.name')
+          APP_VER=$(echo $LATEST_JSON | jq -r '.version')
+          IPA_LINK=$(echo $LATEST_JSON | jq -r '.downloadURL')
           REPO_URL="https://2kgt.github.io/repo/apps.json"
 
-          MSG=$(printf "<b>🚀 ĐÃ CẬP NHẬT APPS.JSON</b>\n"
+          # 3. Tạo nội dung tin nhắn
+          MSG=$(printf "<b>🚀 ĐÃ CẬP NHẬT REPO</b>\n"
           printf "━━━━━━━━━━━━━━━━━━\n"
-          printf "📱 <b>Ứng dụng:</b> <code>%s</code>\n" "$LATEST_APP"
-          printf "📦 <b>Phiên bản:</b> <code>%s</code>\n\n" "$LATEST_VER"
+          printf "📱 <b>Ứng dụng:</b> <code>%s</code>\n" "$APP_NAME"
+          printf "📦 <b>Phiên bản:</b> <code>%s</code>\n\n" "$APP_VER"
           printf "✅ <b>Đã đồng bộ lên ESign, Feather!</b>\n"
           printf "━━━━━━━━━━━━━━━━━━\n"
           printf "🔗 <b>Link Repo (Sao chép):</b>\n"
           printf "<code>%s</code>\n\n" "$REPO_URL"
           printf "📥 <a href='%s'>Nhấn để tải IPA trực tiếp</a>" "$IPA_LINK")
 
+          # 4. Gửi tin nhắn
           if [ -n "$TOKEN" ]; then
             curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
               -d "chat_id=$TO" \
@@ -213,3 +219,4 @@ jobs:
               -d "disable_web_page_preview=true" \
               --data-urlencode "text=$MSG"
           fi
+
