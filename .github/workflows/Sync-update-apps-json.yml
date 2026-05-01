@@ -1,5 +1,5 @@
 name: Auto Sync Esign apps.json
-# Updeta IPA Releases + apps/ 
+
 on:
   push:
     paths:
@@ -18,7 +18,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Lấy toàn bộ lịch sử để tránh lỗi push
+          fetch-depth: 0
+          ref: main # Đảm bảo luôn làm việc trên nhánh chính
 
       - name: Install IPA Parser
         run: npm install app-info-parser
@@ -160,12 +161,14 @@ jobs:
 
             fs.writeFileSync('apps.json', JSON.stringify(finalJson, null, 2));
 
-      - name: Auto Commit and Push
+      - name: 🚀 6.2 Auto Commit and Push
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Auto-update apps.json [skip ci]"
           file_pattern: 'apps.json'
           branch: main
+          # Thêm tùy chọn để tránh lỗi conflict cục bộ
+          push_options: '--force'
 
       - name: 🤖 7.1 Telegram Notification
         if: success()
@@ -173,30 +176,26 @@ jobs:
           TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TO: ${{ secrets.TELEGRAM_TO }}
         run: |
-          # Trích xuất dữ liệu từ file apps.json vừa tạo
-          LATEST_APP=$(jq -r '.apps[0].name' apps.json)
-          LATEST_VER=$(jq -r '.apps[0].version' apps.json)
-          IPA_LINK=$(jq -r '.apps[0].downloadURL' apps.json)
+          # Dùng jq để lấy app mới nhất dựa trên thời gian (nếu apps.json có nội dung)
+          LATEST_APP=$(jq -r '.apps[0].name // "N/A"' apps.json)
+          LATEST_VER=$(jq -r '.apps[0].version // "N/A"' apps.json)
+          IPA_LINK=$(jq -r '.apps[0].downloadURL // "#"' apps.json)
           REPO_URL="https://2kgt.github.io/repo/apps.json"
 
-          # Nội dung thông báo
-          MSG="<b>🚀 ĐÃ CẬP NHẬT APPS.JSON</b>
-          ━━━━━━━━━━━━━━━━━━
-          📱 <b>Ứng dụng:</b> <code>${LATEST_APP}</code>
-          📦 <b>Phiên bản:</b> <code>${LATEST_VER}</code>
-          
-          ✅ <b>Đã đồng bộ lên ESign, Feather!</b>
-          ━━━━━━━━━━━━━━━━━━
-          🔗 <b>Link Repo (Sao chép):</b>
-          <code>${REPO_URL}</code>
-
-          📥 <b>Link tải IPA trực tiếp:</b>
-          <a href='${IPA_LINK}'>Nhấn để tải về</a>"
+          MSG=$(printf "<b>🚀 ĐÃ CẬP NHẬT APPS.JSON</b>\n"
+          printf "━━━━━━━━━━━━━━━━━━\n"
+          printf "📱 <b>Ứng dụng:</b> <code>%s</code>\n" "$LATEST_APP"
+          printf "📦 <b>Phiên bản:</b> <code>%s</code>\n\n" "$LATEST_VER"
+          printf "✅ <b>Đã đồng bộ lên ESign, Feather!</b>\n"
+          printf "━━━━━━━━━━━━━━━━━━\n"
+          printf "🔗 <b>Link Repo (Sao chép):</b>\n"
+          printf "<code>%s</code>\n\n" "$REPO_URL"
+          printf "📥 <a href='%s'>Nhấn để tải IPA trực tiếp</a>" "$IPA_LINK")
 
           if [ -n "$TOKEN" ]; then
             curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
               -d "chat_id=$TO" \
               -d "parse_mode=HTML" \
-              -d "disable_web_page_preview=false" \
+              -d "disable_web_page_preview=true" \
               --data-urlencode "text=$MSG"
           fi
