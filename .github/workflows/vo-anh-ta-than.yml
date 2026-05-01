@@ -143,12 +143,36 @@ jobs:
           STATUS="${{ job.status }}"
           SAFE_NAME="${{ steps.metadata.outputs.safe_name }}"
           FINAL_VER="${{ steps.metadata.outputs.final_ver }}"
-          MSG="🚀 Dự án: ${SAFE_NAME}%0A📦 Phiên bản: ${FINAL_VER}%0A🏮 Trạng thái: ${STATUS}"
+          
+          # Gửi tin nhắn văn bản trước (Dùng --data-urlencode để tránh lỗi ký tự)
+          MSG="🚀 Dự án: ${SAFE_NAME}
+          📦 Phiên bản: ${FINAL_VER}
+          🏮 Trạng thái: ${STATUS}"
+          
           if [ -n "$TOKEN" ]; then
-            curl -s "https://api.telegram.org/bot$TOKEN/sendMessage?chat_id=$TO&text=$MSG&parse_mode=HTML"
+            curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
+              -d "chat_id=$TO" \
+              --data-urlencode "text=$MSG" \
+              -d "parse_mode=HTML"
+            
+            # Gửi file .deb nếu build thành công
             if [[ "$STATUS" == "success" && "${{ github.event.inputs.send_deb }}" == "true" ]]; then
               for file in output/*.deb; do
-                curl -v -F "chat_id=$TO" -F "document=@$file" "https://api.telegram.org/bot$TOKEN/sendDocument"
+                if [ -f "$file" ]; then
+                  curl -s -F "chat_id=$TO" -F "document=@$file" \
+                    "https://api.telegram.org/bot$TOKEN/sendDocument"
+                fi
               done
             fi
           fi
+
+      - name: 📦 7.1 Lưu trữ Artifacts
+        if: success()
+        uses: actions/checkout@v4 # (Bước này thường đã có ở đầu, không cần lặp lại)
+        # Thay vào đó dùng action chuyên dụng:
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.metadata.outputs.safe_name }}-v${{ steps.metadata.outputs.final_ver }}
+          path: output/*.deb
+          retention-days: 7
+
