@@ -156,8 +156,14 @@ jobs:
           SAFE_NAME="${{ steps.metadata.outputs.safe_name || 'N/A' }}"
           FINAL_VER="${{ steps.metadata.outputs.final_ver || 'N/A' }}"
           
-          # Tạo nội dung tin nhắn an toàn
-          MSG=$(printf "🚀 <b>Dự án:</b> %s\n📦 <b>Phiên bản:</b> %s\n🏮 <b>Trạng thái:</b> %s" "$SAFE_NAME" "$FINAL_VER" "${STATUS^^}")
+          # Viết hoa STATUS bằng lệnh tr (tương thích mọi hệ điều hành)
+          UPPER_STATUS=$(echo "$STATUS" | tr '[:lower:]' '[:upper:]')
+          
+          # Chọn Icon
+          [ "$STATUS" == "success" ] && ICON="✅" || ICON="❌"
+
+          # Tạo nội dung tin nhắn
+          MSG=$(printf "<b>$ICON BÁO CÁO BUILD</b>\n\n🚀 <b>Dự án:</b> %s\n📦 <b>Phiên bản:</b> %s\n🏮 <b>Trạng thái:</b> %s" "$SAFE_NAME" "$FINAL_VER" "$UPPER_STATUS")
 
           # Gửi tin nhắn văn bản
           curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
@@ -174,4 +180,3 @@ jobs:
                 "https://api.telegram.org/bot$TOKEN/sendDocument"
             done
           fi
-
