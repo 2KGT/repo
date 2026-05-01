@@ -162,19 +162,14 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # 1. Tìm file IPA vừa được thay đổi trong commit này
           CHANGED_IPA=$(git diff --name-only HEAD^ HEAD | grep 'apps/.*\.ipa$' | head -n 1 || echo "")
-          
-          # Nếu không có file IPA đổi, lấy tên file IPA mới nhất trong thư mục
           if [ -z "$CHANGED_IPA" ]; then
             CHANGED_IPA=$(ls -t apps/*.ipa 2>/dev/null | head -n 1 || echo "")
           fi
           
-          # Trích xuất tên app từ đường dẫn file (ví dụ: apps/LCSign.ipa -> LCSign)
           APP_FILENAME=$(basename "$CHANGED_IPA" .ipa)
           echo "target_app=$APP_FILENAME" >> $GITHUB_OUTPUT
 
-          # 2. Đồng bộ Git
           cp apps.json apps.json.tmp
           git fetch origin main
           git reset --hard origin/main
@@ -189,17 +184,14 @@ jobs:
             echo "pushed=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: "🤖 Bước 7.1: Thông báo Telegram thông minh (Chỉ thông báo app vừa đổi)"
+      - name: "🤖 Bước 7.1: Thông báo Telegram (Chạm để sao chép)"
         if: success() && steps.check_changes.outputs.pushed == 'true'
         env:
           TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TO: ${{ secrets.TELEGRAM_TO }}
           TARGET: ${{ steps.check_changes.outputs.target_app }}
         run: |
-          # Tìm chính xác app có tên trùng với file vừa thay đổi
-          # Nếu không tìm thấy theo tên file, sẽ lấy app có versionDate mới nhất làm dự phòng
           LATEST_APP=$(jq -c --arg TARGET "$TARGET" '.apps[] | select(.name | contains($TARGET))' apps.json | head -n 1)
-          
           if [ -z "$LATEST_APP" ]; then
             LATEST_APP=$(jq -c '.apps | sort_by(.versionDate) | reverse | .[0]' apps.json)
           fi
@@ -209,11 +201,13 @@ jobs:
           LINK=$(echo $LATEST_APP | jq -r '.downloadURL // "#"')
           REPO_URL="https://2kgt.github.io/repo/apps.json"
           
+          # Đưa link vào thẻ <code> để chạm là copy
           MSG=$(printf "<b>🚀 REPO ĐÃ CẬP NHẬT</b>\n"
           printf "━━━━━━━━━━━━━━━━━━\n"
           printf "📱 <b>Ứng dụng:</b> <code>%s</code>\n" "$NAME"
           printf "📦 <b>Phiên bản:</b> <code>%s</code>\n\n" "$VER"
-          printf "✅ <i>Hệ thống đã trích xuất Metadata và đồng bộ hoàn tất.</i>\n"
+          printf "🔗 <b>Link Repo (Chạm để sao chép):</b>\n"
+          printf "<code>%s</code>\n" "$REPO_URL"
           printf "━━━━━━━━━━━━━━━━━━\n"
           printf "📥 <a href='%s'>Nhấn để tải IPA vừa update</a>" "$LINK")
 
@@ -221,7 +215,7 @@ jobs:
             -d "chat_id=$TO" \
             -d "parse_mode=HTML" \
             -d "disable_web_page_preview=true" \
-            --data-urlencode "text=$MSG" \
-            -d "reply_markup={\"inline_keyboard\": [[{\"text\": \"🔗 Sao chép Link Repo\", \"url\": \"$REPO_URL\"}]]}"
+            --data-urlencode "text=$MSG"
+
 
 
