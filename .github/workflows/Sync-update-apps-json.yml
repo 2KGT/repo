@@ -168,31 +168,35 @@ jobs:
           branch: main
 
       - name: 🤖 7.1 Telegram Notification
-        if: success() # Chỉ gửi thông báo nếu các bước trên thành công
+        if: success()
         env:
           TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TO: ${{ secrets.TELEGRAM_TO }}
         run: |
-          # Lấy thông tin app mới nhất từ file apps.json vừa tạo
-          # Dùng jq để trích xuất tên app và phiên bản của app đầu tiên trong danh sách
+          # Trích xuất dữ liệu từ file apps.json vừa tạo
           LATEST_APP=$(jq -r '.apps[0].name' apps.json)
           LATEST_VER=$(jq -r '.apps[0].version' apps.json)
-          REPO_NAME="Kyic Repository"
+          IPA_LINK=$(jq -r '.apps[0].downloadURL' apps.json)
+          REPO_URL="https://2kgt.github.io/repo/apps.json"
 
-          # Nội dung thông báo HTML
+          # Nội dung thông báo
           MSG="<b>🚀 ĐÃ CẬP NHẬT APPS.JSON</b>
           ━━━━━━━━━━━━━━━━━━
           📱 <b>Ứng dụng:</b> <code>${LATEST_APP}</code>
           📦 <b>Phiên bản:</b> <code>${LATEST_VER}</code>
-          🛠️ <b>Nguồn:</b> <i>${REPO_NAME}</i>
           
-          ✅ <i>Đã đồng bộ lên ESign, Feather thành công!</i>
+          ✅ <b>Đã đồng bộ lên ESign, Feather!</b>
           ━━━━━━━━━━━━━━━━━━
-          🔗 <a href='https://2kgt.github.io/repo/apps.json'>Link Repo ESign</a>"
+          🔗 <b>Link Repo (Sao chép):</b>
+          <code>${REPO_URL}</code>
+
+          📥 <b>Link tải IPA trực tiếp:</b>
+          <a href='${IPA_LINK}'>Nhấn để tải về</a>"
 
           if [ -n "$TOKEN" ]; then
             curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
               -d "chat_id=$TO" \
               -d "parse_mode=HTML" \
+              -d "disable_web_page_preview=false" \
               --data-urlencode "text=$MSG"
           fi
