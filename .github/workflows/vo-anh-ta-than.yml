@@ -80,28 +80,32 @@ jobs:
           echo "safe_name=$SAFE" >> $GITHUB_OUTPUT
           echo "final_ver=$NEW_VER" >> $GITHUB_OUTPUT
 
+
+
       - name: 🔨 3.1 Biên dịch Tweak
         run: |
           DIR="${{ steps.metadata.outputs.proj_dir }}"
           SAFE="${{ steps.metadata.outputs.safe_name }}"
           export THEOS=$THEOS
           
-          # Tạo thư mục và header bằng printf để tránh lỗi thụt dòng YAML
+          # 1. Dọn dẹp tuyệt đối (Xóa luôn thư mục packages cũ nếu có)
+          rm -rf "$DIR/packages"
+          mkdir -p output
+          rm -rf output/*
+
+          # 2. Tạo Header đa năng
           HDR_DIR="$THEOS/include/${SAFE}headers"
           mkdir -p "$HDR_DIR"
           printf "#import <UIKit/UIKit.h>\n#import <Foundation/Foundation.h>\n" > "$HDR_DIR/${SAFE}headers.h"
 
-          # Kiểm tra và dọn dẹp trước khi đúc
+          # 3. Biên dịch
           if [[ "${{ github.event.inputs.clean_build }}" == "true" ]]; then
             make -C "$DIR" clean THEOS=$THEOS
           fi
           
-          # Đúc linh đan (Build)
-          # Lưu ý: ADDITIONAL_CFLAGS phải viết liền mạch
           make -C "$DIR" package FINALPACKAGE=1 THEOS=$THEOS ADDITIONAL_CFLAGS="-I$THEOS/include -fobjc-arc"
           
-          # Gom hàng ra đầu ra
-          mkdir -p output
+          # 4. Gom hàng (Chỉ lấy những gì vừa mới đúc xong)
           if [ -d "$DIR/packages" ]; then
             cp "$DIR/packages/"*.deb output/
           fi
