@@ -1,4 +1,4 @@
-name: 🤖 Telegram Remote Sync
+name: Auto sync remote telegram
 
 on:
   repository_dispatch:
