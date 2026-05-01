@@ -27,7 +27,7 @@ on:
         type: boolean
         default: true
       skip_depiction:
-        description: '🙈 Bỏ qua cập nhật JSON Depiction'
+        description: '📝 Cập nhật mô tả JSON Depiction'
         type: boolean
         default: false
 
@@ -108,9 +108,10 @@ jobs:
 
 
       - name: 📝 4.1 Sync Depiction
-        if: github.event.inputs.skip_depiction == 'false'
+        if: github.event.inputs.update_depiction == 'true' # Chỉ chạy khi ông giáo tích chọn
         env:
           SAFE: ${{ steps.metadata.outputs.safe_name }}
+          # ... (phần còn lại giữ nguyên)
           VER: ${{ steps.metadata.outputs.final_ver }}
         run: |
           mkdir -p depictions
