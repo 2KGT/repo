@@ -1,34 +1,37 @@
 #import <AutoACheaders/AutoACheaders.h>
 #import <UIKit/UIKit.h>
 
-// --- BẮT BUỘC PHẢI ĐẶT Ở ĐÂY (TRÊN CÙNG) ---
 #define kPrefs [NSUserDefaults standardUserDefaults]
 static const NSInteger AutoACSection = 2026;
 
-// Định nghĩa Interface để compiler không báo lỗi "no known instance method"
+#pragma mark - Interfaces
+
 @interface YTSettingsSectionItem : NSObject
-+ (id)switchItemWithTitle:(id)arg1 titleDescription:(id)arg2 accessibilityIdentifier:(id)arg3 switchOn:(BOOL)arg4 switchBlock:(id)arg5 settingItemId:(int)arg6;
++ (id)switchItemWithTitle:(id)arg1
+       titleDescription:(id)arg2
+ accessibilityIdentifier:(id)arg3
+             switchOn:(BOOL)arg4
+          switchBlock:(id)arg5
+       settingItemId:(int)arg6;
+@end
+
+@interface UIViewController (AutoAC)
+- (void)setSectionItems:(id)items
+           forCategory:(NSInteger)category
+                 title:(id)title
+      titleDescription:(id)description;
 @end
 
 @interface YTTabBarController : UITabBarController
 @property (nonatomic, readonly) UITabBar *tabBar;
-- (void)autoAC_handleLongPress:(UILongPressGestureRecognizer *)gesture;
-- (void)autoAC_openSettings;
-- (void)autoAC_clearCache;
-- (void)autoAC_showDownloadStatus;
 @end
 
-// Khai báo thêm phương thức để tránh lỗi "no known instance method" ở dòng 67
-@interface UIViewController (AutoAC)
-- (void)setSectionItems:(id)items forCategory:(NSInteger)category title:(id)title titleDescription:(id)description;
-@end
-
-// ------------------------------------------
+#pragma mark - Settings Hook
 
 %hook YTAppSettingsPresentationData
 + (NSArray *)settingsCategoryOrder {
     NSMutableArray *order = [%orig mutableCopy];
-    // Giờ đây AutoACSection đã được định nghĩa ở trên nên sẽ không lỗi nữa
+
     if (order && ![order containsObject:@(AutoACSection)]) {
         [order insertObject:@(AutoACSection) atIndex:1];
     }
@@ -38,38 +41,88 @@ static const NSInteger AutoACSection = 2026;
 
 %hook YTSettingsSectionItemManager
 - (void)updateSectionForCategory:(NSUInteger)category withEntry:(id)entry {
+
     if (category == AutoACSection) {
+
         Class itemClass = %c(YTSettingsSectionItem);
         if (!itemClass) {
-            %orig;
-            return;
+            return %orig;
         }
 
         NSMutableArray *items = [NSMutableArray array];
-        // kPrefs đã được định nghĩa ở đầu file
+
         [items addObject:[itemClass switchItemWithTitle:@"Xoá cache tự động"
-                                    titleDescription:@"Tự dọn dẹp khi mở App"
-                              accessibilityIdentifier:nil
-                                            switchOn:[kPrefs boolForKey:@"kAutoClearCache"]
-                                         switchBlock:^BOOL(id cell, BOOL enabled) {
-                                             [kPrefs setBool:enabled forKey:@"kAutoClearCache"];
-                                             return YES;
-                                         } settingItemId:0]];
+                                      titleDescription:@"Tự dọn khi mở app"
+                                accessibilityIdentifier:nil
+                                              switchOn:[kPrefs boolForKey:@"kAutoClearCache"]
+                                           switchBlock:^BOOL(id cell, BOOL enabled) {
+                                               [kPrefs setBool:enabled forKey:@"kAutoClearCache"];
+                                               return YES;
+                                           }
+                                         settingItemId:0]];
 
         id currentSelf = (id)self;
-        id settingsVC = [currentSelf valueForKey:@"_settingsViewControllerDelegate"] 
-                     ?: [currentSelf valueForKey:@"settingsViewControllerDelegate"];
+        id settingsVC =
+        [currentSelf valueForKey:@"_settingsViewControllerDelegate"]
+        ?: [currentSelf valueForKey:@"settingsViewControllerDelegate"];
 
         if (settingsVC) {
-            [settingsVC setSectionItems:items 
-                            forCategory:AutoACSection 
-                                  title:@"AutoAC Settings" 
+            [settingsVC setSectionItems:items
+                            forCategory:AutoACSection
+                                  title:@"AutoAC Settings"
                        titleDescription:@"Cấu hình bởi 2KGT"];
         }
+
         return;
     }
+
     %orig;
 }
 %end
 
-// ... Các phần %hook YTTabBarController giữ nguyên như cũ ...
+#pragma mark - TAB BAR FIX LONG PRESS
+
+%hook YTTabBarController
+
+- (void)viewDidLoad {
+    %orig;
+
+    NSLog(@"[AutoAC] TabBar loaded");
+
+    UILongPressGestureRecognizer *longPress =
+    [[UILongPressGestureRecognizer alloc]
+     initWithTarget:self
+     action:@selector(autoAC_handleLongPress:)];
+
+    longPress.minimumPressDuration = 0.5;
+    longPress.cancelsTouchesInView = NO;
+
+    [self.tabBar addGestureRecognizer:longPress];
+}
+
+%new
+- (void)autoAC_handleLongPress:(UILongPressGestureRecognizer *)gesture {
+
+    if (gesture.state == UIGestureRecognizerStateBegan) {
+        NSLog(@"[AutoAC] Long press detected");
+
+        [self autoAC_openSettings];
+    }
+}
+
+%new
+- (void)autoAC_openSettings {
+
+    UIAlertController *alert =
+    [UIAlertController alertControllerWithTitle:@"AutoAC"
+                                        message:@"Long press hoạt động ✅"
+                                 preferredStyle:UIAlertControllerStyleAlert];
+
+    [alert addAction:[UIAlertAction actionWithTitle:@"OK"
+                                              style:UIAlertActionStyleDefault
+                                            handler:nil]];
+
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
+%end
