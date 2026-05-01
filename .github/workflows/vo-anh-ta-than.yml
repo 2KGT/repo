@@ -149,28 +149,29 @@ jobs:
       - name: 🤖 7.1 Telegram Notification
         if: always()
         env:
-    TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-    TO: ${{ secrets.TELEGRAM_TO }}
-    run: |
-        STATUS="${{ job.status }}"
-        SAFE_NAME="${{ steps.metadata.outputs.safe_name || 'N/A' }}"
-        FINAL_VER="${{ steps.metadata.outputs.final_ver || 'N/A' }}"
-        
-        # Tạo nội dung tin nhắn an toàn
-        MSG=$(printf "🚀 <b>Dự án:</b> %s\n📦 <b>Phiên bản:</b> %s\n🏮 <b>Trạng thái:</b> %s" "$SAFE_NAME" "$FINAL_VER" "${STATUS^^}")
+          TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TO: ${{ secrets.TELEGRAM_TO }}
+        run: |
+          STATUS="${{ job.status }}"
+          SAFE_NAME="${{ steps.metadata.outputs.safe_name || 'N/A' }}"
+          FINAL_VER="${{ steps.metadata.outputs.final_ver || 'N/A' }}"
+          
+          # Tạo nội dung tin nhắn an toàn
+          MSG=$(printf "🚀 <b>Dự án:</b> %s\n📦 <b>Phiên bản:</b> %s\n🏮 <b>Trạng thái:</b> %s" "$SAFE_NAME" "$FINAL_VER" "${STATUS^^}")
 
-        # Gửi tin nhắn văn bản
-        curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
-          -d "chat_id=$TO" \
-          --data-urlencode "text=$MSG" \
-          -d "parse_mode=HTML"
-        
-        # Gửi file .deb nếu build thành công
-        if [ "$STATUS" == "success" ]; then
-          find . -maxdepth 2 -name "*.deb" -type f | while read -r file; do
-            curl -s -F "chat_id=$TO" \
-              -F "document=@$file" \
-              -F "caption=✅ Build thành công: $(basename "$file")" \
-              "https://api.telegram.org/bot$TOKEN/sendDocument"
-          done
-        fi
+          # Gửi tin nhắn văn bản
+          curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
+            -d "chat_id=$TO" \
+            --data-urlencode "text=$MSG" \
+            -d "parse_mode=HTML"
+          
+          # Gửi file .deb nếu build thành công
+          if [ "$STATUS" == "success" ]; then
+            find . -maxdepth 2 -name "*.deb" -type f | while read -r file; do
+              curl -s -F "chat_id=$TO" \
+                -F "document=@$file" \
+                -F "caption=✅ Build thành công: $(basename "$file")" \
+                "https://api.telegram.org/bot$TOKEN/sendDocument"
+            done
+          fi
+
