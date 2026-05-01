@@ -168,11 +168,10 @@ jobs:
 
       - name: 📦 7.1 Lưu trữ Artifacts
         if: success()
-        uses: actions/checkout@v4 # (Bước này thường đã có ở đầu, không cần lặp lại)
-        # Thay vào đó dùng action chuyên dụng:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.metadata.outputs.safe_name }}-v${{ steps.metadata.outputs.final_ver }}
           path: output/*.deb
           retention-days: 7
+
 
