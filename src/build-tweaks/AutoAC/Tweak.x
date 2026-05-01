@@ -26,7 +26,13 @@ static const NSInteger AutoACSection = 2026;
 @property (nonatomic, readonly) UITabBar *tabBar;
 @end
 
-#pragma mark - Settings Hook
+// ✅ QUAN TRỌNG: thêm category để compiler nhận method
+@interface YTTabBarController (AutoAC)
+- (void)autoAC_handleLongPress:(UILongPressGestureRecognizer *)gesture;
+- (void)autoAC_openSettings;
+@end
+
+#pragma mark - Settings
 
 %hook YTAppSettingsPresentationData
 + (NSArray *)settingsCategoryOrder {
@@ -45,9 +51,7 @@ static const NSInteger AutoACSection = 2026;
     if (category == AutoACSection) {
 
         Class itemClass = %c(YTSettingsSectionItem);
-        if (!itemClass) {
-            return %orig;
-        }
+        if (!itemClass) return %orig;
 
         NSMutableArray *items = [NSMutableArray array];
 
@@ -61,10 +65,9 @@ static const NSInteger AutoACSection = 2026;
                                            }
                                          settingItemId:0]];
 
-        id currentSelf = (id)self;
         id settingsVC =
-        [currentSelf valueForKey:@"_settingsViewControllerDelegate"]
-        ?: [currentSelf valueForKey:@"settingsViewControllerDelegate"];
+        [self valueForKey:@"_settingsViewControllerDelegate"]
+        ?: [self valueForKey:@"settingsViewControllerDelegate"];
 
         if (settingsVC) {
             [settingsVC setSectionItems:items
@@ -80,7 +83,7 @@ static const NSInteger AutoACSection = 2026;
 }
 %end
 
-#pragma mark - TAB BAR FIX LONG PRESS
+#pragma mark - Long Press Fix
 
 %hook YTTabBarController
 
@@ -105,7 +108,6 @@ static const NSInteger AutoACSection = 2026;
 
     if (gesture.state == UIGestureRecognizerStateBegan) {
         NSLog(@"[AutoAC] Long press detected");
-
         [self autoAC_openSettings];
     }
 }
