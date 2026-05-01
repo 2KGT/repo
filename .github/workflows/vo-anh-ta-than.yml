@@ -146,15 +146,13 @@ jobs:
           path: output/*.deb
           retention-days: 7
 
-        #_________ 7.1
-
-
-    - name: 🤖 7.1 Telegram Notification
-      if: always()
-      env:
+        #----------7.1----------
+      - name: 🤖 7.1 Telegram Notification
+        if: always()
+        env:
         TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
         TO: ${{ secrets.TELEGRAM_TO }}
-      run: |
+          run: |
         STATUS="${{ job.status }}"
         SAFE_NAME="${{ steps.metadata.outputs.safe_name }}"
         FINAL_VER="${{ steps.metadata.outputs.final_ver }}"
