@@ -161,57 +161,55 @@ jobs:
 
             fs.writeFileSync('apps.json', JSON.stringify(finalJson, null, 2));
 
-      - name: 🚀 6.2 Auto Commit and Push
+      - name: 🚀 6.2 Auto Commit and Push (Fixed Conflict)
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # Thêm file vào vùng chờ
+          # Thêm apps.json vào chỉ mục
           git add apps.json
           
-          # Kiểm tra xem có thay đổi thực sự không để tránh lỗi commit trống
+          # Kiểm tra nếu có thay đổi mới thực hiện commit
           if git diff --staged --quiet; then
-            echo "Không có thay đổi nào trong apps.json"
+            echo "Không có thay đổi nào để cập nhật."
           else
-            # Tạm thời cất các thay đổi để pull không bị lỗi
+            # Giải quyết xung đột: Cất file -> Pull Rebase -> Trả file
             git stash
             git pull --rebase origin main
             git stash pop
             
-            # Commit và Push
             git add apps.json
             git commit -m "Auto-update apps.json [skip ci]"
             git push origin main
           fi
 
-      - name: 🤖 7.1 Telegram Notification
+      - name: 🤖 7.1 Telegram Notification (Lấy đúng App mới nhất)
         if: success()
         env:
           TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TO: ${{ secrets.TELEGRAM_TO }}
         run: |
-          # 1. Dùng jq để tìm ứng dụng có versionDate mới nhất
-          # Sắp xếp các app theo versionDate giảm dần và lấy app đầu tiên
-          LATEST_JSON=$(jq -c '.apps | sort_by(.versionDate) | reverse | .[0]' apps.json)
+          # 1. Dùng jq lọc app có thời gian versionDate mới nhất (tránh bị spam ESign)
+          LATEST_APP_JSON=$(jq -c '.apps | sort_by(.versionDate) | reverse | .[0]' apps.json)
           
-          # 2. Trích xuất thông tin cụ thể
-          APP_NAME=$(echo $LATEST_JSON | jq -r '.name')
-          APP_VER=$(echo $LATEST_JSON | jq -r '.version')
-          IPA_LINK=$(echo $LATEST_JSON | jq -r '.downloadURL')
+          # 2. Gán biến từ JSON đã lọc
+          NAME=$(echo $LATEST_APP_JSON | jq -r '.name // "Unknown"')
+          VER=$(echo $LATEST_APP_JSON | jq -r '.version // "N/A"')
+          LINK=$(echo $LATEST_APP_JSON | jq -r '.downloadURL // "#"')
           REPO_URL="https://2kgt.github.io/repo/apps.json"
 
-          # 3. Tạo nội dung tin nhắn
+          # 3. Định dạng tin nhắn (Không xem trước link để gọn gàng)
           MSG=$(printf "<b>🚀 ĐÃ CẬP NHẬT REPO</b>\n"
           printf "━━━━━━━━━━━━━━━━━━\n"
-          printf "📱 <b>Ứng dụng:</b> <code>%s</code>\n" "$APP_NAME"
-          printf "📦 <b>Phiên bản:</b> <code>%s</code>\n\n" "$APP_VER"
+          printf "📱 <b>Ứng dụng:</b> <code>%s</code>\n" "$NAME"
+          printf "📦 <b>Phiên bản:</b> <code>%s</code>\n\n" "$VER"
           printf "✅ <b>Đã đồng bộ lên ESign, Feather!</b>\n"
           printf "━━━━━━━━━━━━━━━━━━\n"
           printf "🔗 <b>Link Repo (Sao chép):</b>\n"
           printf "<code>%s</code>\n\n" "$REPO_URL"
-          printf "📥 <a href='%s'>Nhấn để tải IPA trực tiếp</a>" "$IPA_LINK")
+          printf "📥 <a href='%s'>Nhấn để tải IPA trực tiếp</a>" "$LINK")
 
-          # 4. Gửi tin nhắn
+          # 4. Gửi qua Telegram API
           if [ -n "$TOKEN" ]; then
             curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
               -d "chat_id=$TO" \
@@ -219,4 +217,3 @@ jobs:
               -d "disable_web_page_preview=true" \
               --data-urlencode "text=$MSG"
           fi
-
