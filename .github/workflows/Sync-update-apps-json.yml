@@ -162,14 +162,9 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # Lưu file mới tạo
           cp apps.json apps.json.tmp
-          
-          # Cập nhật và Reset về bản trên Server (Dùng dấu / thay vì dấu cách)
           git fetch origin main
           git reset --hard origin/main
-          
-          # Ghi đè lại nội dung mới
           mv apps.json.tmp apps.json
           
           git add apps.json
@@ -187,18 +182,26 @@ jobs:
           TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TO: ${{ secrets.TELEGRAM_TO }}
         run: |
-          # Lấy app mới nhất dựa trên versionDate
           LATEST_APP=$(jq -c '.apps | sort_by(.versionDate) | reverse | .[0]' apps.json)
-          
           NAME=$(echo $LATEST_APP | jq -r '.name // "Unknown"')
           VER=$(echo $LATEST_APP | jq -r '.version // "N/A"')
           LINK=$(echo $LATEST_APP | jq -r '.downloadURL // "#"')
+          REPO_URL="https://2kgt.github.io/repo/apps.json"
           
-          MSG=$(printf "<b>🚀 ĐÃ CẬP NHẬT REPO</b>\n━━━━━━━━━━━━━━━━━━\n📱 <b>Ứng dụng:</b> <code>%s</code>\n📦 <b>Phiên bản:</b> <code>%s</code>\n\n✅ <b>Dữ liệu đã đồng bộ hoàn tất!</b>\n━━━━━━━━━━━━━━━━━━\n🔗 <b>Link Repo (Sao chép):</b>\n<code>https://2kgt.github.io/repo/apps.json</code>\n\n📥 <a href='%s'>Nhấn để tải IPA vừa update</a>" "$NAME" "$VER" "$LINK")
+          # Nội dung tin nhắn đã được lược bỏ link dài
+          MSG=$(printf "<b>🚀 ĐÃ CẬP NHẬT REPO</b>\n"
+          printf "━━━━━━━━━━━━━━━━━━\n"
+          printf "📱 <b>Ứng dụng:</b> <code>%s</code>\n" "$NAME"
+          printf "📦 <b>Phiên bản:</b> <code>%s</code>\n\n" "$VER"
+          printf "✅ <b>Dữ liệu đã đồng bộ hoàn tất!</b>\n"
+          printf "━━━━━━━━━━━━━━━━━━\n"
+          printf "📥 <a href='%s'>Nhấn để tải IPA vừa update</a>" "$LINK")
 
+          # Gửi thông báo kèm nút bấm Inline
           curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
             -d "chat_id=$TO" \
             -d "parse_mode=HTML" \
             -d "disable_web_page_preview=true" \
-            --data-urlencode "text=$MSG"
+            --data-urlencode "text=$MSG" \
+            -d "reply_markup={\"inline_keyboard\": [[{\"text\": \"🔗 Sao chép Link Repo\", \"url\": \"$REPO_URL\"}]]}"
 
