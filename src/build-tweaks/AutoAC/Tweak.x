@@ -26,13 +26,13 @@ static const NSInteger AutoACSection = 2026;
 @property (nonatomic, readonly) UITabBar *tabBar;
 @end
 
-// ✅ QUAN TRỌNG: thêm category để compiler nhận method
+// ✅ Category để tránh lỗi compiler
 @interface YTTabBarController (AutoAC)
 - (void)autoAC_handleLongPress:(UILongPressGestureRecognizer *)gesture;
 - (void)autoAC_openSettings;
 @end
 
-#pragma mark - Settings
+#pragma mark - Settings Hook
 
 %hook YTAppSettingsPresentationData
 + (NSArray *)settingsCategoryOrder {
@@ -44,6 +44,7 @@ static const NSInteger AutoACSection = 2026;
     return [order copy];
 }
 %end
+
 
 %hook YTSettingsSectionItemManager
 - (void)updateSectionForCategory:(NSUInteger)category withEntry:(id)entry {
@@ -65,15 +66,18 @@ static const NSInteger AutoACSection = 2026;
                                            }
                                          settingItemId:0]];
 
+        // ✅ FIX forward declaration lỗi ở đây
+        id currentSelf = (id)self;
+
         id settingsVC =
-        [self valueForKey:@"_settingsViewControllerDelegate"]
-        ?: [self valueForKey:@"settingsViewControllerDelegate"];
+        [currentSelf valueForKey:@"_settingsViewControllerDelegate"]
+        ?: [currentSelf valueForKey:@"settingsViewControllerDelegate"];
 
         if (settingsVC) {
-            [settingsVC setSectionItems:items
-                            forCategory:AutoACSection
-                                  title:@"AutoAC Settings"
-                       titleDescription:@"Cấu hình bởi 2KGT"];
+            [(id)settingsVC setSectionItems:items
+                               forCategory:AutoACSection
+                                     title:@"AutoAC Settings"
+                          titleDescription:@"Cấu hình bởi 2KGT"];
         }
 
         return;
@@ -83,7 +87,8 @@ static const NSInteger AutoACSection = 2026;
 }
 %end
 
-#pragma mark - Long Press Fix
+
+#pragma mark - Long Press Gesture
 
 %hook YTTabBarController
 
