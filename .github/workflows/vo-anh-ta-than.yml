@@ -149,9 +149,9 @@ jobs:
       - name: 🤖 7.1 Telegram Notification
         if: always()
         env:
-        TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-        TO: ${{ secrets.TELEGRAM_TO }}
-      run: |
+    TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+    TO: ${{ secrets.TELEGRAM_TO }}
+    run: |
         STATUS="${{ job.status }}"
         SAFE_NAME="${{ steps.metadata.outputs.safe_name || 'N/A' }}"
         FINAL_VER="${{ steps.metadata.outputs.final_ver || 'N/A' }}"
