@@ -163,7 +163,7 @@ jobs:
           [ "$STATUS" == "success" ] && ICON="✅" || ICON="❌"
 
           # Tạo nội dung tin nhắn
-          MSG=$(printf "<b>$ICON BÁO CÁO BUILD</b>\n\n🚀 <b>Dự án:</b> %s\n📦 <b>Phiên bản:</b> %s\n🏮 <b>Trạng thái:</b> %s" "$SAFE_NAME" "$FINAL_VER" "$UPPER_STATUS")
+          MSG=$(printf "<b>$ICON BÁO CÁO BUILD</b>\n\n📦 <b>Dự án:</b> %s\n🔏 <b>Phiên bản:</b> %s\n💡 <b>Trạng thái:</b> %s" "$SAFE_NAME" "$FINAL_VER" "$UPPER_STATUS")
 
           # Gửi tin nhắn văn bản
           curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
