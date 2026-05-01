@@ -134,7 +134,15 @@ jobs:
           git commit -m "🌟 Release ${{ steps.metadata.outputs.safe_name }} v${{ steps.metadata.outputs.final_ver }}"
           git push origin main
 
-      - name: 🤖 6.1 Telegram Notification
+      - name: 📦 6.1 Lưu trữ Artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.metadata.outputs.safe_name }}-v${{ steps.metadata.outputs.final_ver }}
+          path: output/*.deb
+          retention-days: 7
+
+      - name: 🤖 7.1 Telegram Notification
         if: always()
         env:
           TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
@@ -166,12 +174,6 @@ jobs:
             fi
           fi
 
-      - name: 📦 7.1 Lưu trữ Artifacts
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.metadata.outputs.safe_name }}-v${{ steps.metadata.outputs.final_ver }}
-          path: output/*.deb
-          retention-days: 7
+
 
 
