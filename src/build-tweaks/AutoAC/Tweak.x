@@ -22,16 +22,6 @@ static const NSInteger AutoACSection = 2026;
       titleDescription:(id)description;
 @end
 
-@interface YTTabBarController : UITabBarController
-@property (nonatomic, readonly) UITabBar *tabBar;
-@end
-
-// ✅ Category để tránh lỗi compiler
-@interface YTTabBarController (AutoAC)
-- (void)autoAC_handleLongPress:(UILongPressGestureRecognizer *)gesture;
-- (void)autoAC_openSettings;
-@end
-
 #pragma mark - Settings Hook
 
 %hook YTAppSettingsPresentationData
@@ -66,7 +56,7 @@ static const NSInteger AutoACSection = 2026;
                                            }
                                          settingItemId:0]];
 
-        // ✅ FIX forward declaration lỗi ở đây
+        // FIX forward declaration
         id currentSelf = (id)self;
 
         id settingsVC =
@@ -87,49 +77,54 @@ static const NSInteger AutoACSection = 2026;
 }
 %end
 
+#pragma mark - REAL LONG PRESS (HOOK UITabBar)
 
-#pragma mark - Long Press Gesture
+%hook UITabBar
 
-%hook YTTabBarController
-
-- (void)viewDidLoad {
+- (void)didMoveToWindow {
     %orig;
 
-    NSLog(@"[AutoAC] TabBar loaded");
+    NSLog(@"[AutoAC] UITabBar attached");
 
     UILongPressGestureRecognizer *longPress =
     [[UILongPressGestureRecognizer alloc]
      initWithTarget:self
-     action:@selector(autoAC_handleLongPress:)];
+     action:@selector(autoAC_handleLongPress_global:)];
 
     longPress.minimumPressDuration = 0.5;
     longPress.cancelsTouchesInView = NO;
+    longPress.delaysTouchesBegan = NO;
+    longPress.delaysTouchesEnded = NO;
 
-    [self.tabBar addGestureRecognizer:longPress];
+    [self addGestureRecognizer:longPress];
 }
 
 %new
-- (void)autoAC_handleLongPress:(UILongPressGestureRecognizer *)gesture {
+- (void)autoAC_handleLongPress_global:(UILongPressGestureRecognizer *)gesture {
 
     if (gesture.state == UIGestureRecognizerStateBegan) {
-        NSLog(@"[AutoAC] Long press detected");
-        [self autoAC_openSettings];
+
+        NSLog(@"[AutoAC] Long press REAL detected");
+
+        UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+        UIViewController *rootVC = keyWindow.rootViewController;
+
+        // tìm top VC để tránh crash
+        while (rootVC.presentedViewController) {
+            rootVC = rootVC.presentedViewController;
+        }
+
+        UIAlertController *alert =
+        [UIAlertController alertControllerWithTitle:@"AutoAC"
+                                            message:@"Long press hoạt động ✅"
+                                     preferredStyle:UIAlertControllerStyleAlert];
+
+        [alert addAction:[UIAlertAction actionWithTitle:@"OK"
+                                                  style:UIAlertActionStyleDefault
+                                                handler:nil]];
+
+        [rootVC presentViewController:alert animated:YES completion:nil];
     }
-}
-
-%new
-- (void)autoAC_openSettings {
-
-    UIAlertController *alert =
-    [UIAlertController alertControllerWithTitle:@"AutoAC"
-                                        message:@"Long press hoạt động ✅"
-                                 preferredStyle:UIAlertControllerStyleAlert];
-
-    [alert addAction:[UIAlertAction actionWithTitle:@"OK"
-                                              style:UIAlertActionStyleDefault
-                                            handler:nil]];
-
-    [self presentViewController:alert animated:YES completion:nil];
 }
 
 %end
