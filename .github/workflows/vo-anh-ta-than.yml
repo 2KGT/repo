@@ -151,7 +151,7 @@ jobs:
         env:
         TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
         TO: ${{ secrets.TELEGRAM_TO }}
-      run: |
+        run: |
         STATUS="${{ job.status }}"
         SAFE_NAME="${{ steps.metadata.outputs.safe_name }}"
         FINAL_VER="${{ steps.metadata.outputs.final_ver }}"
