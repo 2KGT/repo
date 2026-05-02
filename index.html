@@ -1,5 +1,190 @@
 <script>
 const API = "https://repo-2xm0.onrender.com"; // 🔥 đổi sau khi deploy
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kyic Sign</title>
+<style>
+body{
+  margin:0;
+  font-family:-apple-system, BlinkMacSystemFont;
+  background:radial-gradient(circle at top,#1e3a8a,#020617);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
+}
+
+.box{
+  width:90%;
+  max-width:360px;
+  padding:30px;
+  border-radius:28px;
+  background:rgba(255,255,255,0.06);
+  backdrop-filter:blur(40px);
+  border:1px solid rgba(255,255,255,0.12);
+  box-shadow:0 20px 60px rgba(0,0,0,0.6);
+  text-align:center;
+  animation:fade .6s ease;
+}
+
+@keyframes fade{
+  from{opacity:0; transform:translateY(20px)}
+  to{opacity:1}
+}
+
+h2{
+  margin-bottom:20px;
+}
+
+.btn{
+  display:block;
+  margin:12px 0;
+  padding:16px;
+  border-radius:18px;
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,0.12);
+  text-decoration:none;
+  color:#fff;
+  font-weight:600;
+  transition:.2s;
+}
+
+.btn:active{
+  transform:scale(.96);
+  background:rgba(255,255,255,0.2);
+}
+
+#status{
+  margin-top:20px;
+  font-size:14px;
+  opacity:.75;
+}
+
+.progress{
+  margin-top:20px;
+  height:6px;
+  background:#222;
+  border-radius:10px;
+  overflow:hidden;
+}
+
+.bar{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#22c55e,#4ade80,#86efac);
+  transition:.3s;
+}
+
+input{
+  display:none;
+}
+</style>
+</head>
+<body>
+<div class="box">
+  <h2>🚀 Kyic Sign</h2>
+  <div id="status">Ready</div>
+  <div class="progress">
+    <div class="bar" id="bar"></div>
+  </div>
+  <input type="file" id="file" onchange="upload(this.files[0])">
+</div>
+<script>
+
+// ⚠️ THAY LINK NÀY BẰNG LINK SERVER CỦA BẠN
+const API = "https://YOUR_RENDER_URL";
+
+// ===== UI =====
+function pick(){
+  document.getElementById("file").click();
+}
+
+function setStatus(t){
+  document.getElementById("status").innerText = t;
+}
+
+function runFake(done){
+  const bar = document.getElementById("bar");
+  let w = 0;
+
+  const i = setInterval(()=>{
+    w += Math.random()*15;
+    if(w >= 100){
+      w = 100;
+      clearInterval(i);
+      done();
+    }
+    bar.style.width = w + "%";
+  },300);
+}
+
+// ===== UPLOAD =====
+async function upload(file){
+  if(!file) return;
+
+  setStatus("🔐 Đang ký IPA...");
+  runFake(async ()=>{
+    try{
+      const form = new FormData();
+      form.append("ipa", file);
+
+      const res = await fetch(API + "/sign", {
+        method:"POST",
+        body:form
+      });
+
+      const data = await res.json();
+
+      if(data.success){
+        install(data.manifest);
+      }else{
+        setStatus("❌ Ký thất bại");
+      }
+    }catch(e){
+      setStatus("❌ Lỗi server");
+    }
+  });
+}
+
+// ===== LINK =====
+async function signLink(){
+  const ipa = prompt("Dán link IPA:");
+  if(!ipa) return;
+
+  setStatus("🌐 Đang xử lý link...");
+  runFake(async ()=>{
+    try{
+      const res = await fetch(API + "/sign-from-url?ipa=" + encodeURIComponent(ipa));
+      const data = await res.json();
+
+      if(data.success){
+        install(data.manifest);
+      }else{
+        setStatus("❌ Link lỗi");
+      }
+    }catch(e){
+      setStatus("❌ Server lỗi");
+    }
+  });
+}
+
+// ===== INSTALL =====
+function install(manifest){
+  setStatus("🚀 Đang cài...");
+
+  const url = API + manifest;
+  const itms = "itms-services://?action=download-manifest&url=" + url;
+
+  setTimeout(()=>{
+    window.location.href = itms;
+  },800);
+}
+
+</script>
 
 // ===== COPY LINK (giữ nguyên) =====
 function copySileo() {
