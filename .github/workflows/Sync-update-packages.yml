@@ -1,43 +1,57 @@
-name: Auto sync sileo Packages
-
-on:
-  push:
-    paths:
-      - 'debs/**'
-  workflow_dispatch:
-
-jobs:
-  generate:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Đảm bảo lấy đủ lịch sử để push không lỗi
-
-      - name: Install dpkg-dev
-        run: sudo apt-get update && sudo apt-get install -y dpkg-dev
-
-      - name: Generate Packages
+      - name: Generate Packages & Release
         run: |
-          # Kiểm tra nếu thư mục debs tồn tại
           if [ -d "debs" ]; then
+            # 1. Tạo file Packages thô trước
             cd debs
             dpkg-scanpackages -m . /dev/null > ../Packages
             cd ..
+
+            # 2. Logic quét từng file deb để gán Icon dựa trên Name trong Control
+            # Tạo một file tạm để lưu Packages mới
+            touch Packages.new
+            
+            # Đọc file Packages hiện tại để xử lý từng block dữ liệu
+            while IFS= read -r line; do
+              echo "$line" >> Packages.new
+              
+              # Nếu dòng hiện tại là 'Package: ...', ta sẽ tìm file deb tương ứng
+              if [[ $line == Package:* ]]; then
+                PKG_ID=$(echo $line | awk '{print $2}')
+                # Tìm file deb dựa trên Package ID
+                DEB_FILE=$(find debs -name "*.deb" -exec grep -l "Package: $PKG_ID" {} + | head -n 1)
+                
+                if [ -n "$DEB_FILE" ]; then
+                  # Lấy Name từ file control (dùng tên hiển thị)
+                  TWEAK_NAME=$(dpkg-deb -f "$DEB_FILE" Name)
+                  
+                  # Nếu có Name, chèn dòng Icon ngay sau dòng Package
+                  if [ -n "$TWEAK_NAME" ]; then
+                    echo "Icon: https://raw.githubusercontent.com/2KGT/repo/main/icons/${TWEAK_NAME}.png" >> Packages.new
+                  fi
+                fi
+              fi
+            done < Packages
+            
+            # Thay thế file cũ bằng file đã gán Icon
+            mv Packages.new Packages
+            
+            # 3. Nén file
             bzip2 -kf Packages
-            echo "✅ Đã tạo Packages & Packages.bz2"
+            
+            # 4. Ghi file Release
+            echo "Origin: Kyic Repository" > Release
+            echo "Label: Kyic Repository" >> Release
+            echo "Suite: stable" >> Release
+            echo "Version: 1.0" >> Release
+            echo "Codename: ios" >> Release
+            echo "Architectures: iphoneos-arm64 iphoneos-arm" >> Release
+            echo "Components: main" >> Release
+            echo "Description: Kyic Repository - Kho lưu trữ tweaks & IPA chất lượng cao." >> Release
+            echo "Icon: https://raw.githubusercontent.com/2KGT/repo/main/icons/sileo.png" >> Release
+            echo "Date: $(date -R)" >> Release
+            
+            echo "✅ Tự động quét gán icon theo tên Tweak thành công!"
           else
             echo "❌ Không tìm thấy thư mục debs"
             exit 1
           fi
-
-      - name: Commit and Push
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Auto update Packages & Packages.bz2 [skip ci]"
-          file_pattern: "Packages*"
-          branch: main # Đảm bảo push đúng vào nhánh chính
