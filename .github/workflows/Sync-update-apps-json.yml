@@ -40,7 +40,6 @@ jobs:
             const eventName = context.eventName;
             let appToNotify = null;
 
-            // --- CÔNG CỤ XỬ LÝ ---
             const extractVersion = (f) => (f.match(/[_-]v?(\d+\.\d+(\.\d+)?)/i) || [null, "1.0"])[1];
             const cleanAppName = (f) => f.replace(/\.ipa$/i, '').replace(/[_-]v?\d+(\.\d+)*.*$/i, '').replace(/_/g, ' ').trim();
 
@@ -58,27 +57,27 @@ jobs:
                   versions: [] 
                 };
               }
-              // Tránh trùng lặp dựa trên URL tải về
               if (!appsMap[key].versions.find(v => v.downloadURL === vData.downloadURL)) {
                 appsMap[key].versions.push(vData);
               }
               return appsMap[key];
             };
 
-            // 1. Quét Git Diff để xác định app vừa push
+            // 1. Quét thay đổi từ Git Diff
             let changedFiles = [];
             try {
               changedFiles = execSync('git diff --name-only HEAD^ HEAD').toString().split('\n').map(f => f.trim());
             } catch (e) {}
 
-            // 2. QUÉT THƯ MỤC APPS/
+            // 2. Quét thư mục apps/
             if (fs.existsSync('apps')) {
               const files = fs.readdirSync('apps').filter(f => f.toLowerCase().endsWith('.ipa'));
               for (const file of files) {
                 const path = `apps/${file}`;
                 const name = cleanAppName(file);
                 const version = extractVersion(file);
-                let bundleId = "com.kyic.app", perms = { entitlements: [], privacy: {} };
+                let bundleId = "com.kyic.app";
+                let perms = { entitlements: [], privacy: {} };
 
                 try {
                   const info = await (new AppInfoParser(path)).parse();
@@ -94,7 +93,7 @@ jobs:
               }
             }
 
-            // 3. QUÉT TOÀN BỘ RELEASES (Gộp thêm phiên bản)
+            // 3. Quét toàn bộ Releases
             try {
               const { data: releases } = await github.rest.repos.listReleases({ 
                 owner: context.repo.owner, 
@@ -114,7 +113,6 @@ jobs:
                     };
                     const appObj = addAppToMap(name, "com.kyic.release", "Utilities", vData);
 
-                    // Nếu là sự kiện release, ưu tiên báo app này
                     if (!appToNotify && eventName === 'release' && release.id === context.payload.release.id) {
                       appToNotify = { ...appObj, ...vData };
                     }
@@ -123,14 +121,13 @@ jobs:
               }
             } catch (e) { console.log("Lỗi quét Release: " + e.message); }
 
-            // --- TỔNG HỢP VÀ SẮP XẾP ---
+            // --- TỔNG HỢP ---
             const finalApps = Object.values(appsMap).map(app => {
               app.versions.sort((a, b) => new Date(b.date) - new Date(a.date));
               const latest = app.versions[0];
               return { ...app, version: latest.version, versionDate: latest.date, size: latest.size, downloadURL: latest.downloadURL };
             });
 
-            // Ghi file JSON với tên mới
             const repoData = { 
               name: "Kyic Repository", 
               identifier: "com.2kgt.repo", 
@@ -140,7 +137,7 @@ jobs:
             fs.writeFileSync('apps.json', JSON.stringify(repoData, null, 2));
             if (appToNotify) fs.writeFileSync('current_app.json', JSON.stringify(appToNotify));
 
-      - name: "🚀 Đồng bộ Git (Ghi file)"
+      - name: "🚀 Ghi Repo & Push Metadata"
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -160,8 +157,7 @@ jobs:
             VER=$(echo "$INFO" | jq -r '.version')
             LINK=$(echo "$INFO" | jq -r '.downloadURL')
             
-            # Tiêu đề In đậm, viết hoa đầu ngữ và dùng chữ Update
-            # Dòng kẻ dùng ký tự mỏng hơn (─) thay vì (━)
+            # Giao diện tin nhắn gọn gàng, mỏng và tươi sáng
             MSG="<b>⭐ Kyic repository update</b>%0A"
             MSG="$MSG──────────────────%0A"
             MSG="$MSG📱 <b>App:</b> <code>$NAME</code>%0A"
@@ -179,4 +175,3 @@ jobs:
               -d "disable_web_page_preview=false" \
               -d "text=$MSG"
           fi
-fi
