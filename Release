@@ -6,5 +6,11 @@ Codename: ios
 Architectures: iphoneos-arm64 iphoneos-arm
 Components: main
 Description: Kyic Repository - Kho lưu trữ tweaks & IPA chất lượng cao cho thiết bị iOS jailbreak. Hỗ trợ Cydia, Sileo, Zebra và các trình quản lý gói hiện đại. Cung cấp tweak, công cụ, theme và file IPA đã ký cho người dùng iOS.
-Date: Thu, 23 Apr 2026 03:55:00 +0000
+Icon: https://raw.github.com/2KGT/repo/blob/main/icons/Kyic.png
+MD5Sum: 00000000000000000000000000000000
+SHA1: 0000000000000000000000000000000000000000
+SHA256: 0000000000000000000000000000000000000000000000000000000000000000
+Date: Sat, 02 May 2026 17:31:00 +0700
 Acquire-By-Hash: yes
+Maintainer: 2KGT <your-email@example.com>
+Support: https://github.com/2KGT/repo/issues
