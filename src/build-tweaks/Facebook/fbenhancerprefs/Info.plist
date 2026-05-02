@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0">
 <dict>
+
     <key>CFBundleIdentifier</key>
     <string>com.yourname.fbenhancerprefs</string>
 
@@ -14,6 +15,7 @@
     <string>FBEnhancerPrefs</string>
 
     <key>NSPrincipalClass</key>
-    <string>PSListController</string>
+    <string>FBEnhancerPrefsListController</string>
+
 </dict>
 </plist>
