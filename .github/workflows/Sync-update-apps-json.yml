@@ -8,7 +8,6 @@ on:
     types: [published, edited]
   workflow_dispatch:
 
-# GIAI ĐOẠN 1: Xếp hàng tiến trình (First Come, First Served)
 concurrency:
   group: sync-apps-json
   cancel-in-progress: false
@@ -18,14 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pages: write
-      id-token: write
 
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2 
+          fetch-depth: 0 # Quan trọng: Để lấy đủ lịch sử cho git diff
           ref: main
 
       - name: "Install Dependencies"
@@ -36,8 +33,6 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const path = require('path');
-            const fetch = require('node-fetch');
             const { execSync } = require('child_process');
             const AppInfoParser = require(`${process.env.GITHUB_WORKSPACE}/node_modules/app-info-parser`);
             
@@ -45,141 +40,91 @@ jobs:
             const eventName = context.eventName;
             let appToNotify = null;
 
-            // --- GIAI ĐOẠN 2: XỬ LÝ DỮ LIỆU (THE LOGIC) ---
+            // Hàm xử lý dữ liệu
+            const extractVersion = (f) => (f.match(/[_-]v?(\d+\.\d+(\.\d+)?)/i) || [null, "1.0"])[1];
+            const cleanAppName = (f) => f.replace(/\.ipa$/i, '').replace(/[_-]v?\d+(\.\d+)*.*$/i, '').replace(/_/g, ' ').trim();
 
-            const extractVersion = (filename) => {
-              const match = filename.match(/[_-]v?(\d+\.\d+(\.\d+)?)/i);
-              return match ? match[1] : "1.0";
-            };
-
-            const cleanAppName = (filename) => {
-              return filename.replace(/\.ipa$/i, '').replace(/[_-]v?\d+(\.\d+)*.*$/i, '').replace(/_/g, ' ').trim();
-            };
-
-            const addAppVersion = (name, bundleId, category, permissions, versionData) => {
-              const key = name.toLowerCase();
-              if (!appsMap[key]) {
-                appsMap[key] = {
-                  name: name,
-                  bundleIdentifier: bundleId,
-                  developerName: "Kyic",
-                  subtitle: name,
-                  category: category,
-                  iconURL: `https://2kgt.github.io/repo/icons/${name.replace(/\s+/g, '')}.png`,
-                  appPermissions: permissions,
-                  versions: []
-                };
-              }
-              if (!appsMap[key].versions.find(v => v.version === versionData.version)) {
-                appsMap[key].versions.push(versionData);
-              }
-              return appsMap[key];
-            };
-
-            // 1. Quét Git Diff (Dành cho Push)
+            // 1. Quét file mới từ Push
             let changedFiles = [];
             if (eventName === 'push') {
               try {
-                const diffOutput = execSync('git diff --name-only HEAD^ HEAD').toString();
-                changedFiles = diffOutput.split('\n').map(f => f.trim()).filter(f => f.endsWith('.ipa'));
-              } catch (e) { console.log("Không lấy được diff"); }
+                changedFiles = execSync('git diff --name-only HEAD^ HEAD').toString().split('\n').map(f => f.trim());
+              } catch (e) { console.log("Lỗi diff"); }
             }
 
-            // 2. Duyệt Thư mục Local & Gán appToNotify từ Push
+            // 2. Xử lý thư mục apps/ (Giai đoạn 2: Local Scan)
             if (fs.existsSync('apps')) {
-              const allFiles = fs.readdirSync('apps').filter(f => f.toLowerCase().endsWith('.ipa'));
-              for (const file of allFiles) {
-                const relPath = `apps/${file}`;
+              const files = fs.readdirSync('apps').filter(f => f.toLowerCase().endsWith('.ipa'));
+              for (const file of files) {
+                const path = `apps/${file}`;
                 const name = cleanAppName(file);
                 const version = extractVersion(file);
+                
                 let bundleId = "com.unknown.app", perms = { entitlements: [], privacy: {} };
-
                 try {
-                  const parser = new AppInfoParser(relPath);
-                  const info = await parser.parse();
+                  const info = await (new AppInfoParser(path)).parse();
                   bundleId = info.CFBundleIdentifier || bundleId;
                   for (const k in info) if (k.endsWith('UsageDescription')) perms.privacy[k] = info[k];
-                  if (info.mobileProvision?.Entitlements) perms.entitlements = Object.keys(info.mobileProvision.Entitlements);
                 } catch (e) {}
 
-                const stats = fs.statSync(relPath);
-                const appObj = addAppVersion(name, bundleId, "Utilities", perms, {
-                  version: version,
-                  date: stats.mtime.toISOString(),
-                  size: stats.size,
-                  downloadURL: `https://2kgt.github.io/repo/apps/${file}`
-                });
+                const stats = fs.statSync(path);
+                const key = name.toLowerCase();
+                if (!appsMap[key]) {
+                  appsMap[key] = { name, bundleIdentifier: bundleId, developerName: "Kyic", category: "Utilities", versions: [] };
+                }
+                
+                const vData = { version, date: stats.mtime.toISOString(), size: stats.size, downloadURL: `https://2kgt.github.io/repo/apps/${file}` };
+                appsMap[key].versions.push(vData);
 
-                // Nếu file nằm trong Git Diff, chọn làm thông báo
-                if (changedFiles.includes(relPath)) appToNotify = appObj;
+                // Ưu tiên app vừa push để thông báo
+                if (changedFiles.includes(path)) appToNotify = { ...appsMap[key], ...vData };
               }
             }
 
-            // 3. Quét Release (Dành cho Phát hành)
-            // Chỉ lấy thông báo từ Release nếu chưa có từ Push
+            // 3. Xử lý Release (Nếu chưa có app từ push)
             if (!appToNotify && eventName === 'release') {
-              try {
-                const release = context.payload.release;
-                const asset = release.assets.find(a => a.name.toLowerCase().endsWith('.ipa'));
-                if (asset) {
-                  appToNotify = addAppVersion(cleanAppName(asset.name), "com.release.app", "Utilities", {}, {
-                    version: extractVersion(asset.name),
-                    date: release.published_at,
-                    size: asset.size,
-                    downloadURL: asset.browser_download_url
-                  });
-                }
-              } catch (e) { console.log("Lỗi Release"); }
+              const asset = context.payload.release.assets.find(a => a.name.endsWith('.ipa'));
+              if (asset) {
+                appToNotify = { name: cleanAppName(asset.name), version: extractVersion(asset.name), downloadURL: asset.browser_download_url };
+              }
             }
 
-            // --- GIAI ĐOẠN 3: ĐỒNG BỘ & THÔNG BÁO ---
-
-            // 1. Tổng hợp và ghi file apps.json
+            // --- GIAI ĐOẠN 3: GHI DỮ LIỆU ---
             const finalApps = Object.values(appsMap).map(app => {
               app.versions.sort((a, b) => b.version.localeCompare(a.version, undefined, { numeric: true }));
-              const latest = app.versions[0];
-              Object.assign(app, { version: latest.version, versionDate: latest.date, size: latest.size, downloadURL: latest.downloadURL });
-              return app;
+              return { ...app, ...app.versions[0] };
             });
 
             fs.writeFileSync('apps.json', JSON.stringify({ name: "Kyic Repo", identifier: "com.2kgt.repo", apps: finalApps }, null, 2));
+            if (appToNotify) fs.writeFileSync('current_app.json', JSON.stringify(appToNotify));
 
-            // 2. Ghi thông tin mới vào current_app.json để gửi Telegram
-            if (appToNotify) {
-              fs.writeFileSync('current_app.json', JSON.stringify(appToNotify));
-            }
-
-      - name: "🚀 Ghi Repo & Push Metadata"
+      - name: "🚀 Push Metadata (Ghi file trước)"
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Bảo lưu file thông báo trước khi push
-          if [ -f current_app.json ]; then cp current_app.json temp_app.json; fi
+          # Bảo lưu dữ liệu tránh bị reset mất
+          cp apps.json apps_temp.json
+          if [ -f current_app.json ]; then cp current_app.json notify_temp.json; fi
+          
+          git fetch origin main
+          git checkout main
+          mv apps_temp.json apps.json
           
           git add apps.json
           git commit -m "Update apps.json [skip ci]" || echo "No changes"
-          git push origin main --force
+          git push origin main
 
-      - name: "🤖 Gửi Telegram Notification"
-        if: success()
+      - name: "🤖 Telegram Notify (Thông báo sau)"
         run: |
-          if [ -f temp_app.json ]; then
-            INFO=$(cat temp_app.json)
+          if [ -f notify_temp.json ]; then
+            INFO=$(cat notify_temp.json)
             NAME=$(echo "$INFO" | jq -r '.name')
             VER=$(echo "$INFO" | jq -r '.version')
             LINK=$(echo "$INFO" | jq -r '.downloadURL')
-            REPO_LINK="https://2kgt.github.io/repo/apps.json"
-
-            MSG="<b>🚀 REPO ĐÃ CẬP NHẬT</b>%0A"
-            MSG="$MSG━━━━━━━━━━━━━━━━━━%0A"
-            MSG="$MSG📱 <b>Ứng dụng:</b> <code>$NAME</code>%0A"
-            MSG="$MSG📦 <b>Phiên bản:</b> <code>$VER</code>%0A"
-            MSG="$MSG━━━━━━━━━━━━━━━━━━%0A"
-            MSG="$MSG🔗 <b>Link Repo (Chạm sao chép):</b>%0A<code>$REPO_LINK</code>%0A"
-            MSG="$MSG━━━━━━━━━━━━━━━━━━%0A"
-            MSG="$MSG📥 <a href='$LINK'>Nhấn để tải IPA trực tiếp</a>"
-
+            
+            MSG="<b>🚀 REPO CẬP NHẬT</b>%0A📱 App: <code>$NAME</code>%0A📦 Ver: <code>$VER</code>%0A🔗 <a href='$LINK'>Tải trực tiếp IPA</a>"
+            
             curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" \
               -d "chat_id=${{ secrets.TELEGRAM_TO }}" \
               -d "parse_mode=HTML" \
