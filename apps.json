@@ -24,21 +24,21 @@
       "versions": [
         {
           "version": "5.0.2",
-          "date": "2026-05-02T01:18:37.710Z",
+          "date": "2026-05-02T01:29:30.357Z",
           "size": 7473847,
           "downloadURL": "https://2kgt.github.io/repo/apps/ESign_5.0.2.ipa",
           "localizedDescription": "Phiên bản 5.0.2 tổng hợp bởi Kyic."
         },
         {
           "version": "4.8.1",
-          "date": "2026-05-02T01:18:37.689Z",
+          "date": "2026-05-02T01:29:30.337Z",
           "size": 9115820,
           "downloadURL": "https://2kgt.github.io/repo/apps/ESign_4.8.1.ipa",
           "localizedDescription": "Phiên bản 4.8.1 tổng hợp bởi Kyic."
         }
       ],
       "version": "5.0.2",
-      "versionDate": "2026-05-02T01:18:37.710Z",
+      "versionDate": "2026-05-02T01:29:30.357Z",
       "size": 7473847,
       "downloadURL": "https://2kgt.github.io/repo/apps/ESign_5.0.2.ipa",
       "description": "ESign v5.0.2",
@@ -58,14 +58,14 @@
       "versions": [
         {
           "version": "2.8.2",
-          "date": "2026-05-02T01:18:37.735Z",
+          "date": "2026-05-02T01:29:30.382Z",
           "size": 14210105,
           "downloadURL": "https://2kgt.github.io/repo/apps/Feather_2.8.2.ipa",
           "localizedDescription": "Phiên bản 2.8.2 tổng hợp bởi Kyic."
         }
       ],
       "version": "2.8.2",
-      "versionDate": "2026-05-02T01:18:37.735Z",
+      "versionDate": "2026-05-02T01:29:30.382Z",
       "size": 14210105,
       "downloadURL": "https://2kgt.github.io/repo/apps/Feather_2.8.2.ipa",
       "description": "Feather v2.8.2",
@@ -85,21 +85,21 @@
       "versions": [
         {
           "version": "1.0.6",
-          "date": "2026-05-02T01:18:37.762Z",
+          "date": "2026-05-02T01:29:30.409Z",
           "size": 11155218,
           "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.6.ipa",
           "localizedDescription": "Phiên bản 1.0.6 tổng hợp bởi Kyic."
         },
         {
           "version": "1.0",
-          "date": "2026-05-02T01:18:37.783Z",
+          "date": "2026-05-02T01:29:30.431Z",
           "size": 10151779,
           "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.ipa",
           "localizedDescription": "Phiên bản 1.0 tổng hợp bởi Kyic."
         }
       ],
       "version": "1.0.6",
-      "versionDate": "2026-05-02T01:18:37.762Z",
+      "versionDate": "2026-05-02T01:29:30.409Z",
       "size": 11155218,
       "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.6.ipa",
       "description": "LCSign v1.0.6",
@@ -151,7 +151,7 @@
         },
         {
           "version": "1.1.28",
-          "date": "2026-05-02T01:18:37.798Z",
+          "date": "2026-05-02T01:29:30.446Z",
           "size": 9592698,
           "downloadURL": "https://2kgt.github.io/repo/apps/Zebra_1.1.28.ipa",
           "localizedDescription": "Phiên bản 1.1.28 tổng hợp bởi Kyic."
@@ -188,27 +188,27 @@
       "localizedDescription": "Stay_v2.9.18 crack Pro ( Safari tiện ích mở rộng )"
     },
     {
-      "name": "Instagram.v419.0.0",
+      "name": "Instagram",
       "bundleIdentifier": "com.unknown.app",
       "developerName": "Kyic",
-      "subtitle": "Instagram.v419.0.0",
+      "subtitle": "Instagram",
       "category": "Utilities",
-      "iconURL": "https://2kgt.github.io/repo/icons/Instagram.v419.0.0.png",
+      "iconURL": "https://2kgt.github.io/repo/icons/Instagram.png",
       "versions": [
         {
           "version": "Instagram_v419.0.0",
           "date": "2026-05-02T00:57:02Z",
           "size": 274889166,
-          "downloadURL": "https://github.com/2KGT/repo/releases/download/Instagram_v419.0.0/Instagram.v419.0.0.ipa",
-          "localizedDescription": "Instagram v419.0.0 Regram v2.4"
+          "downloadURL": "https://github.com/2KGT/repo/releases/download/Instagram_v419.0.0/Instagram-v419.0.0.ipa",
+          "localizedDescription": "Instagram-v419.0.0 Regram v2.4"
         }
       ],
       "version": "Instagram_v419.0.0",
       "versionDate": "2026-05-02T00:57:02Z",
       "size": 274889166,
-      "downloadURL": "https://github.com/2KGT/repo/releases/download/Instagram_v419.0.0/Instagram.v419.0.0.ipa",
-      "description": "Instagram.v419.0.0 vInstagram_v419.0.0",
-      "localizedDescription": "Instagram v419.0.0 Regram v2.4"
+      "downloadURL": "https://github.com/2KGT/repo/releases/download/Instagram_v419.0.0/Instagram-v419.0.0.ipa",
+      "description": "Instagram vInstagram_v419.0.0",
+      "localizedDescription": "Instagram-v419.0.0 Regram v2.4"
     },
     {
       "name": "BiliBili",
