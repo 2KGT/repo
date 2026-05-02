@@ -8,7 +8,6 @@ on:
     types: [published, edited]
   workflow_dispatch:
 
-# Xếp hàng các tiến trình push để tránh xung đột dữ liệu và báo tin sai thứ tự
 concurrency:
   group: sync-apps-json
   cancel-in-progress: false
@@ -23,7 +22,7 @@ jobs:
       - name: "Checkout repository"
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Quan trọng để git diff hoạt động chính xác
+          fetch-depth: 2 # Lấy ít nhất 2 commit để so sánh diff
           ref: main
 
       - name: "Install Dependencies"
@@ -41,14 +40,15 @@ jobs:
             
             const appsMap = {};
 
-            // Helper: Lấy danh sách file IPA vừa thay đổi qua Git Diff
+            // FIX: Lấy danh sách file thay đổi chính xác từ commit vừa push
             let changedFiles = [];
             try {
-              const diff = execSync('git diff --name-only HEAD^ HEAD | grep "\\.ipa$" || true').toString();
-              changedFiles = diff.split('\n').filter(f => f.trim() !== '');
-              console.log("Files changed in this push:", changedFiles);
+              // Lấy danh sách file thay đổi giữa commit hiện tại (HEAD) và commit trước đó (HEAD^)
+              const diffOutput = execSync('git diff --name-only HEAD^ HEAD').toString();
+              changedFiles = diffOutput.split('\n').map(f => f.trim()).filter(f => f.endsWith('.ipa'));
+              console.log("Files detected in commit:", changedFiles);
             } catch (e) {
-              console.log("Không lấy được diff, quét toàn bộ thư mục apps/");
+              console.log("Không lấy được diff hoặc lần đầu khởi tạo.");
             }
 
             const extractVersion = (filename) => {
@@ -86,64 +86,63 @@ jobs:
               return appsMap[key];
             };
 
-            let lastUpdatedApp = null;
+            let appToNotify = null;
 
-            // 1. Xử lý file IPA nội bộ (apps/)
+            // 1. Xử lý thư mục apps/
             if (fs.existsSync('apps')) {
-              const files = fs.readdirSync('apps').filter(f => f.toLowerCase().endsWith('.ipa'));
-              for (const file of files) {
-                const fullPath = `apps/${file}`;
+              const allIpaFiles = fs.readdirSync('apps').filter(f => f.toLowerCase().endsWith('.ipa'));
+              for (const file of allIpaFiles) {
+                const relativePath = `apps/${file}`;
                 const name = cleanAppName(file);
                 const version = extractVersion(file);
                 let bundleId = "com.unknown.app", category = "Utilities", perms = { entitlements: [], privacy: {} };
 
                 try {
-                  const parser = new AppInfoParser(fullPath);
+                  const parser = new AppInfoParser(relativePath);
                   const info = await parser.parse();
                   bundleId = info.CFBundleIdentifier || bundleId;
                   category = formatCategory(info.LSApplicationCategoryType);
                   for (const k in info) if (k.endsWith('UsageDescription')) perms.privacy[k] = info[k];
                   if (info.mobileProvision?.Entitlements) perms.entitlements = Object.keys(info.mobileProvision.Entitlements);
-                } catch (e) { console.log(`⚠️ Lỗi parse: ${file}`); }
+                } catch (e) { console.log("Parse error: " + file); }
 
-                const stats = fs.statSync(fullPath);
+                const stats = fs.statSync(relativePath);
                 const appObj = addAppVersion(name, bundleId, category, perms, {
                   version: version,
                   date: stats.mtime.toISOString(),
                   size: stats.size,
                   downloadURL: `https://2kgt.github.io/repo/apps/${file}`,
-                  localizedDescription: `Cập nhật qua apps/`
+                  localizedDescription: `Phiên bản ${version} cập nhật.`
                 });
 
-                // Nếu file này nằm trong danh sách Git Diff, đánh dấu là app vừa cập nhật
-                if (changedFiles.includes(fullPath)) lastUpdatedApp = appObj;
+                // FIX: Chỉ gán appToNotify nếu file này nằm trong danh sách vừa push
+                if (changedFiles.includes(relativePath)) {
+                  appToNotify = appObj;
+                }
               }
             }
 
-            // 2. Xử lý IPA từ Releases (Quét 5 bản gần nhất)
+            // 2. Xử lý Release (Nếu không có file push trực tiếp thì mới lấy app mới nhất từ đây)
             try {
               const { data: releases } = await github.rest.repos.listReleases({ owner: context.repo.owner, repo: context.repo.repo });
-              for (const release of releases.slice(0, 5)) {
+              for (const release of releases.slice(0, 3)) {
                 for (const asset of release.assets) {
                   if (asset.name.toLowerCase().endsWith('.ipa')) {
                     const name = cleanAppName(asset.name);
-                    const version = extractVersion(asset.name);
-                    // Skip nếu đã xử lý bản mới hơn ở apps/
-                    if (appsMap[name.toLowerCase()] && appsMap[name.toLowerCase()].versions.some(v => v.downloadURL.includes('/apps/'))) continue;
-
-                    addAppVersion(name, "com.release.app", "Utilities", { entitlements: [], privacy: {} }, {
-                      version: version,
+                    const appObj = addAppVersion(name, "com.release.app", "Utilities", {}, {
+                      version: extractVersion(asset.name),
                       date: release.published_at,
                       size: asset.size,
                       downloadURL: asset.browser_download_url,
-                      localizedDescription: release.body || `Phát hành qua Release`
+                      localizedDescription: release.body || "Phát hành Release"
                     });
+                    if (!appToNotify && github.event_name === 'release') appToNotify = appObj;
                   }
                 }
               }
-            } catch (e) { console.log("Lỗi Release: " + e.message); }
+            } catch (e) {}
 
-            // 3. Xuất dữ liệu
+            // Sắp xếp và lưu apps.json
             const finalApps = Object.values(appsMap).map(app => {
               app.versions.sort((a, b) => b.version.localeCompare(a.version, undefined, { numeric: true }));
               const latest = app.versions[0];
@@ -151,36 +150,46 @@ jobs:
               return app;
             });
 
-            const repoData = { name: "Kyic Repo", identifier: "com.2kgt.repo", apps: finalApps };
-            fs.writeFileSync('apps.json', JSON.stringify(repoData, null, 2));
+            fs.writeFileSync('apps.json', JSON.stringify({ name: "Kyic Repo", identifier: "com.2kgt.repo", apps: finalApps }, null, 2));
 
-            // Ghi file tạm cho Telegram (Ưu tiên app trong Git Diff, nếu không lấy app mới nhất)
-            const targetApp = lastUpdatedApp || finalApps.sort((a, b) => new Date(b.versionDate) - new Date(a.versionDate))[0];
-            if (targetApp) fs.writeFileSync('current_app.json', JSON.stringify(targetApp));
+            // FIX: Ghi đè file tạm bằng app được xác định chính xác từ git diff
+            if (appToNotify) {
+              fs.writeFileSync('current_app.json', JSON.stringify(appToNotify));
+              console.log("App selected for notification:", appToNotify.name);
+            }
+            
 
       - name: "🚀 Push & Notify"
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Lưu thông tin app trước khi sync git
-          cp current_app.json temp_app.json || echo "{}" > temp_app.json
+          # Bảo lưu file tạm
+          if [ -f current_app.json ]; then cp current_app.json temp_app.json; fi
           
           git add apps.json
-          git commit -m "Update apps.json [skip ci]" || echo "No changes"
-          git push origin main
+          git commit -m "Update metadata [skip ci]" || echo "No changes"
+          git push origin main --force
           
           # Gửi Telegram
-          INFO=$(cat temp_app.json)
-          NAME=$(echo "$INFO" | jq -r '.name')
-          VER=$(echo "$INFO" | jq -r '.version')
-          LINK=$(echo "$INFO" | jq -r '.downloadURL')
-          
-          if [ "$NAME" != "null" ]; then
-            MSG="<b>🚀 REPO ĐÃ CẬP NHẬT</b>%0A━━━━━━━━━━━━━━━━━━%0A📱 <b>App:</b> <code>$NAME</code>%0A📦 <b>Ver:</b> <code>$VER</code>%0A━━━━━━━━━━━━━━━━━━%0A🔗 <a href='$LINK'>Tải trực tiếp IPA</a>"
+          if [ -f temp_app.json ]; then
+            INFO=$(cat temp_app.json)
+            NAME=$(echo "$INFO" | jq -r '.name')
+            VER=$(echo "$INFO" | jq -r '.version')
+            LINK=$(echo "$INFO" | jq -r '.downloadURL')
+            REPO_LINK="https://2kgt.github.io/repo/apps.json"
+
+            MSG="<b>🚀 REPO ĐÃ CẬP NHẬT</b>%0A"
+            MSG="$MSG━━━━━━━━━━━━━━━━━━%0A"
+            MSG="$MSG📱 <b>Ứng dụng:</b> <code>$NAME</code>%0A"
+            MSG="$MSG📦 <b>Phiên bản:</b> <code>$VER</code>%0A"
+            MSG="$MSG━━━━━━━━━━━━━━━━━━%0A"
+            MSG="$MSG🔗 <b>Link Repo (Chạm sao chép):</b>%0A<code>$REPO_LINK</code>%0A"
+            MSG="$MSG━━━━━━━━━━━━━━━━━━%0A"
+            MSG="$MSG📥 <a href='$LINK'>Nhấn để tải IPA trực tiếp</a>"
+
             curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" \
               -d "chat_id=${{ secrets.TELEGRAM_TO }}" \
               -d "parse_mode=HTML" \
-              -d "text=$MSG" \
-              -d "disable_web_page_preview=true"
+              -d "text=$MSG"
           fi
