@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://2kgt.github.io/repo/CydiaIcon.png" width="120" height="120" alt="Kyic Repository">
+  <img src="https://2kgt.github.io/repo/Kyic.png" width="120" height="120" alt="Kyic Repository">
 </p>
 
 <div align="center" style="margin: 20px 0 40px 0;">
