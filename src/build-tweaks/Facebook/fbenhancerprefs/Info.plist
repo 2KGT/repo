@@ -1,21 +1,2 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<plist version="1.0">
-<dict>
-
-    <key>CFBundleIdentifier</key>
-    <string>com.yourname.fbenhancerprefs</string>
-
-    <key>CFBundleName</key>
-    <string>FBEnhancer</string>
-
-    <key>CFBundleVersion</key>
-    <string>1.0</string>
-
-    <key>CFBundleExecutable</key>
-    <string>FBEnhancerPrefs</string>
-
-    <key>NSPrincipalClass</key>
-    <string>FBEnhancerPrefsListController</string>
-
-</dict>
-</plist>
+<key>NSPrincipalClass</key>
+<string>FBEnhancerPrefsListController</string>
