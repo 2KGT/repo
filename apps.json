@@ -24,21 +24,21 @@
       "versions": [
         {
           "version": "5.0.2",
-          "date": "2026-05-02T01:00:53.518Z",
+          "date": "2026-05-02T01:03:27.408Z",
           "size": 7473847,
           "downloadURL": "https://2kgt.github.io/repo/apps/ESign_5.0.2.ipa",
           "localizedDescription": "Phiên bản 5.0.2 tổng hợp bởi Kyic."
         },
         {
           "version": "4.8.1",
-          "date": "2026-05-02T01:00:53.500Z",
+          "date": "2026-05-02T01:03:27.390Z",
           "size": 9115820,
           "downloadURL": "https://2kgt.github.io/repo/apps/ESign_4.8.1.ipa",
           "localizedDescription": "Phiên bản 4.8.1 tổng hợp bởi Kyic."
         }
       ],
       "version": "5.0.2",
-      "versionDate": "2026-05-02T01:00:53.518Z",
+      "versionDate": "2026-05-02T01:03:27.408Z",
       "size": 7473847,
       "downloadURL": "https://2kgt.github.io/repo/apps/ESign_5.0.2.ipa",
       "description": "ESign v5.0.2",
@@ -58,14 +58,14 @@
       "versions": [
         {
           "version": "2.8.2",
-          "date": "2026-05-02T01:00:53.541Z",
+          "date": "2026-05-02T01:03:27.430Z",
           "size": 14210105,
           "downloadURL": "https://2kgt.github.io/repo/apps/Feather_2.8.2.ipa",
           "localizedDescription": "Phiên bản 2.8.2 tổng hợp bởi Kyic."
         }
       ],
       "version": "2.8.2",
-      "versionDate": "2026-05-02T01:00:53.541Z",
+      "versionDate": "2026-05-02T01:03:27.430Z",
       "size": 14210105,
       "downloadURL": "https://2kgt.github.io/repo/apps/Feather_2.8.2.ipa",
       "description": "Feather v2.8.2",
@@ -85,21 +85,21 @@
       "versions": [
         {
           "version": "1.0.6",
-          "date": "2026-05-02T01:00:53.567Z",
+          "date": "2026-05-02T01:03:27.455Z",
           "size": 11155218,
           "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.6.ipa",
           "localizedDescription": "Phiên bản 1.0.6 tổng hợp bởi Kyic."
         },
         {
           "version": "1.0",
-          "date": "2026-05-02T01:00:53.586Z",
+          "date": "2026-05-02T01:03:27.475Z",
           "size": 10151779,
           "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.ipa",
           "localizedDescription": "Phiên bản 1.0 tổng hợp bởi Kyic."
         }
       ],
       "version": "1.0.6",
-      "versionDate": "2026-05-02T01:00:53.567Z",
+      "versionDate": "2026-05-02T01:03:27.455Z",
       "size": 11155218,
       "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.6.ipa",
       "description": "LCSign v1.0.6",
@@ -151,7 +151,7 @@
         },
         {
           "version": "1.1.28",
-          "date": "2026-05-02T01:00:53.600Z",
+          "date": "2026-05-02T01:03:27.489Z",
           "size": 9592698,
           "downloadURL": "https://2kgt.github.io/repo/apps/Zebra_1.1.28.ipa",
           "localizedDescription": "Phiên bản 1.1.28 tổng hợp bởi Kyic."
@@ -209,6 +209,29 @@
       "downloadURL": "https://github.com/2KGT/repo/releases/download/Instagram_v419.0.0/Instagram.v419.0.0.ipa",
       "description": "Instagram.v419.0.0 vInstagram_v419.0.0",
       "localizedDescription": "Instagram v419.0.0 Regram v2.4"
+    },
+    {
+      "name": "BiliBili",
+      "bundleIdentifier": "com.unknown.app",
+      "developerName": "Kyic",
+      "subtitle": "BiliBili",
+      "category": "Utilities",
+      "iconURL": "https://2kgt.github.io/repo/icons/BiliBili.png",
+      "versions": [
+        {
+          "version": "BiliBili-v2.70.0",
+          "date": "2026-05-02T01:03:09Z",
+          "size": 79130444,
+          "downloadURL": "https://github.com/2KGT/repo/releases/download/BiliBili-v2.70.0/BiliBili_2.70.0.ipa",
+          "localizedDescription": "BiliBili-2.70.0 Noads"
+        }
+      ],
+      "version": "BiliBili-v2.70.0",
+      "versionDate": "2026-05-02T01:03:09Z",
+      "size": 79130444,
+      "downloadURL": "https://github.com/2KGT/repo/releases/download/BiliBili-v2.70.0/BiliBili_2.70.0.ipa",
+      "description": "BiliBili vBiliBili-v2.70.0",
+      "localizedDescription": "BiliBili-2.70.0 Noads"
     },
     {
       "name": "Phim4K.v2.2.2.iOS2.2.22021",
