@@ -2,8 +2,10 @@ include $(THEOS)/makefiles/common.mk
 
 BUNDLE_NAME = FBEnhancerPrefs
 
-FBEnhancerPrefs_FILES = Root.plist
+FBEnhancerPrefs_FILES = FBEnhancerPrefsListController.m
+
 FBEnhancerPrefs_INSTALL_PATH = /Library/PreferenceBundles
+
 FBEnhancerPrefs_FRAMEWORKS = UIKit
 FBEnhancerPrefs_PRIVATE_FRAMEWORKS = Preferences
 
