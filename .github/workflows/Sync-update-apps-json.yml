@@ -162,16 +162,15 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # 1. Lưu bản JSON mới bạn vừa tạo ra từ script
+          # 1. Tạm lưu file mới vừa được script tạo ra
           cp apps.json apps_new.json
           
-          # 2. Lấy bản JSON cũ từ Server về để làm mốc đối chiếu
+          # 2. ĐỒNG BỘ CỨNG: Ép nhánh local phải khớp hoàn toàn với Server
           git fetch origin main
-          git checkout origin/main -- apps.json || echo '{"apps":[]}' > apps.json
+          git reset --hard origin/main
           
-          # 3. Logic THỜI GIAN THỰC:
-          # So sánh bản CŨ và bản MỚI. 
-          # Thằng nào có (Tên + Version + Ngày) khác biệt thì đó chính là thằng vừa được bạn sửa.
+          # 3. Logic so sánh bản CŨ (vừa fetch) và bản MỚI (vừa lưu tạm)
+          # Tìm bản ghi có sự khác biệt về (Tên + Phiên bản + Ngày)
           CHANGED_APP_JSON=$(jq -c --slurpfile old apps.json --slurpfile new apps_new.json '
             $new[0].apps[] as $n | 
             select(
@@ -179,19 +178,21 @@ jobs:
             )
           ' | head -n 1)
 
-          # Lưu toàn bộ dữ liệu của app thay đổi vào biến môi trường
+          # Lưu Metadata vào biến môi trường để dùng cho bước Telegram
           echo "app_info=$CHANGED_APP_JSON" >> $GITHUB_ENV
           
-          # 4. Cập nhật và Push
+          # 4. Ghi đè file mới và thực hiện Push
           mv apps_new.json apps.json
           git add apps.json
+          
           if ! git diff --staged --quiet; then
             git commit -m "Update record [skip ci]"
-            git push origin main
+            git push origin main --force-with-lease
             echo "pushed=true" >> $GITHUB_OUTPUT
           else
             echo "pushed=false" >> $GITHUB_OUTPUT
           fi
+
 
       - name: "🤖 Bước 7.1: Thông báo Telegram theo thay đổi vừa xảy ra"
         if: success() && steps.sync_data.outputs.pushed == 'true' && env.app_info != ''
