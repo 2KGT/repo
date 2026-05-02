@@ -1,1 +1,85 @@
-#txt
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+
+    <key>PreferenceSpecifiers</key>
+    <array>
+
+        <!-- HEADER -->
+        <dict>
+            <key>Type</key>
+            <string>PSGroupCell</string>
+            <key>Label</key>
+            <string>FBEnhancer</string>
+            <key>FooterText</key>
+            <string>Tools for better Facebook experience</string>
+        </dict>
+
+        <!-- DOWNLOAD -->
+        <dict>
+            <key>Type</key>
+            <string>PSSwitchCell</string>
+            <key>Title</key>
+            <string>Enable Download</string>
+            <key>Key</key>
+            <string>EnableDownload</string>
+            <key>DefaultValue</key>
+            <true/>
+        </dict>
+
+        <!-- UI BUTTON -->
+        <dict>
+            <key>Type</key>
+            <string>PSSwitchCell</string>
+            <key>Title</key>
+            <string>Show Download Button</string>
+            <key>Key</key>
+            <string>EnableUI</string>
+            <key>DefaultValue</key>
+            <true/>
+        </dict>
+
+        <!-- ADVANCED GROUP -->
+        <dict>
+            <key>Type</key>
+            <string>PSGroupCell</string>
+            <key>Label</key>
+            <string>Advanced</string>
+        </dict>
+
+        <!-- AUTO M3U8 -->
+        <dict>
+            <key>Type</key>
+            <string>PSSwitchCell</string>
+            <key>Title</key>
+            <string>Auto Detect m3u8</string>
+            <key>Key</key>
+            <string>AutoM3U8</string>
+            <key>DefaultValue</key>
+            <true/>
+        </dict>
+
+        <!-- HD MODE -->
+        <dict>
+            <key>Type</key>
+            <string>PSSwitchCell</string>
+            <key>Title</key>
+            <string>Prefer HD Quality</string>
+            <key>Key</key>
+            <string>PreferHD</string>
+            <key>DefaultValue</key>
+            <true/>
+        </dict>
+
+        <!-- FOOTER -->
+        <dict>
+            <key>Type</key>
+            <string>PSGroupCell</string>
+            <key>FooterText</key>
+            <string>Version 1.0 - Custom tweak</string>
+        </dict>
+
+    </array>
+
+</dict>
+</plist>
