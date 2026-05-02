@@ -1,6 +1,6 @@
 {
-  "name": "Kyic Repository",
-  "identifier": "com.kyic.iparepo",
+  "name": "Kyic Repo",
+  "identifier": "com.2kgt.repo",
   "iconURL": "https://2kgt.github.io/repo/icons/Kyic.png",
   "apps": [
     {
@@ -24,24 +24,23 @@
       "versions": [
         {
           "version": "5.0.2",
-          "date": "2026-05-02T01:29:30.357Z",
+          "date": "2026-05-02T01:53:54.082Z",
           "size": 7473847,
           "downloadURL": "https://2kgt.github.io/repo/apps/ESign_5.0.2.ipa",
           "localizedDescription": "Phiên bản 5.0.2 tổng hợp bởi Kyic."
         },
         {
           "version": "4.8.1",
-          "date": "2026-05-02T01:29:30.337Z",
+          "date": "2026-05-02T01:53:54.063Z",
           "size": 9115820,
           "downloadURL": "https://2kgt.github.io/repo/apps/ESign_4.8.1.ipa",
           "localizedDescription": "Phiên bản 4.8.1 tổng hợp bởi Kyic."
         }
       ],
       "version": "5.0.2",
-      "versionDate": "2026-05-02T01:29:30.357Z",
+      "versionDate": "2026-05-02T01:53:54.082Z",
       "size": 7473847,
       "downloadURL": "https://2kgt.github.io/repo/apps/ESign_5.0.2.ipa",
-      "description": "ESign v5.0.2",
       "localizedDescription": "Phiên bản 5.0.2 tổng hợp bởi Kyic."
     },
     {
@@ -58,17 +57,16 @@
       "versions": [
         {
           "version": "2.8.2",
-          "date": "2026-05-02T01:29:30.382Z",
+          "date": "2026-05-02T01:53:54.106Z",
           "size": 14210105,
           "downloadURL": "https://2kgt.github.io/repo/apps/Feather_2.8.2.ipa",
           "localizedDescription": "Phiên bản 2.8.2 tổng hợp bởi Kyic."
         }
       ],
       "version": "2.8.2",
-      "versionDate": "2026-05-02T01:29:30.382Z",
+      "versionDate": "2026-05-02T01:53:54.106Z",
       "size": 14210105,
       "downloadURL": "https://2kgt.github.io/repo/apps/Feather_2.8.2.ipa",
-      "description": "Feather v2.8.2",
       "localizedDescription": "Phiên bản 2.8.2 tổng hợp bởi Kyic."
     },
     {
@@ -85,48 +83,57 @@
       "versions": [
         {
           "version": "1.0.6",
-          "date": "2026-05-02T01:29:30.409Z",
+          "date": "2026-05-02T01:53:54.133Z",
           "size": 11155218,
           "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.6.ipa",
           "localizedDescription": "Phiên bản 1.0.6 tổng hợp bởi Kyic."
         },
         {
           "version": "1.0",
-          "date": "2026-05-02T01:29:30.431Z",
+          "date": "2026-05-02T01:53:54.154Z",
           "size": 10151779,
           "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.ipa",
           "localizedDescription": "Phiên bản 1.0 tổng hợp bởi Kyic."
         }
       ],
       "version": "1.0.6",
-      "versionDate": "2026-05-02T01:29:30.409Z",
+      "versionDate": "2026-05-02T01:53:54.133Z",
       "size": 11155218,
       "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.6.ipa",
-      "description": "LCSign v1.0.6",
       "localizedDescription": "Phiên bản 1.0.6 tổng hợp bởi Kyic."
     },
     {
       "name": "Turrit",
-      "bundleIdentifier": "com.turrit.app",
+      "bundleIdentifier": "com.unknown.app",
       "developerName": "Kyic",
-      "subtitle": "Ứng dụng Turrit",
-      "category": "Social",
+      "subtitle": "Turrit",
+      "category": "Utilities",
       "iconURL": "https://2kgt.github.io/repo/icons/Turrit.png",
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      },
       "versions": [
         {
+          "version": "1.4.7",
+          "date": "2026-04-22T08:28:23Z",
+          "size": 86814078,
+          "downloadURL": "https://github.com/2KGT/repo/releases/download/Turrit_v1.4.6/Turrit_v1.4.7.ipa",
+          "localizedDescription": "Turrit v1.4.6 + TGExtra 1.7.3\r\nTurrit v1.4.7 + TGExtra 1.7.3"
+        },
+        {
           "version": "1.4.6",
-          "date": "2026-04-21T00:00:00Z",
-          "size": 88900000,
-          "downloadURL": "https://2kgt.github.io/repo/apps/turrit.ipa",
-          "localizedDescription": "Turrit - App Telegram bên thứ ba đa năng."
+          "date": "2026-05-02T01:53:54.154Z",
+          "size": 0,
+          "downloadURL": "https://2kgt.github.io/repo/apps/Turrit_1.4.6.ipa",
+          "localizedDescription": "Phiên bản 1.4.6 tổng hợp bởi Kyic."
         }
       ],
-      "version": "1.4.6",
-      "versionDate": "2026-04-21T00:00:00Z",
-      "size": 88900000,
-      "downloadURL": "https://2kgt.github.io/repo/apps/turrit.ipa",
-      "description": "Turrit v1.4.6",
-      "localizedDescription": "Turrit - App Telegram bên thứ ba đa năng."
+      "version": "1.4.7",
+      "versionDate": "2026-04-22T08:28:23Z",
+      "size": 86814078,
+      "downloadURL": "https://github.com/2KGT/repo/releases/download/Turrit_v1.4.6/Turrit_v1.4.7.ipa",
+      "localizedDescription": "Turrit v1.4.6 + TGExtra 1.7.3\r\nTurrit v1.4.7 + TGExtra 1.7.3"
     },
     {
       "name": "Zebra",
@@ -143,103 +150,173 @@
       },
       "versions": [
         {
-          "version": "Zebra",
-          "date": "2026-04-22T07:11:47Z",
-          "size": 9592698,
-          "downloadURL": "https://github.com/2KGT/repo/releases/download/Zebra/Zebra_1.1.28.ipa",
-          "localizedDescription": "Zebra 1.1.28"
-        },
-        {
           "version": "1.1.28",
-          "date": "2026-05-02T01:29:30.446Z",
+          "date": "2026-05-02T01:53:54.169Z",
           "size": 9592698,
           "downloadURL": "https://2kgt.github.io/repo/apps/Zebra_1.1.28.ipa",
           "localizedDescription": "Phiên bản 1.1.28 tổng hợp bởi Kyic."
         }
       ],
-      "version": "Zebra",
-      "versionDate": "2026-04-22T07:11:47Z",
+      "version": "1.1.28",
+      "versionDate": "2026-05-02T01:53:54.169Z",
       "size": 9592698,
-      "downloadURL": "https://github.com/2KGT/repo/releases/download/Zebra/Zebra_1.1.28.ipa",
-      "description": "Zebra vZebra",
-      "localizedDescription": "Zebra 1.1.28"
+      "downloadURL": "https://2kgt.github.io/repo/apps/Zebra_1.1.28.ipa",
+      "localizedDescription": "Phiên bản 1.1.28 tổng hợp bởi Kyic."
     },
     {
       "name": "Stay",
-      "bundleIdentifier": "com.unknown.app",
+      "bundleIdentifier": "com.dajiu.stay.pro",
       "developerName": "Kyic",
       "subtitle": "Stay",
       "category": "Utilities",
       "iconURL": "https://2kgt.github.io/repo/icons/Stay.png",
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSCameraUsageDescription": "Stay uses the camera to save videos.",
+          "NSFaceIDUsageDescription": "Stay uses the FaceID to protect folders.",
+          "NSLocationAlwaysAndWhenInUseUsageDescription": "请选择【始终】,Stay通过精确的定位服务来计算实时行走距离",
+          "NSLocationWhenInUseUsageDescription": "请选择【使用App时允许】,Stay通过精确的定位服务来计算实时行走距离",
+          "NSPhotoLibraryUsageDescription": "Stay uses Photo Library to save videos.",
+          "NSSpeechRecognitionUsageDescription": "我们需要访问您的麦克风来进行语音识别。",
+          "NSUserTrackingUsageDescription": "将用于推荐个性化用户脚本"
+        }
+      },
       "versions": [
         {
-          "version": "Stay_v2.9.18",
+          "version": "2.9.18",
           "date": "2026-05-02T00:44:05Z",
           "size": 37649800,
-          "downloadURL": "https://github.com/2KGT/repo/releases/download/Stay_v2.9.18/Stay_v2.9.18.ipa",
+          "downloadURL": "https://github.com/2KGT/repo/releases/download/V2.9.18/Stay_v2.9.18.ipa",
           "localizedDescription": "Stay_v2.9.18 crack Pro ( Safari tiện ích mở rộng )"
         }
       ],
-      "version": "Stay_v2.9.18",
+      "version": "2.9.18",
       "versionDate": "2026-05-02T00:44:05Z",
       "size": 37649800,
-      "downloadURL": "https://github.com/2KGT/repo/releases/download/Stay_v2.9.18/Stay_v2.9.18.ipa",
-      "description": "Stay vStay_v2.9.18",
+      "downloadURL": "https://github.com/2KGT/repo/releases/download/V2.9.18/Stay_v2.9.18.ipa",
       "localizedDescription": "Stay_v2.9.18 crack Pro ( Safari tiện ích mở rộng )"
     },
     {
       "name": "Instagram",
-      "bundleIdentifier": "com.unknown.app",
+      "bundleIdentifier": "com.burbn.instagram",
       "developerName": "Kyic",
       "subtitle": "Instagram",
       "category": "Utilities",
       "iconURL": "https://2kgt.github.io/repo/icons/Instagram.png",
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSBluetoothAlwaysUsageDescription": "This allows your phone to find and connect to the glasses using a Bluetooth connection.",
+          "NSCalendarsUsageDescription": "This will let Instagram sync events to your calendar.",
+          "NSCalendarsWriteOnlyAccessUsageDescription": "This will let Instagram sync events to your calendar.",
+          "NSCameraUsageDescription": "Instagram uses your device's camera to do things like help you take photos, record videos and use effects.",
+          "NSContactsUsageDescription": "Instagram will use your contacts to suggest people and things you care about, and offer a better service. Your contacts will be periodically synced and securely stored on Instagram’s servers.",
+          "NSFaceIDUsageDescription": "Enable Face ID for quick and secure authentication on Instagram.",
+          "NSFocusStatusUsageDescription": "This allows Instagram to check to see if you’ve been missing notifications from friends. You can always change this later in settings.",
+          "NSLocalNetworkUsageDescription": "Used to discover and connect to compatible streaming devices on your Wi-Fi network.",
+          "NSLocationAlwaysAndWhenInUseUsageDescription": "Instagram uses this to make some features work, personalize content and help people find places. You can change your preferences at any time in your device settings.",
+          "NSLocationUsageDescription": "Instagram uses this to make some features work, personalize content and help people find places. You can change your preferences at any time in your device settings.",
+          "NSLocationWhenInUseUsageDescription": "Instagram uses this to make some features work, personalize content and help people find places. You can change your preferences at any time in your device settings.",
+          "NSMicrophoneUsageDescription": "Instagram uses your device's microphone to do things like help you record videos and preview audio effects.",
+          "NSPhotoLibraryAddUsageDescription": "This lets you save photos and videos to your Camera Roll.",
+          "NSPhotoLibraryUsageDescription": "Instagram uses access to your camera roll to do things like help you share photos and videos to Instagram, apply effects and suggest photos and videos to share.",
+          "NSUserTrackingUsageDescription": "This helps Instagram personalize ads we show you."
+        }
+      },
       "versions": [
         {
-          "version": "Instagram_v419.0.0",
+          "version": "419.0.0",
           "date": "2026-05-02T00:57:02Z",
           "size": 274889166,
           "downloadURL": "https://github.com/2KGT/repo/releases/download/Instagram_v419.0.0/Instagram-v419.0.0.ipa",
           "localizedDescription": "Instagram-v419.0.0 Regram v2.4"
         }
       ],
-      "version": "Instagram_v419.0.0",
+      "version": "419.0.0",
       "versionDate": "2026-05-02T00:57:02Z",
       "size": 274889166,
       "downloadURL": "https://github.com/2KGT/repo/releases/download/Instagram_v419.0.0/Instagram-v419.0.0.ipa",
-      "description": "Instagram vInstagram_v419.0.0",
       "localizedDescription": "Instagram-v419.0.0 Regram v2.4"
     },
     {
       "name": "BiliBili",
-      "bundleIdentifier": "com.unknown.app",
+      "bundleIdentifier": "com.bstar.intl",
       "developerName": "Kyic",
       "subtitle": "BiliBili",
       "category": "Utilities",
       "iconURL": "https://2kgt.github.io/repo/icons/BiliBili.png",
+      "appPermissions": {
+        "entitlements": [
+          "application-identifier",
+          "keychain-access-groups",
+          "get-task-allow",
+          "com.apple.developer.team-identifier"
+        ],
+        "privacy": {
+          "NSAppleMusicUsageDescription": "如果不允许，您将无法使用媒体库的内容做直播背景音乐。",
+          "NSCalendarsUsageDescription": "为了在日历上提醒您漫展开售等活动",
+          "NSCameraUsageDescription": "如果不允许，您将无法使用拍摄、直播、扫一扫等功能。",
+          "NSPhotoLibraryAddUsageDescription": "如果不允许，您将无法保存图片到相册里。",
+          "NSPhotoLibraryUsageDescription": "如果不允许，您将无法发布、发送系统相册里的照片等。",
+          "NSUserTrackingUsageDescription": "为了为您更精准地推荐个性化内容，申请获取您的广告标识符"
+        }
+      },
       "versions": [
         {
-          "version": "BiliBili-v2.70.0",
+          "version": "2.70.0",
           "date": "2026-05-02T01:03:09Z",
           "size": 79130444,
           "downloadURL": "https://github.com/2KGT/repo/releases/download/BiliBili-v2.70.0/BiliBili-v2.70.0.ipa",
           "localizedDescription": "BiliBili-2.70.0 Noads"
         }
       ],
-      "version": "BiliBili-v2.70.0",
+      "version": "2.70.0",
       "versionDate": "2026-05-02T01:03:09Z",
       "size": 79130444,
       "downloadURL": "https://github.com/2KGT/repo/releases/download/BiliBili-v2.70.0/BiliBili-v2.70.0.ipa",
-      "description": "BiliBili vBiliBili-v2.70.0",
       "localizedDescription": "BiliBili-2.70.0 Noads"
     },
     {
       "name": "Phim4K.v2.2.2.iOS2.2.22021",
-      "bundleIdentifier": "com.unknown.app",
+      "bundleIdentifier": "xyz.phim4k.ios",
       "developerName": "Kyic",
       "subtitle": "Phim4K.v2.2.2.iOS2.2.22021",
       "category": "Utilities",
       "iconURL": "https://2kgt.github.io/repo/icons/Phim4K.v2.2.2.iOS2.2.22021.png",
+      "appPermissions": {
+        "entitlements": [
+          "com.apple.security.application-groups",
+          "application-identifier",
+          "com.apple.application-identifier",
+          "keychain-access-groups",
+          "get-task-allow",
+          "com.apple.developer.team-identifier",
+          "com.apple.developer.ubiquity-kvstore-identifier",
+          "com.apple.developer.icloud-services",
+          "com.apple.developer.icloud-container-identifiers",
+          "com.apple.developer.icloud-container-development-container-identifiers",
+          "com.apple.developer.usernotifications.communication",
+          "com.apple.developer.ubiquity-container-identifiers",
+          "com.apple.developer.usernotifications.time-sensitive",
+          "com.apple.developer.aps-environment",
+          "com.apple.developer.driverkit",
+          "com.apple.developer.networking.vpn.api",
+          "com.apple.security.get-task-allow",
+          "com.apple.developer.applesignin"
+        ],
+        "privacy": {
+          "NSLocationAlwaysUsageDescription": "This app requires location.",
+          "NSCameraUsageDescription": "Ứng dụng cần camera để quét mã QR đăng nhập trên TV.",
+          "NSMotionUsageDescription": "This app needs to be able to access your motion use",
+          "NSAppleMusicUsageDescription": "Play using while you are hiking",
+          "NSSpeechRecognitionUsageDescription": "recognize speech",
+          "NSCalendarsUsageDescription": "App requires access to your calender .",
+          "NSLocationWhenInUseUsageDescription": "This app requires location.",
+          "NSContactsUsageDescription": "App requires access to your contact .",
+          "NSPhotoLibraryUsageDescription": "This app requires access to the photo library to support Profile Update."
+        }
+      },
       "versions": [
         {
           "version": "Phim4K_2.2.2",
@@ -253,107 +330,111 @@
       "versionDate": "2026-05-01T13:29:36Z",
       "size": 45714246,
       "downloadURL": "https://github.com/2KGT/repo/releases/download/Phim4K_2.2.2/Phim4K.v2.2.2.iOS2.2.22021.ipa",
-      "description": "Phim4K.v2.2.2.iOS2.2.22021 vPhim4K_2.2.2",
       "localizedDescription": "Phim4K_2.2.2  xem phim lậu 4K"
     },
     {
       "name": "Phim.4K",
-      "bundleIdentifier": "com.unknown.app",
+      "bundleIdentifier": "xyz.phim4k.ios",
       "developerName": "Kyic",
       "subtitle": "Phim.4K",
       "category": "Utilities",
       "iconURL": "https://2kgt.github.io/repo/icons/Phim.4K.png",
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSLocationAlwaysUsageDescription": "This app requires location.",
+          "NSCameraUsageDescription": "Ứng dụng cần camera để quét mã QR đăng nhập trên TV.",
+          "NSMotionUsageDescription": "This app needs to be able to access your motion use",
+          "NSAppleMusicUsageDescription": "Play using while you are hiking",
+          "NSSpeechRecognitionUsageDescription": "recognize speech",
+          "NSCalendarsUsageDescription": "App requires access to your calender .",
+          "NSLocationWhenInUseUsageDescription": "This app requires location.",
+          "NSContactsUsageDescription": "App requires access to your contact .",
+          "NSPhotoLibraryUsageDescription": "This app requires access to the photo library to support Profile Update."
+        }
+      },
       "versions": [
         {
-          "version": "Phim4K_2.1.0",
+          "version": "2.1.0",
           "date": "2026-05-01T15:01:30Z",
           "size": 23186835,
           "downloadURL": "https://github.com/2KGT/repo/releases/download/Phim4K_2.1.0/Phim.4K_2.1.0.ipa",
           "localizedDescription": "Phim4K_2.1.0 Xem phim lậu 4K"
         }
       ],
-      "version": "Phim4K_2.1.0",
+      "version": "2.1.0",
       "versionDate": "2026-05-01T15:01:30Z",
       "size": 23186835,
       "downloadURL": "https://github.com/2KGT/repo/releases/download/Phim4K_2.1.0/Phim.4K_2.1.0.ipa",
-      "description": "Phim.4K vPhim4K_2.1.0",
       "localizedDescription": "Phim4K_2.1.0 Xem phim lậu 4K"
     },
     {
       "name": "YouTube",
-      "bundleIdentifier": "com.unknown.app",
+      "bundleIdentifier": "com.google.ios.youtube",
       "developerName": "Kyic",
       "subtitle": "YouTube",
       "category": "Utilities",
       "iconURL": "https://2kgt.github.io/repo/icons/YouTube.png",
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSAppleMusicUsageDescription": "This lets you add your own audio files to your videos.",
+          "NSBluetoothPeripheralUsageDescription": "YouTube needs bluetooth access to scan for nearby Cast devices.",
+          "NSCameraUsageDescription": "This lets you create videos using the app.",
+          "NSContactsUsageDescription": "Your contacts will be sent to YouTube servers to help you find friends to share videos with.",
+          "NSLocalNetworkUsageDescription": "Access to your network allows YouTube to discover and connect to devices such as your TV.",
+          "NSLocationWhenInUseUsageDescription": "This enables local content discovery, improved recommendations, and enhanced search results.",
+          "NSMicrophoneUsageDescription": "This lets you include audio with your videos and search using your voice.",
+          "NSPhotoLibraryUsageDescription": "This lets you upload media you've already created.",
+          "NSUserTrackingUsageDescription": "To personalize ads and provide ad measurement, YouTube will link activity from this app with activity from non-Google apps and websites."
+        }
+      },
       "versions": [
         {
-          "version": "YouTube_21.17.3",
+          "version": "21.17.3",
           "date": "2026-04-30T06:27:15Z",
           "size": 138365206,
           "downloadURL": "https://github.com/2KGT/repo/releases/download/YouTube_21.17.3/YouTube_21.17.3.ipa",
           "localizedDescription": "YouTube_21.17.3+YTPlus"
-        },
-        {
-          "version": "YouTube",
-          "date": "2026-04-21T10:43:36Z",
-          "size": 127948186,
-          "downloadURL": "https://github.com/2KGT/repo/releases/download/YouTube/YouTube_21.16.2_ytx.ipa",
-          "localizedDescription": "YouTube 21.16.2 ytxpip"
         }
       ],
-      "version": "YouTube_21.17.3",
+      "version": "21.17.3",
       "versionDate": "2026-04-30T06:27:15Z",
       "size": 138365206,
       "downloadURL": "https://github.com/2KGT/repo/releases/download/YouTube_21.17.3/YouTube_21.17.3.ipa",
-      "description": "YouTube vYouTube_21.17.3",
       "localizedDescription": "YouTube_21.17.3+YTPlus"
     },
     {
       "name": "UnKeySign",
-      "bundleIdentifier": "com.unknown.app",
+      "bundleIdentifier": "com.unkeysign.app",
       "developerName": "Kyic",
       "subtitle": "UnKeySign",
       "category": "Utilities",
       "iconURL": "https://2kgt.github.io/repo/icons/UnKeySign.png",
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSCameraUsageDescription": "UnKeySign cần camera để quét mã QR import certificate",
+          "NSFaceIDUsageDescription": "UnKeyApp uses Face ID to protect your app with biometric lock.",
+          "NSFileAccessUsageDescription": "UnKeySign needs access to files to download and manage IPA files.",
+          "NSLocalNetworkUsageDescription": "UnKeySign needs local network access to host the WiFi Share upload page on your LAN.",
+          "NSPhotoLibraryUsageDescription": "UnKeyApp cần quyền truy cập thư viện ảnh để lưu và chia sẻ file IPA đã ký."
+        }
+      },
       "versions": [
         {
-          "version": "Unkeysign",
+          "version": "1.1.8",
           "date": "2026-04-26T05:00:07Z",
           "size": 28669111,
           "downloadURL": "https://github.com/2KGT/repo/releases/download/Unkeysign/UnKeySign_1.1.8.ipa",
           "localizedDescription": "Unkeysign 1.1.8"
         }
       ],
-      "version": "Unkeysign",
+      "version": "1.1.8",
       "versionDate": "2026-04-26T05:00:07Z",
       "size": 28669111,
       "downloadURL": "https://github.com/2KGT/repo/releases/download/Unkeysign/UnKeySign_1.1.8.ipa",
-      "description": "UnKeySign vUnkeysign",
       "localizedDescription": "Unkeysign 1.1.8"
-    },
-    {
-      "name": "Telegram",
-      "bundleIdentifier": "com.unknown.app",
-      "developerName": "Kyic",
-      "subtitle": "Telegram",
-      "category": "Utilities",
-      "iconURL": "https://2kgt.github.io/repo/icons/Telegram.png",
-      "versions": [
-        {
-          "version": "Telegram",
-          "date": "2026-04-22T07:07:47Z",
-          "size": 74074696,
-          "downloadURL": "https://github.com/2KGT/repo/releases/download/Telegram/Telegram_12.6.3.ipa",
-          "localizedDescription": "\r\n<img width=\"1170\" height=\"2416\" alt=\"IMG_0880\" src=\"https://github.com/user-attachments/assets/1a84bb0c-39be-4f45-9311-75d6901b3ec2\" />\r\nTGExtra v1.7.4"
-        }
-      ],
-      "version": "Telegram",
-      "versionDate": "2026-04-22T07:07:47Z",
-      "size": 74074696,
-      "downloadURL": "https://github.com/2KGT/repo/releases/download/Telegram/Telegram_12.6.3.ipa",
-      "description": "Telegram vTelegram",
-      "localizedDescription": "\r\n<img width=\"1170\" height=\"2416\" alt=\"IMG_0880\" src=\"https://github.com/user-attachments/assets/1a84bb0c-39be-4f45-9311-75d6901b3ec2\" />\r\nTGExtra v1.7.4"
     }
   ]
 }
