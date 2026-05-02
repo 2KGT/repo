@@ -24,21 +24,21 @@
       "versions": [
         {
           "version": "5.0.2",
-          "date": "2026-05-02T01:53:54.082Z",
+          "date": "2026-05-02T01:57:56.616Z",
           "size": 7473847,
           "downloadURL": "https://2kgt.github.io/repo/apps/ESign_5.0.2.ipa",
           "localizedDescription": "Phiên bản 5.0.2 tổng hợp bởi Kyic."
         },
         {
           "version": "4.8.1",
-          "date": "2026-05-02T01:53:54.063Z",
+          "date": "2026-05-02T01:57:56.597Z",
           "size": 9115820,
           "downloadURL": "https://2kgt.github.io/repo/apps/ESign_4.8.1.ipa",
           "localizedDescription": "Phiên bản 4.8.1 tổng hợp bởi Kyic."
         }
       ],
       "version": "5.0.2",
-      "versionDate": "2026-05-02T01:53:54.082Z",
+      "versionDate": "2026-05-02T01:57:56.616Z",
       "size": 7473847,
       "downloadURL": "https://2kgt.github.io/repo/apps/ESign_5.0.2.ipa",
       "localizedDescription": "Phiên bản 5.0.2 tổng hợp bởi Kyic."
@@ -57,14 +57,14 @@
       "versions": [
         {
           "version": "2.8.2",
-          "date": "2026-05-02T01:53:54.106Z",
+          "date": "2026-05-02T01:57:56.641Z",
           "size": 14210105,
           "downloadURL": "https://2kgt.github.io/repo/apps/Feather_2.8.2.ipa",
           "localizedDescription": "Phiên bản 2.8.2 tổng hợp bởi Kyic."
         }
       ],
       "version": "2.8.2",
-      "versionDate": "2026-05-02T01:53:54.106Z",
+      "versionDate": "2026-05-02T01:57:56.641Z",
       "size": 14210105,
       "downloadURL": "https://2kgt.github.io/repo/apps/Feather_2.8.2.ipa",
       "localizedDescription": "Phiên bản 2.8.2 tổng hợp bởi Kyic."
@@ -83,21 +83,21 @@
       "versions": [
         {
           "version": "1.0.6",
-          "date": "2026-05-02T01:53:54.133Z",
+          "date": "2026-05-02T01:57:56.668Z",
           "size": 11155218,
           "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.6.ipa",
           "localizedDescription": "Phiên bản 1.0.6 tổng hợp bởi Kyic."
         },
         {
           "version": "1.0",
-          "date": "2026-05-02T01:53:54.154Z",
+          "date": "2026-05-02T01:57:56.689Z",
           "size": 10151779,
           "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.ipa",
           "localizedDescription": "Phiên bản 1.0 tổng hợp bởi Kyic."
         }
       ],
       "version": "1.0.6",
-      "versionDate": "2026-05-02T01:53:54.133Z",
+      "versionDate": "2026-05-02T01:57:56.668Z",
       "size": 11155218,
       "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.6.ipa",
       "localizedDescription": "Phiên bản 1.0.6 tổng hợp bởi Kyic."
@@ -115,25 +115,18 @@
       },
       "versions": [
         {
-          "version": "1.4.7",
-          "date": "2026-04-22T08:28:23Z",
-          "size": 86814078,
-          "downloadURL": "https://github.com/2KGT/repo/releases/download/Turrit_v1.4.6/Turrit_v1.4.7.ipa",
-          "localizedDescription": "Turrit v1.4.6 + TGExtra 1.7.3\r\nTurrit v1.4.7 + TGExtra 1.7.3"
-        },
-        {
           "version": "1.4.6",
-          "date": "2026-05-02T01:53:54.154Z",
+          "date": "2026-05-02T01:57:56.689Z",
           "size": 0,
           "downloadURL": "https://2kgt.github.io/repo/apps/Turrit_1.4.6.ipa",
           "localizedDescription": "Phiên bản 1.4.6 tổng hợp bởi Kyic."
         }
       ],
-      "version": "1.4.7",
-      "versionDate": "2026-04-22T08:28:23Z",
-      "size": 86814078,
-      "downloadURL": "https://github.com/2KGT/repo/releases/download/Turrit_v1.4.6/Turrit_v1.4.7.ipa",
-      "localizedDescription": "Turrit v1.4.6 + TGExtra 1.7.3\r\nTurrit v1.4.7 + TGExtra 1.7.3"
+      "version": "1.4.6",
+      "versionDate": "2026-05-02T01:57:56.689Z",
+      "size": 0,
+      "downloadURL": "https://2kgt.github.io/repo/apps/Turrit_1.4.6.ipa",
+      "localizedDescription": "Phiên bản 1.4.6 tổng hợp bởi Kyic."
     },
     {
       "name": "Zebra",
@@ -151,17 +144,59 @@
       "versions": [
         {
           "version": "1.1.28",
-          "date": "2026-05-02T01:53:54.169Z",
+          "date": "2026-05-02T01:57:56.704Z",
           "size": 9592698,
           "downloadURL": "https://2kgt.github.io/repo/apps/Zebra_1.1.28.ipa",
           "localizedDescription": "Phiên bản 1.1.28 tổng hợp bởi Kyic."
         }
       ],
       "version": "1.1.28",
-      "versionDate": "2026-05-02T01:53:54.169Z",
+      "versionDate": "2026-05-02T01:57:56.704Z",
       "size": 9592698,
       "downloadURL": "https://2kgt.github.io/repo/apps/Zebra_1.1.28.ipa",
       "localizedDescription": "Phiên bản 1.1.28 tổng hợp bởi Kyic."
+    },
+    {
+      "name": "Instagram",
+      "bundleIdentifier": "com.burbn.instagram",
+      "developerName": "Kyic",
+      "subtitle": "Instagram",
+      "category": "Utilities",
+      "iconURL": "https://2kgt.github.io/repo/icons/Instagram.png",
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSBluetoothAlwaysUsageDescription": "This allows your phone to find and connect to the glasses using a Bluetooth connection.",
+          "NSCalendarsUsageDescription": "This will let Instagram sync events to your calendar.",
+          "NSCalendarsWriteOnlyAccessUsageDescription": "This will let Instagram sync events to your calendar.",
+          "NSCameraUsageDescription": "Instagram uses your device's camera to do things like help you take photos, record videos and use effects.",
+          "NSContactsUsageDescription": "Instagram will use your contacts to suggest people and things you care about, and offer a better service. Your contacts will be periodically synced and securely stored on Instagram’s servers.",
+          "NSFaceIDUsageDescription": "Enable Face ID for quick and secure authentication on Instagram.",
+          "NSFocusStatusUsageDescription": "This allows Instagram to check to see if you’ve been missing notifications from friends. You can always change this later in settings.",
+          "NSLocalNetworkUsageDescription": "Used to discover and connect to compatible streaming devices on your Wi-Fi network.",
+          "NSLocationAlwaysAndWhenInUseUsageDescription": "Instagram uses this to make some features work, personalize content and help people find places. You can change your preferences at any time in your device settings.",
+          "NSLocationUsageDescription": "Instagram uses this to make some features work, personalize content and help people find places. You can change your preferences at any time in your device settings.",
+          "NSLocationWhenInUseUsageDescription": "Instagram uses this to make some features work, personalize content and help people find places. You can change your preferences at any time in your device settings.",
+          "NSMicrophoneUsageDescription": "Instagram uses your device's microphone to do things like help you record videos and preview audio effects.",
+          "NSPhotoLibraryAddUsageDescription": "This lets you save photos and videos to your Camera Roll.",
+          "NSPhotoLibraryUsageDescription": "Instagram uses access to your camera roll to do things like help you share photos and videos to Instagram, apply effects and suggest photos and videos to share.",
+          "NSUserTrackingUsageDescription": "This helps Instagram personalize ads we show you."
+        }
+      },
+      "versions": [
+        {
+          "version": "419.0.0",
+          "date": "2026-05-02T00:57:02Z",
+          "size": 274889166,
+          "downloadURL": "https://github.com/2KGT/repo/releases/download/V419.0.0/Instagram_v419.0.0.ipa",
+          "localizedDescription": "Instagram-v419.0.0 Regram v2.4"
+        }
+      ],
+      "version": "419.0.0",
+      "versionDate": "2026-05-02T00:57:02Z",
+      "size": 274889166,
+      "downloadURL": "https://github.com/2KGT/repo/releases/download/V419.0.0/Instagram_v419.0.0.ipa",
+      "localizedDescription": "Instagram-v419.0.0 Regram v2.4"
     },
     {
       "name": "Stay",
@@ -198,54 +233,12 @@
       "localizedDescription": "Stay_v2.9.18 crack Pro ( Safari tiện ích mở rộng )"
     },
     {
-      "name": "Instagram",
-      "bundleIdentifier": "com.burbn.instagram",
-      "developerName": "Kyic",
-      "subtitle": "Instagram",
-      "category": "Utilities",
-      "iconURL": "https://2kgt.github.io/repo/icons/Instagram.png",
-      "appPermissions": {
-        "entitlements": [],
-        "privacy": {
-          "NSBluetoothAlwaysUsageDescription": "This allows your phone to find and connect to the glasses using a Bluetooth connection.",
-          "NSCalendarsUsageDescription": "This will let Instagram sync events to your calendar.",
-          "NSCalendarsWriteOnlyAccessUsageDescription": "This will let Instagram sync events to your calendar.",
-          "NSCameraUsageDescription": "Instagram uses your device's camera to do things like help you take photos, record videos and use effects.",
-          "NSContactsUsageDescription": "Instagram will use your contacts to suggest people and things you care about, and offer a better service. Your contacts will be periodically synced and securely stored on Instagram’s servers.",
-          "NSFaceIDUsageDescription": "Enable Face ID for quick and secure authentication on Instagram.",
-          "NSFocusStatusUsageDescription": "This allows Instagram to check to see if you’ve been missing notifications from friends. You can always change this later in settings.",
-          "NSLocalNetworkUsageDescription": "Used to discover and connect to compatible streaming devices on your Wi-Fi network.",
-          "NSLocationAlwaysAndWhenInUseUsageDescription": "Instagram uses this to make some features work, personalize content and help people find places. You can change your preferences at any time in your device settings.",
-          "NSLocationUsageDescription": "Instagram uses this to make some features work, personalize content and help people find places. You can change your preferences at any time in your device settings.",
-          "NSLocationWhenInUseUsageDescription": "Instagram uses this to make some features work, personalize content and help people find places. You can change your preferences at any time in your device settings.",
-          "NSMicrophoneUsageDescription": "Instagram uses your device's microphone to do things like help you record videos and preview audio effects.",
-          "NSPhotoLibraryAddUsageDescription": "This lets you save photos and videos to your Camera Roll.",
-          "NSPhotoLibraryUsageDescription": "Instagram uses access to your camera roll to do things like help you share photos and videos to Instagram, apply effects and suggest photos and videos to share.",
-          "NSUserTrackingUsageDescription": "This helps Instagram personalize ads we show you."
-        }
-      },
-      "versions": [
-        {
-          "version": "419.0.0",
-          "date": "2026-05-02T00:57:02Z",
-          "size": 274889166,
-          "downloadURL": "https://github.com/2KGT/repo/releases/download/Instagram_v419.0.0/Instagram-v419.0.0.ipa",
-          "localizedDescription": "Instagram-v419.0.0 Regram v2.4"
-        }
-      ],
-      "version": "419.0.0",
-      "versionDate": "2026-05-02T00:57:02Z",
-      "size": 274889166,
-      "downloadURL": "https://github.com/2KGT/repo/releases/download/Instagram_v419.0.0/Instagram-v419.0.0.ipa",
-      "localizedDescription": "Instagram-v419.0.0 Regram v2.4"
-    },
-    {
-      "name": "BiliBili",
+      "name": "BiliBili.v2.70.0",
       "bundleIdentifier": "com.bstar.intl",
       "developerName": "Kyic",
-      "subtitle": "BiliBili",
+      "subtitle": "BiliBili.v2.70.0",
       "category": "Utilities",
-      "iconURL": "https://2kgt.github.io/repo/icons/BiliBili.png",
+      "iconURL": "https://2kgt.github.io/repo/icons/BiliBili.v2.70.0.png",
       "appPermissions": {
         "entitlements": [
           "application-identifier",
@@ -267,14 +260,14 @@
           "version": "2.70.0",
           "date": "2026-05-02T01:03:09Z",
           "size": 79130444,
-          "downloadURL": "https://github.com/2KGT/repo/releases/download/BiliBili-v2.70.0/BiliBili-v2.70.0.ipa",
+          "downloadURL": "https://github.com/2KGT/repo/releases/download/V2.70.0/BiliBili.v2.70.0.ipa",
           "localizedDescription": "BiliBili-2.70.0 Noads"
         }
       ],
       "version": "2.70.0",
       "versionDate": "2026-05-02T01:03:09Z",
       "size": 79130444,
-      "downloadURL": "https://github.com/2KGT/repo/releases/download/BiliBili-v2.70.0/BiliBili-v2.70.0.ipa",
+      "downloadURL": "https://github.com/2KGT/repo/releases/download/V2.70.0/BiliBili.v2.70.0.ipa",
       "localizedDescription": "BiliBili-2.70.0 Noads"
     },
     {
