@@ -23,21 +23,21 @@
       "versions": [
         {
           "version": "5.0.2",
-          "date": "2026-05-02T03:26:00.992Z",
+          "date": "2026-05-02T03:30:51.889Z",
           "size": 7473847,
           "downloadURL": "https://2kgt.github.io/repo/apps/ESign_5.0.2.ipa",
           "localizedDescription": "Phiên bản 5.0.2 cập nhật."
         },
         {
           "version": "4.8.1",
-          "date": "2026-05-02T03:26:00.974Z",
+          "date": "2026-05-02T03:30:51.871Z",
           "size": 9115820,
           "downloadURL": "https://2kgt.github.io/repo/apps/ESign_4.8.1.ipa",
           "localizedDescription": "Phiên bản 4.8.1 cập nhật."
         }
       ],
       "version": "5.0.2",
-      "versionDate": "2026-05-02T03:26:00.992Z",
+      "versionDate": "2026-05-02T03:30:51.889Z",
       "size": 7473847,
       "downloadURL": "https://2kgt.github.io/repo/apps/ESign_5.0.2.ipa"
     },
@@ -55,14 +55,14 @@
       "versions": [
         {
           "version": "2.8.2",
-          "date": "2026-05-02T03:26:01.015Z",
+          "date": "2026-05-02T03:30:51.912Z",
           "size": 14210105,
           "downloadURL": "https://2kgt.github.io/repo/apps/Feather_2.8.2.ipa",
           "localizedDescription": "Phiên bản 2.8.2 cập nhật."
         }
       ],
       "version": "2.8.2",
-      "versionDate": "2026-05-02T03:26:01.015Z",
+      "versionDate": "2026-05-02T03:30:51.912Z",
       "size": 14210105,
       "downloadURL": "https://2kgt.github.io/repo/apps/Feather_2.8.2.ipa"
     },
@@ -80,21 +80,21 @@
       "versions": [
         {
           "version": "1.0.6",
-          "date": "2026-05-02T03:26:01.041Z",
+          "date": "2026-05-02T03:30:51.936Z",
           "size": 11155218,
           "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.6.ipa",
           "localizedDescription": "Phiên bản 1.0.6 cập nhật."
         },
         {
           "version": "1.0",
-          "date": "2026-05-02T03:26:01.083Z",
+          "date": "2026-05-02T03:30:51.975Z",
           "size": 10151779,
           "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.ipa",
           "localizedDescription": "Phiên bản 1.0 cập nhật."
         }
       ],
       "version": "1.0.6",
-      "versionDate": "2026-05-02T03:26:01.041Z",
+      "versionDate": "2026-05-02T03:30:51.936Z",
       "size": 11155218,
       "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.6.ipa"
     },
@@ -112,14 +112,14 @@
       "versions": [
         {
           "version": "1.4.6",
-          "date": "2026-05-02T03:26:01.083Z",
+          "date": "2026-05-02T03:30:51.975Z",
           "size": 0,
           "downloadURL": "https://2kgt.github.io/repo/apps/Turrit_1.4.6.ipa",
           "localizedDescription": "Phiên bản 1.4.6 cập nhật."
         }
       ],
       "version": "1.4.6",
-      "versionDate": "2026-05-02T03:26:01.083Z",
+      "versionDate": "2026-05-02T03:30:51.975Z",
       "size": 0,
       "downloadURL": "https://2kgt.github.io/repo/apps/Turrit_1.4.6.ipa"
     },
@@ -139,14 +139,14 @@
       "versions": [
         {
           "version": "1.1.28",
-          "date": "2026-05-02T03:26:01.097Z",
+          "date": "2026-05-02T03:30:51.989Z",
           "size": 9592698,
           "downloadURL": "https://2kgt.github.io/repo/apps/Zebra_1.1.28.ipa",
           "localizedDescription": "Phiên bản 1.1.28 cập nhật."
         }
       ],
       "version": "1.1.28",
-      "versionDate": "2026-05-02T03:26:01.097Z",
+      "versionDate": "2026-05-02T03:30:51.989Z",
       "size": 9592698,
       "downloadURL": "https://2kgt.github.io/repo/apps/Zebra_1.1.28.ipa"
     },
@@ -162,15 +162,15 @@
         {
           "version": "2.70.0",
           "date": "2026-05-02T01:03:09Z",
-          "size": 79130444,
-          "downloadURL": "https://github.com/2KGT/repo/releases/download/v2.70.0/BiliBili_v2.70.0.ipa",
+          "size": 72320932,
+          "downloadURL": "https://github.com/2KGT/repo/releases/download/v2.70.0/BiliBili_2.70.0.ipa",
           "localizedDescription": "BiliBili_2.70.0 Noads"
         }
       ],
       "version": "2.70.0",
       "versionDate": "2026-05-02T01:03:09Z",
-      "size": 79130444,
-      "downloadURL": "https://github.com/2KGT/repo/releases/download/v2.70.0/BiliBili_v2.70.0.ipa"
+      "size": 72320932,
+      "downloadURL": "https://github.com/2KGT/repo/releases/download/v2.70.0/BiliBili_2.70.0.ipa"
     },
     {
       "name": "Instagram",
