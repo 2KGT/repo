@@ -3,7 +3,7 @@
 static BOOL enableDownload = YES;
 static BOOL enableUI = YES;
 
-static void loadPrefs() {
+static void reloadPrefs() {
     NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:
         @"/var/mobile/Library/Preferences/com.yourname.fbenhancer.plist"];
 
@@ -11,6 +11,19 @@ static void loadPrefs() {
         enableDownload = [prefs[@"EnableDownload"] boolValue];
         enableUI = [prefs[@"EnableUI"] boolValue];
     }
+}
+
+%ctor {
+    reloadPrefs();
+
+    CFNotificationCenterAddObserver(
+        CFNotificationCenterGetDarwinNotifyCenter(),
+        NULL,
+        (CFNotificationCallback)reloadPrefs,
+        CFSTR("com.yourname.fbenhancer/settingschanged"),
+        NULL,
+        CFNotificationSuspensionBehaviorDeliverImmediately
+    );
 }
 
 %ctor {
