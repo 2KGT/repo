@@ -21,19 +21,21 @@ jobs:
           fetch-depth: 0
           ref: main
 
-      - name: "Install IPA Parser"
-        run: npm install app-info-parser
+      - name: "Install Dependencies"
+        run: npm install app-info-parser node-fetch@2
 
       - name: "Update apps.json"
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
+            const path = require('path');
+            const fetch = require('node-fetch');
             const AppInfoParser = require(`${process.env.GITHUB_WORKSPACE}/node_modules/app-info-parser`);
             const appsMap = {};
 
             const extractVersion = (filename) => {
-              const match = filename.match(/[_-]v?(\d+\.\d+(?:\.\d+)?)/i);
+              const match = filename.match(/[_-]v?(\d+\.\d+(\.\d+)?)/i);
               return match ? match[1] : "1.0";
             };
 
@@ -61,19 +63,19 @@ jobs:
                   versions: []
                 };
               }
+              // Tránh trùng lặp phiên bản
               if (!appsMap[key].versions.find(v => v.version === versionData.version)) {
                 appsMap[key].versions.push(versionData);
               }
             };
 
+            // 1. Xử lý file IPA trong thư mục nội bộ apps/
             if (fs.existsSync('apps')) {
               const files = fs.readdirSync('apps').filter(f => f.toLowerCase().endsWith('.ipa'));
               for (const file of files) {
                 const name = cleanAppName(file);
                 const version = extractVersion(file);
-                let bundleId = "com.unknown.app";
-                let category = "Utilities";
-                let perms = { entitlements: [], privacy: {} };
+                let bundleId = "com.unknown.app", category = "Utilities", perms = { entitlements: [], privacy: {} };
 
                 try {
                   const parser = new AppInfoParser(`apps/${file}`);
@@ -82,7 +84,7 @@ jobs:
                   category = formatCategory(info.LSApplicationCategoryType);
                   for (const k in info) if (k.endsWith('UsageDescription')) perms.privacy[k] = info[k];
                   if (info.mobileProvision?.Entitlements) perms.entitlements = Object.keys(info.mobileProvision.Entitlements);
-                } catch (e) { console.log(`⚠️ Lỗi parse ${file}`); }
+                } catch (e) { console.log(`⚠️ Lỗi parse file nội bộ: ${file}`); }
 
                 const stats = fs.statSync(`apps/${file}`);
                 addAppVersion(name, bundleId, category, perms, {
@@ -95,14 +97,41 @@ jobs:
               }
             }
 
+            // 2. Xử lý IPA từ GitHub Releases (Tích hợp Deep Parse)
             try {
               const { data: releases } = await github.rest.repos.listReleases({ owner: context.repo.owner, repo: context.repo.repo });
-              for (const release of releases) {
+              const recentReleases = releases.slice(0, 8); // Quét 8 bản gần nhất
+
+              for (const release of recentReleases) {
                 for (const asset of release.assets) {
                   if (asset.name.toLowerCase().endsWith('.ipa')) {
                     const name = cleanAppName(asset.name);
-                    const version = release.tag_name.replace(/^v/i, '');
-                    addAppVersion(name, "com.unknown.app", "Utilities", undefined, {
+                    const key = name.toLowerCase();
+                    if (appsMap[key] && appsMap[key].versions.some(v => v.downloadURL.includes('raw.githubusercontent'))) continue;
+
+                    let version = extractVersion(asset.name);
+                    if (version === "1.0") version = release.tag_name.replace(/^v/i, '');
+
+                    let bundleId = "com.unknown.app", category = "Utilities", perms = { entitlements: [], privacy: {} };
+
+                    try {
+                      console.log(`📥 Đang parse sâu Release Asset: ${asset.name}...`);
+                      const res = await fetch(asset.browser_download_url);
+                      const buffer = await res.buffer();
+                      const tempPath = `./temp_${asset.name}`;
+                      fs.writeFileSync(tempPath, buffer);
+
+                      const parser = new AppInfoParser(tempPath);
+                      const info = await parser.parse();
+                      bundleId = info.CFBundleIdentifier || bundleId;
+                      category = formatCategory(info.LSApplicationCategoryType);
+                      for (const k in info) if (k.endsWith('UsageDescription')) perms.privacy[k] = info[k];
+                      if (info.mobileProvision?.Entitlements) perms.entitlements = Object.keys(info.mobileProvision.Entitlements);
+                      
+                      fs.unlinkSync(tempPath);
+                    } catch (e) { console.log(`⚠️ Lỗi parse sâu asset: ${asset.name}`); }
+
+                    addAppVersion(name, bundleId, category, perms, {
                       version: version,
                       date: release.published_at || new Date().toISOString(),
                       size: asset.size,
@@ -112,109 +141,52 @@ jobs:
                   }
                 }
               }
-            } catch (e) { console.log("No releases found"); }
+            } catch (e) { console.log("Lỗi Releases: " + e.message); }
 
-            const manualApps = [
-              {
-                "name": "Turrit",
-                "bundleIdentifier": "com.turrit.app",
-                "developerName": "Kyic",
-                "subtitle": "Ứng dụng Turrit",
-                "category": "Social",
-                "iconURL": "https://2kgt.github.io/repo/icons/Turrit.png",
-                "versions": [
-                  {
-                    "version": "1.4.6",
-                    "date": "2026-04-21T00:00:00Z",
-                    "size": 88900000,
-                    "downloadURL": "https://2kgt.github.io/repo/apps/turrit.ipa",
-                    "localizedDescription": "Turrit - App Telegram bên thứ ba đa năng."
-                  }
-                ]
-              }
-            ];
+            // 3. App thủ công (Nếu có)
+            const manualApps = []; // Thêm object app vào đây nếu cần
             manualApps.forEach(app => { appsMap[app.name.toLowerCase()] = app; });
 
+            // 4. Tổng hợp và Ghi file
             const finalApps = Object.values(appsMap).map(app => {
-              app.versions.sort((a, b) => b.version.localeCompare(a.version, undefined, { numeric: true, sensitivity: 'base' }));
+              app.versions.sort((a, b) => b.version.localeCompare(a.version, undefined, { numeric: true }));
               const latest = app.versions[0];
-              app.version = latest.version;
-              app.versionDate = latest.date;
-              app.size = latest.size;
-              app.downloadURL = latest.downloadURL;
-              app.description = `${app.name} v${app.version}`;
-              app.localizedDescription = latest.localizedDescription;
+              Object.assign(app, { version: latest.version, versionDate: latest.date, size: latest.size, downloadURL: latest.downloadURL, localizedDescription: latest.localizedDescription });
               return app;
             });
 
-            const finalJson = {
-              "name": "Kyic Repository",
-              "identifier": "com.kyic.iparepo",
-              "iconURL": "https://2kgt.github.io/repo/icons/Kyic.png",
-              "apps": finalApps
-            };
+            const repoData = { name: "Kyic Repo", identifier: "com.2kgt.repo", iconURL: "https://2kgt.github.io/repo/icons/Kyic.png", apps: finalApps };
+            fs.writeFileSync('apps.json', JSON.stringify(repoData, null, 2));
 
-            fs.writeFileSync('apps.json', JSON.stringify(finalJson, null, 2));
-
-      - name: "🚀 Bước 6.2: Đồng bộ và Trích xuất thay đổi"
-        id: sync_data
+      - name: "🚀 Sync & Extract Data"
+        id: sync
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
-          # 1. Lưu bản mới (vừa tạo từ script) ra file tạm
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           cp apps.json apps_new.json
+          git fetch origin main && git reset --hard origin/main
           
-          # 2. Đồng bộ lịch sử với Repo để tránh lỗi push
-          git fetch origin main
-          git reset --hard origin/main
-          
-          # 3. Logic TRÍCH XUẤT THAY ĐỔI (Dùng jq so sánh mảng)
-          # Tìm app có (Name + Version + Date) KHÔNG tồn tại trong file cũ
+          # Tìm thông tin app mới nhất để gửi Telegram
           APP_JSON=$(jq -c --slurpfile old apps.json --slurpfile new apps_new.json '
-            $new[0].apps[] as $n | 
-            select(($old[0].apps | any(.name == $n.name and .version == $n.version and .versionDate == $n.versionDate) | not))
+            $new[0].apps[] as $n | select(($old[0].apps | any(.name == $n.name and .version == $n.version) | not))
           ' | head -n 1)
-
-          # Nếu không thấy khác biệt (do up đè dữ liệu cũ), lấy bản ghi đầu tiên trong JSON mới
-          if [ -z "$APP_JSON" ] || [ "$APP_JSON" == "null" ]; then
-            APP_JSON=$(jq -c '.apps[0]' apps_new.json)
-          fi
-
-          # Mã hóa Base64 để truyền dữ liệu an toàn 100% qua các bước
-          echo "APP_BASE64=$(echo "$APP_JSON" | base64 -w 0)" >> $GITHUB_ENV
+          [ -z "$APP_JSON" ] && APP_JSON=$(jq -c '.apps[0]' apps_new.json)
           
-          # 4. Cập nhật file và Push lên GitHub
+          echo "APP_BASE64=$(echo "$APP_JSON" | base64 -w 0)" >> $GITHUB_ENV
           mv apps_new.json apps.json
-          git add apps.json
-          git commit -m "Update repo metadata [skip ci]" || echo "Không có thay đổi"
+          git add apps.json && git commit -m "Update metadata [skip ci]" || echo "No changes"
           git push origin main --force-with-lease
 
-      - name: "🤖 Bước 7.1: Gửi Telegram (Real-time)"
+      - name: "🤖 Telegram Notification"
         if: always() && env.APP_BASE64 != ''
         env:
           TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TO: ${{ secrets.TELEGRAM_TO }}
         run: |
-          # Giải mã dữ liệu
           INFO=$(echo "${{ env.APP_BASE64 }}" | base64 -d)
+          NAME=$(echo "$INFO" | jq -r '.name')
+          VER=$(echo "$INFO" | jq -r '.version')
+          LINK=$(echo "$INFO" | jq -r '.downloadURL')
           
-          NAME=$(echo "$INFO" | jq -r '.name // "Ứng dụng"')
-          VER=$(echo "$INFO" | jq -r '.version // "N/A"')
-          LINK=$(echo "$INFO" | jq -r '.downloadURL // "#"')
-          REPO_URL="https://2kgt.github.io/repo/apps.json"
-          
-          MSG=$(printf "<b>🚀 REPO ĐÃ CẬP NHẬT</b>\n"
-          printf "━━━━━━━━━━━━━━━━━━\n"
-          printf "📱 <b>Ứng dụng:</b> <code>%s</code>\n" "$NAME"
-          printf "📦 <b>Phiên bản:</b> <code>%s</code>\n\n" "$VER"
-          printf "🔗 <b>Link Repo (Chạm sao chép):</b>\n"
-          printf "<code>%s</code>\n" "$REPO_URL"
-          printf "━━━━━━━━━━━━━━━━━━\n"
-          printf "📥 <a href='%s'>Nhấn để tải IPA trực tiếp</a>" "$LINK")
-
-          curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
-            -d "chat_id=$TO" \
-            -d "parse_mode=HTML" \
-            -d "disable_web_page_preview=true" \
-            --data-urlencode "text=$MSG"
+          MSG="<b>🚀 REPO CẬP NHẬT</b>%0A📱 <b>App:</b> <code>$NAME</code>%0A📦 <b>Ver:</b> <code>$VER</code>%0A🔗 <a href='$LINK'>Tải trực tiếp IPA</a>"
+          curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" -d "chat_id=$TO&parse_mode=HTML&text=$MSG"
