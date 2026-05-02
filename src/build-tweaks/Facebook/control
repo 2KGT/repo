@@ -1,9 +1,9 @@
-Package: com.yourname.fbenhancer
+Package: com.kyic.fbenhancer
 Name: FBEnhancer
-Depends: mobilesubstrate
+Depends: mobilesubstrate (>= 0.9.5000)
 Version: 1.0.0
-Architecture: iphoneos-arm
+Architecture: arm64
 Description: Facebook Enhancer tweak
-Maintainer: You
-Author: You
+Maintainer: Kyic
+Author: Kyic
 Section: Tweaks
