@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IPA Signer</title>
+</head>
+
+<body style="text-align:center;font-family:-apple-system;background:#111;color:white">
+
+<h2>🚀 IPA Signer</h2>
+
+<input type="file" id="file"><br><br>
+<button onclick="upload()">🔐 Sign File</button><br><br>
+
+<input id="url" placeholder="Paste decrypt IPA link"><br><br>
+<button onclick="signURL()">🌐 Sign from link</button><br><br>
+
+<a id="install">📲 Install</a>
+
+<script>
+const API = "https://YOUR_DOMAIN";
+
+async function upload() {
+  const f = document.getElementById("file").files[0];
+  const form = new FormData();
+  form.append("ipa", f);
+
+  const res = await fetch(API + "/sign", { method: "POST", body: form });
+  const data = await res.json();
+
+  if (data.success) {
+    install(data.manifest);
+  }
+}
+
+async function signURL() {
+  const url = document.getElementById("url").value;
+
+  const res = await fetch(API + "/sign-from-url?ipa=" + encodeURIComponent(url));
+  const data = await res.json();
+
+  if (data.success) {
+    install(data.manifest);
+  }
+}
+
+function install(manifest) {
+  const link = "itms-services://?action=download-manifest&url=" + API + manifest;
+  document.getElementById("install").href = link;
+}
+</script>
+
+</body>
+</html>
