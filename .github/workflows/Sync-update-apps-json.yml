@@ -156,53 +156,52 @@ jobs:
 
             fs.writeFileSync('apps.json', JSON.stringify(finalJson, null, 2));
 
-      - name: "🚀 Bước 6.2: Đồng bộ và Ghi nhận thay đổi"
+      - name: "🚀 Bước 6.2: Đồng bộ và Trích xuất thay đổi"
         id: sync_data
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # Lưu bản mới ra file tạm để so sánh
+          # 1. Lưu bản mới (vừa tạo từ script) ra file tạm
           cp apps.json apps_new.json
           
-          # Đồng bộ lịch sử với Server
+          # 2. Đồng bộ lịch sử với Repo để tránh lỗi push
           git fetch origin main
           git reset --hard origin/main
           
-          # Tìm bản ghi khác biệt (Real-time)
-          # So sánh dựa trên Name, Version và Date
+          # 3. Logic TRÍCH XUẤT THAY ĐỔI (Dùng jq so sánh mảng)
+          # Tìm app có (Name + Version + Date) KHÔNG tồn tại trong file cũ
           APP_JSON=$(jq -c --slurpfile old apps.json --slurpfile new apps_new.json '
             $new[0].apps[] as $n | 
             select(($old[0].apps | any(.name == $n.name and .version == $n.version and .versionDate == $n.versionDate) | not))
           ' | head -n 1)
 
-          # Trường hợp không thấy khác biệt (do ghi đè cùng nội dung), lấy bản ghi đầu tiên
-          if [ -z "$APP_JSON" ]; then
+          # Nếu không thấy khác biệt (do up đè dữ liệu cũ), lấy bản ghi đầu tiên trong JSON mới
+          if [ -z "$APP_JSON" ] || [ "$APP_JSON" == "null" ]; then
             APP_JSON=$(jq -c '.apps[0]' apps_new.json)
           fi
 
-          # Ghi vào file tạm để Bước 7.1 đọc chắc chắn hơn GITHUB_ENV
-          echo "$APP_JSON" > changed_app.json
+          # Mã hóa Base64 để truyền dữ liệu an toàn 100% qua các bước
+          echo "APP_BASE64=$(echo "$APP_JSON" | base64 -w 0)" >> $GITHUB_ENV
           
-          # Ghi đè và Push
+          # 4. Cập nhật file và Push lên GitHub
           mv apps_new.json apps.json
           git add apps.json
-          git commit -m "Update record [skip ci]" || echo "No changes to commit"
+          git commit -m "Update repo metadata [skip ci]" || echo "Không có thay đổi"
           git push origin main --force-with-lease
 
-      - name: "🤖 Bước 7.1: Gửi Telegram"
-        # Bỏ qua điều kiện 'if' cũ, chỉ cần bước trước thành công là chạy
-        if: success()
+      - name: "🤖 Bước 7.1: Gửi Telegram (Real-time)"
+        if: always() && env.APP_BASE64 != ''
         env:
           TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TO: ${{ secrets.TELEGRAM_TO }}
         run: |
-          # Đọc dữ liệu từ file tạm đã tạo ở bước trước
-          INFO=$(cat changed_app.json)
+          # Giải mã dữ liệu
+          INFO=$(echo "${{ env.APP_BASE64 }}" | base64 -d)
           
-          NAME=$(echo $INFO | jq -r '.name // "Ứng dụng"')
-          VER=$(echo $INFO | jq -r '.version // "N/A"')
-          LINK=$(echo $INFO | jq -r '.downloadURL // "#"')
+          NAME=$(echo "$INFO" | jq -r '.name // "Ứng dụng"')
+          VER=$(echo "$INFO" | jq -r '.version // "N/A"')
+          LINK=$(echo "$INFO" | jq -r '.downloadURL // "#"')
           REPO_URL="https://2kgt.github.io/repo/apps.json"
           
           MSG=$(printf "<b>🚀 REPO ĐÃ CẬP NHẬT</b>\n"
