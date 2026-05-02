@@ -75,18 +75,14 @@ jobs:
                 const name = cleanAppName(file);
                 const version = extractVersion(file);
                 let bundleId = "com.kyic.app";
-                let perms = { entitlements: [], privacy: {} };
-
                 try {
                   const info = await (new AppInfoParser(path)).parse();
                   bundleId = info.CFBundleIdentifier || bundleId;
-                  for (const k in info) if (k.endsWith('UsageDescription')) perms.privacy[k] = info[k];
                 } catch (e) {}
 
                 const stats = fs.statSync(path);
                 const vData = { version, date: stats.mtime.toISOString(), size: stats.size, downloadURL: `https://2kgt.github.io/repo/apps/${file}` };
                 const appObj = addAppToMap(name, bundleId, "Utilities", vData);
-
                 if (changedFiles.includes(path)) appToNotify = { ...appObj, ...vData };
               }
             }
@@ -97,26 +93,17 @@ jobs:
                 repo: context.repo.repo,
                 per_page: 30 
               });
-
               for (const release of releases) {
                 for (const asset of release.assets) {
                   if (asset.name.toLowerCase().endsWith('.ipa')) {
                     const name = cleanAppName(asset.name);
-                    const vData = { 
-                      version: extractVersion(asset.name), 
-                      date: release.published_at, 
-                      size: asset.size, 
-                      downloadURL: asset.browser_download_url 
-                    };
+                    const vData = { version: extractVersion(asset.name), date: release.published_at, size: asset.size, downloadURL: asset.browser_download_url };
                     const appObj = addAppToMap(name, "com.kyic.release", "Utilities", vData);
-
-                    if (!appToNotify && eventName === 'release' && release.id === context.payload.release.id) {
-                      appToNotify = { ...appObj, ...vData };
-                    }
+                    if (!appToNotify && eventName === 'release' && release.id === context.payload.release.id) appToNotify = { ...appObj, ...vData };
                   }
                 }
               }
-            } catch (e) { console.log("Lỗi quét Release: " + e.message); }
+            } catch (e) {}
 
             const finalApps = Object.values(appsMap).map(app => {
               app.versions.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -127,14 +114,13 @@ jobs:
             const repoData = { 
               name: "Kyic Repository", 
               identifier: "com.2kgt.repo", 
-              iconURL: "https://2kgt.github.io/repo/icons/repo-logo.png",
+              iconURL: "https://2kgt.github.io/repo/icons/Kyic.png",
               apps: finalApps 
             };
-            
             fs.writeFileSync('apps.json', JSON.stringify(repoData, null, 2));
             if (appToNotify) fs.writeFileSync('current_app.json', JSON.stringify(appToNotify));
 
-      - name: "🚀 Ghi Repo & Push Metadata"
+      - name: "🚀 Sync & Push"
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -143,10 +129,10 @@ jobs:
           git fetch origin main && git checkout main
           mv apps_temp.json apps.json
           git add apps.json
-          git commit -m "Update Kyic Repository metadata [skip ci]" || echo "No changes"
+          git commit -m "Update Kyic Repository [skip ci]" || echo "No changes"
           git push origin main
 
-      - name: "🤖 Thông báo Telegram"
+      - name: "🤖 Telegram Notify"
         run: |
           if [ -f notify_temp.json ]; then
             INFO=$(cat notify_temp.json)
@@ -154,15 +140,16 @@ jobs:
             VER=$(echo "$INFO" | jq -r '.version')
             LINK=$(echo "$INFO" | jq -r '.downloadURL')
             
+            # Sử dụng dấu gạch ngang chuẩn để đảm bảo hiển thị
             MSG="<b>⭐ Kyic repository update</b>%0A"
-            MSG="$MSG──────────────────%0A"
+            MSG="$MSG--------------------------------%0A"
             MSG="$MSG📱 <b>App:</b> <code>$NAME</code>%0A"
             MSG="$MSG💡 <b>Ver:</b> <code>$VER</code>%0A"
             MSG="$MSG💯 <b>Status:</b> <code>Ready ✅</code>%0A"
-            MSG="$MSG──────────────────%0A"
+            MSG="$MSG--------------------------------%0A"
             MSG="$MSG🌐 <a href='https://2kgt.github.io/repo/'>Webstore</a>%0A"
             MSG="$MSG📥 <a href='$LINK'><b>DOWNLOAD IPA</b></a>%0A"
-            MSG="$MSG──────────────────%0A"
+            MSG="$MSG--------------------------------%0A"
             MSG="$MSG🤩 <i>Enjoy your experience!</i>"
 
             curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" \
