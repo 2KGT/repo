@@ -95,7 +95,7 @@ jobs:
               return { ...app, ...app.versions[0] };
             });
 
-            fs.writeFileSync('apps.json', JSON.stringify({ name: "Kyic Repo", identifier: "com.2kgt.repo", apps: finalApps }, null, 2));
+            fs.writeFileSync('apps.json', JSON.stringify({ name: "Kyic Repository", identifier: "com.2kgt.repo", apps: finalApps }, null, 2));
             if (appToNotify) fs.writeFileSync('current_app.json', JSON.stringify(appToNotify));
 
       - name: "🚀 Push Metadata (Ghi file trước)"
