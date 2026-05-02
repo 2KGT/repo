@@ -130,9 +130,11 @@ jobs:
 
             const repoData = { 
               name: "Kyic Repository", 
-              identifier: "com.2kgt.repo", 
-              apps: finalApps 
-            };
+                identifier: "com.2kgt.repo", 
+  iconURL: "https://2kgt.github.io/repo/icons/logo.png", 
+  apps: finalApps 
+};
+
             
             fs.writeFileSync('apps.json', JSON.stringify(repoData, null, 2));
             if (appToNotify) fs.writeFileSync('current_app.json', JSON.stringify(appToNotify));
