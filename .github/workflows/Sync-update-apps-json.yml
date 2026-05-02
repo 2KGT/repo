@@ -129,9 +129,10 @@ jobs:
             });
 
             const repoData = { 
-              name: "Kyic Repository", 
-                identifier: "com.2kgt.repo", 
-  iconURL: "https://2kgt.github.io/repo/icons/logo.png", 
+  name: "Kyic Repository", 
+  identifier: "com.2kgt.repo", 
+  // Gán icon cho cả Repo ở đây:
+  iconURL: "https://2kgt.github.io/repo/icons/repo-logo.png", 
   apps: finalApps 
 };
 
