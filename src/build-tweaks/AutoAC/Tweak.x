@@ -1,5 +1,6 @@
 #import <AutoACheaders/AutoACheaders.h>
 #import <UIKit/UIKit.h>
+#import <objc/runtime.h>
 
 #define kPrefs [NSUserDefaults standardUserDefaults]
 static const NSInteger AutoACSection = 2026;
@@ -22,7 +23,7 @@ static const NSInteger AutoACSection = 2026;
       titleDescription:(id)description;
 @end
 
-#pragma mark - Settings Hook
+#pragma mark - Settings
 
 %hook YTAppSettingsPresentationData
 + (NSArray *)settingsCategoryOrder {
@@ -56,7 +57,6 @@ static const NSInteger AutoACSection = 2026;
                                            }
                                          settingItemId:0]];
 
-        // FIX forward declaration
         id currentSelf = (id)self;
 
         id settingsVC =
@@ -77,54 +77,81 @@ static const NSInteger AutoACSection = 2026;
 }
 %end
 
-#pragma mark - REAL LONG PRESS (HOOK UITabBar)
+#pragma mark - LONG PRESS (REAL WORKING)
 
 %hook UITabBar
 
-- (void)didMoveToWindow {
-    %orig;
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = %orig;
 
-    NSLog(@"[AutoAC] UITabBar attached");
+    if (self) {
 
-    UILongPressGestureRecognizer *longPress =
-    [[UILongPressGestureRecognizer alloc]
-     initWithTarget:self
-     action:@selector(autoAC_handleLongPress_global:)];
+        NSLog(@"[AutoAC] UITabBar init");
 
-    longPress.minimumPressDuration = 0.5;
-    longPress.cancelsTouchesInView = NO;
-    longPress.delaysTouchesBegan = NO;
-    longPress.delaysTouchesEnded = NO;
+        BOOL added = objc_getAssociatedObject(self, @selector(autoAC_handleLongPress:)) != nil;
 
-    [self addGestureRecognizer:longPress];
+        if (!added) {
+
+            UILongPressGestureRecognizer *lp =
+            [[UILongPressGestureRecognizer alloc]
+             initWithTarget:self
+             action:@selector(autoAC_handleLongPress:)];
+
+            lp.minimumPressDuration = 0.5;
+            lp.cancelsTouchesInView = NO;
+
+            [self addGestureRecognizer:lp];
+
+            objc_setAssociatedObject(self,
+                                     @selector(autoAC_handleLongPress:),
+                                     @(YES),
+                                     OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+            NSLog(@"[AutoAC] Gesture added");
+        }
+    }
+
+    return self;
 }
 
 %new
-- (void)autoAC_handleLongPress_global:(UILongPressGestureRecognizer *)gesture {
+- (void)autoAC_handleLongPress:(UILongPressGestureRecognizer *)gesture {
 
-    if (gesture.state == UIGestureRecognizerStateBegan) {
+    if (gesture.state != UIGestureRecognizerStateBegan) return;
 
-        NSLog(@"[AutoAC] Long press REAL detected");
+    NSLog(@"[AutoAC] ✅ LONG PRESS DETECTED");
 
-        UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
-        UIViewController *rootVC = keyWindow.rootViewController;
+    UIWindow *window = nil;
 
-        // tìm top VC để tránh crash
-        while (rootVC.presentedViewController) {
-            rootVC = rootVC.presentedViewController;
+    for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+        if ([scene isKindOfClass:[UIWindowScene class]]) {
+            UIWindowScene *ws = (UIWindowScene *)scene;
+
+            if (ws.activationState == UISceneActivationStateForegroundActive) {
+                window = ws.windows.firstObject;
+                break;
+            }
         }
-
-        UIAlertController *alert =
-        [UIAlertController alertControllerWithTitle:@"AutoAC"
-                                            message:@"Long press hoạt động ✅"
-                                     preferredStyle:UIAlertControllerStyleAlert];
-
-        [alert addAction:[UIAlertAction actionWithTitle:@"OK"
-                                                  style:UIAlertActionStyleDefault
-                                                handler:nil]];
-
-        [rootVC presentViewController:alert animated:YES completion:nil];
     }
+
+    if (!window) return;
+
+    UIViewController *rootVC = window.rootViewController;
+
+    while (rootVC.presentedViewController) {
+        rootVC = rootVC.presentedViewController;
+    }
+
+    UIAlertController *alert =
+    [UIAlertController alertControllerWithTitle:@"AutoAC"
+                                        message:@"Long press OK ✅"
+                                 preferredStyle:UIAlertControllerStyleAlert];
+
+    [alert addAction:[UIAlertAction actionWithTitle:@"OK"
+                                              style:UIAlertActionStyleDefault
+                                            handler:nil]];
+
+    [rootVC presentViewController:alert animated:YES completion:nil];
 }
 
 %end
