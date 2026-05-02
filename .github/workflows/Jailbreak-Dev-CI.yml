@@ -1,168 +1,148 @@
-name: 👑 Jailbreak Ultimate CI
+name: "Vô Ảnh Tà Thần - SINGULARITY MODE"
 
 on:
   workflow_dispatch:
     inputs:
-      apps:
-        description: "Danh sách IPA (phân cách dấu phẩy)"
-        default: "Facebook,TikTok"
-      tweaks:
-        description: "Danh sách tweak"
-        default: "AutoAC,AutoDL"
-      cert_mode:
+      project:
         type: choice
-        options: [auto, manual]
-        default: auto
-      cert_name:
-        description: "Tên cert nếu manual"
-        required: false
+        required: true
+        options: [None, AutoAC, AutoDL, Facebook]
+      ver_type:
+        type: choice
+        default: Patch (Vá lỗi)
+        options: [Patch (Vá lỗi), Minor (Tính năng), Major (Đại tu)]
+      publish:
+        type: boolean
+        default: true
+      send_deb:
+        type: boolean
+        default: true
 
 env:
-  THEOS: ${{ github.workspace }}/theos
+  THEOS: ${{ github.workspace }}/theos_engine
+  BASE_URL: "https://raw.githubusercontent.com/${{ github.repository }}/main"
 
 jobs:
-  build:
+  singularity:
     runs-on: macos-latest
-
-    strategy:
-      matrix:
-        app: ${{ fromJson(format('["{0}"]', join(split(github.event.inputs.apps, ','), '","'))) }}
-        tweak: ${{ fromJson(format('["{0}"]', join(split(github.event.inputs.tweaks, ','), '","'))) }}
+    permissions:
+      contents: write
 
     steps:
-      - uses: actions/checkout@v4
+    - name: 📥 Load System
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-      # ⚡ Cache
-      - uses: actions/cache@v4
-        with:
-          path: ${{ env.THEOS }}
-          key: theos-${{ runner.os }}
+    - name: ⚡ Singularity Cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ env.THEOS }}
+          ~/.cache
+          ~/Library/Caches
+        key: singularity-${{ runner.os }}-${{ hashFiles('**/control') }}
 
-      # 🛠 Setup
-      - name: Setup
-        run: |
-          set -e
-          brew install ldid dpkg unzip wget
-          git clone --recursive https://github.com/theos/theos.git $THEOS || true
+    - name: 🛠️ Singularity Engine
+      run: |
+        set -e
+        brew install make ldid dpkg
+        if [ ! -d "$THEOS" ]; then
+          git clone --recursive https://github.com/theos/theos.git $THEOS
+          curl -L https://github.com/theos/sdks/archive/master.tar.gz \
+            | tar -xz --strip-components=1 -C $THEOS/sdks
+        fi
 
-      # 🔨 Build tweak
-      - name: Build tweak
-        run: |
-          set -e
-          export THEOS=$THEOS
-          make -C src/build-tweaks/${{ matrix.tweak }} package
+    - name: 🧠 Singularity Metadata Memory
+      id: meta
+      run: |
+        set -e
+        PROJ="${{ github.event.inputs.project }}"
+        [ "$PROJ" = "None" ] && exit 1
+        DIR="src/build-tweaks/$PROJ"
+        CTRL="$DIR/control"
+        VER=$(grep "^Version:" "$CTRL" | cut -d: -f2 | xargs)
+        IFS='.' read MAJ MIN PAT <<< "$VER"
+        case "${{ github.event.inputs.ver_type }}" in
+          "Major (Đại tu)") MAJ=$((MAJ+1)); MIN=0; PAT=0 ;;
+          "Minor (Tính năng)") MIN=$((MIN+1)); PAT=0 ;;
+          "Patch (Vá lỗi)") PAT=$((PAT+1)) ;;
+        esac
+        NEW_VER="$MAJ.$MIN.$PAT"
+        NAME=$(grep "^Name:" "$CTRL" | cut -d: -f2 | xargs)
+        SAFE=$(echo "$NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9_-]//g')
+        sed -i '' "s/^Version:.*/Version: $NEW_VER/" "$CTRL"
+        echo "dir=$DIR" >> $GITHUB_OUTPUT
+        echo "safe=$SAFE" >> $GITHUB_OUTPUT
+        echo "ver=$NEW_VER" >> $GITHUB_OUTPUT
+        echo "name=$NAME" >> $GITHUB_OUTPUT
 
-          mkdir inject
-          find src/build-tweaks/${{ matrix.tweak }}/.theos -name "*.dylib" -exec cp {} inject/ \;
+    - name: ⚙️ Singularity Adaptive Build
+      id: build
+      run: |
+        set -e
+        DIR="${{ steps.meta.outputs.dir }}"
+        rm -rf output && mkdir -p output
+        attempt_build() {
+          make -C "$DIR" clean THEOS=$THEOS || true
+          make -C "$DIR" package FINALPACKAGE=1 THEOS=$THEOS ADDITIONAL_CFLAGS="-I$THEOS/include -fobjc-arc"
+        }
+        attempt_build || attempt_build || make -C "$DIR" package FINALPACKAGE=1 THEOS=$THEOS ADDITIONAL_CFLAGS="-I$THEOS/include"
+        find "$DIR/packages" -name "*.deb" -exec cp {} output/ \;
 
-      # 📲 Load IPA
-      - name: Load IPA
-        run: |
-          set -e
-          if [ -f "src/ipa/${{ matrix.app }}.ipa" ]; then
-            cp src/ipa/${{ matrix.app }}.ipa app.ipa
-          else
-            echo "❌ IPA not found"
-            exit 1
-          fi
+    - name: 🌐 Repo Self-Healing
+      if: ${{ success() && github.event.inputs.publish == 'true' }}
+      run: |
+        set -e
+        mkdir -p debs
+        cp output/*.deb debs/
+        dpkg-scanpackages debs /dev/null > Packages
+        gzip -kf Packages
+        bzip2 -kf Packages
 
-      # 📦 Unpack
-      - run: unzip -q app.ipa -d work
+    - name: 🚀 Singularity Release
+      if: ${{ success() && github.event.inputs.publish == 'true' }}
+      run: |
+        set -e
+        git config user.name "SINGULARITY"
+        git config user.email "singularity@void.ai"
+        git add .
+        git commit -m "🧿 Singularity Release ${{ steps.meta.outputs.safe }} v${{ steps.meta.outputs.ver }}" || true
+        git tag -f "singularity-${{ steps.meta.outputs.ver }}"
+        git push origin main --tags -f
 
-      # 🧬 Inject
-      - name: Inject tweak
-        run: |
-          set -e
-          APP=$(find work/Payload -name "*.app" | head -n1)
-          BIN=$(defaults read "$APP/Info.plist" CFBundleExecutable)
+    - name: 🤖 Singularity Telemetry
+      if: always()
+      env:
+        TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        TO: ${{ secrets.TELEGRAM_TO }}
+      run: |
+        set -e
+        STATUS="${{ job.status }}"
+        ICON="🧿"
+        [ "$STATUS" = "success" ] && ICON="⚡"
+        [ "$STATUS" = "failure" ] && ICON="❌"
+        
+        NAME="${{ steps.meta.outputs.name }}"
+        VER="${{ steps.meta.outputs.ver }}"
 
-          insert_dylib --strip-codesig --all-yes inject/*.dylib "$APP/$BIN"
+        # Giao diện tin nhắn mới
+        MSG="<b>$ICON Singularity engine update</b>%0A"
+        MSG="$MSG--------------------------------%0A"
+        MSG="$MSG📦 <b>Project:</b> <code>$NAME</code>%0A"
+        MSG="$MSG💡 <b>Version:</b> <code>v$VER</code>%0A"
+        MSG="$MSG📊 <b>Status:</b> <code>$STATUS</code>%0A"
+        MSG="$MSG--------------------------------%0A"
+        MSG="$MSG🤩 <i>Enjoy the Singularity experience!</i>"
 
-      # 🔐 Load cert
-      - name: Load cert
-        run: |
-          set -e
-          security create-keychain -p "" build.keychain
-          security default-keychain -s build.keychain
+        curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
+          -d "chat_id=$TO" \
+          -d "parse_mode=HTML" \
+          --data-urlencode "text=$MSG"
 
-          echo "${{ secrets.CERT_P12 }}" | base64 -d > cert.p12
-          echo "${{ secrets.PROFILE }}" | base64 -d > profile.mobileprovision
-
-          security import cert.p12 -P "${{ secrets.CERT_PASS }}" -k build.keychain -T /usr/bin/codesign
-
-      # 🔍 Detect / manual cert
-      - name: Select cert
-        id: cert
-        run: |
-          if [ "${{ github.event.inputs.cert_mode }}" = "manual" ]; then
-            echo "CERT=${{ github.event.inputs.cert_name }}" >> $GITHUB_ENV
-          else
-            CERT=$(security find-identity -v -p codesigning | head -n1 | awk '{print $2}')
-            echo "CERT=$CERT" >> $GITHUB_ENV
-          fi
-
-      # ✍️ Sign
-      - name: Sign app
-        run: |
-          APP=$(find work/Payload -name "*.app" | head -n1)
-          cp profile.mobileprovision "$APP/embedded.mobileprovision"
-
-          codesign -f -s "$CERT" "$APP"
-
-      # 📦 Repack
-      - name: Pack IPA
-        run: |
-          cd work
-          zip -qr ../${{ matrix.app }}-${{ matrix.tweak }}.ipa Payload
-
-      # 🌐 Manifest (install link)
-      - name: Create manifest
-        run: |
-          IPA_NAME="${{ matrix.app }}-${{ matrix.tweak }}.ipa"
-
-          cat > manifest.plist <<EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <plist version="1.0">
-          <dict>
-            <items>
-              <dict>
-                <assets>
-                  <array>
-                    <dict>
-                      <key>kind</key>
-                      <string>software-package</string>
-                      <key>url</key>
-                      <string>https://yourdomain.com/$IPA_NAME</string>
-                    </dict>
-                  </array>
-                <key>metadata</key>
-                <dict>
-                  <key>bundle-identifier</key>
-                  <string>com.example.app</string>
-                  <key>bundle-version</key>
-                  <string>1.0</string>
-                  <key>kind</key>
-                  <string>software</string>
-                  <key>title</key>
-                  <string>$IPA_NAME</string>
-                </dict>
-              </dict>
-            </items>
-          </dict>
-          </plist>
-          EOF
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.app }}-${{ matrix.tweak }}
-          path: |
-            *.ipa
-            manifest.plist
-
-      # 📊 Dashboard
-      - name: Summary
-        run: |
-          echo "## 📱 INSTALL READY" >> $GITHUB_STEP_SUMMARY
-          echo "- App: ${{ matrix.app }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Tweak: ${{ matrix.tweak }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Cert: $CERT" >> $GITHUB_STEP_SUMMARY
+        if [ "$STATUS" = "success" ] && [ "${{ github.event.inputs.send_deb }}" = "true" ]; then
+          find output -name "*.deb" | while read f; do
+            curl -s -F "chat_id=$TO" -F "document=@$f" -F "caption=🧿 $(basename "$f")" \
+              "https://api.telegram.org/bot$TOKEN/sendDocument"
+          done
+        fi
