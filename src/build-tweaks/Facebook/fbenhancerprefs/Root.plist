@@ -1,42 +1,13 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<plist version="1.0">
 <dict>
-
-    <key>PreferenceSpecifiers</key>
-    <array>
-
-        <dict>
-            <key>Type</key>
-            <string>PSGroupCell</string>
-            <key>Label</key>
-            <string>FBEnhancer</string>
-            <key>FooterText</key>
-            <string>Settings inside Facebook</string>
-        </dict>
-
-        <dict>
-            <key>Type</key>
-            <string>PSSwitchCell</string>
-            <key>Title</key>
-            <string>Enable Download</string>
-            <key>Key</key>
-            <string>EnableDownload</string>
-            <key>DefaultValue</key>
-            <true/>
-        </dict>
-
-        <dict>
-            <key>Type</key>
-            <string>PSSwitchCell</string>
-            <key>Title</key>
-            <string>Prefer HD</string>
-            <key>Key</key>
-            <string>PreferHD</string>
-            <key>DefaultValue</key>
-            <true/>
-        </dict>
-
-    </array>
-
+<key>PreferenceSpecifiers</key>
+<array>
+<dict>
+<key>Type</key>
+<string>PSSwitchCell</string>
+<key>Title</key>
+<string>Enable Download</string>
+<key>Key</key>
+<string>EnableDownload</string>
 </dict>
-</plist>
+</array>
+</dict>
