@@ -2,33 +2,43 @@ const express = require("express");
 const multer = require("multer");
 const fs = require("fs");
 const { execSync } = require("child_process");
-const axios = require("axios");
+const path = require("path");
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
 
-const PORT = 3000;
+// 🔥 PORT cho Render
+const PORT = process.env.PORT || 3000;
 
 // ⚠️ sửa đúng tên cert của bạn
 const CERT_NAME = "Apple Distribution";
-const CERT_PASS = "123456";
 
-// 📦 SIGN FILE LOCAL
-app.post("/sign", upload.single("ipa"), async (req, res) => {
+// 📦 SIGN FILE
+app.post("/sign", upload.single("ipa"), (req, res) => {
   try {
+    if (!req.file) {
+      return res.json({ success: false, error: "No file" });
+    }
+
     const input = req.file.path;
     const out = `signed-${Date.now()}.ipa`;
 
+    // dọn folder
     fs.rmSync("work", { recursive: true, force: true });
 
+    // unzip
     execSync(`unzip -q ${input} -d work`);
 
+    // tìm app
     const appPath = execSync(`find work/Payload -name "*.app"`).toString().trim();
 
+    // inject profile
     execSync(`cp profile.mobileprovision ${appPath}/embedded.mobileprovision`);
 
+    // sign
     execSync(`codesign -f -s "${CERT_NAME}" ${appPath}`);
 
+    // zip lại
     execSync(`cd work && zip -qr ../${out} Payload`);
 
     res.json({
@@ -42,35 +52,7 @@ app.post("/sign", upload.single("ipa"), async (req, res) => {
   }
 });
 
-// 🌐 SIGN FROM URL (DECRYPT)
-app.get("/sign-from-url", async (req, res) => {
-  try {
-    const url = req.query.ipa;
-    const file = `downloads-${Date.now()}.ipa`;
-
-    const response = await axios({
-      method: "GET",
-      url,
-      responseType: "stream"
-    });
-
-    const writer = fs.createWriteStream(file);
-    response.data.pipe(writer);
-
-    writer.on("finish", async () => {
-      const form = new FormData();
-      form.append("ipa", fs.createReadStream(file));
-
-      // gọi lại API sign
-      res.redirect(`/sign-local?file=${file}`);
-    });
-
-  } catch (e) {
-    res.json({ success: false });
-  }
-});
-
-// 📲 MANIFEST
+// 📲 manifest
 app.get("/manifest", (req, res) => {
   const ipa = req.query.ipa;
 
@@ -87,7 +69,7 @@ app.get("/manifest", (req, res) => {
               <key>kind</key>
               <string>software-package</string>
               <key>url</key>
-              <string>https://YOUR_DOMAIN/${ipa}</string>
+              <string>https://${req.headers.host}/${ipa}</string>
             </dict>
           </array>
         </assets>
@@ -110,8 +92,11 @@ app.get("/manifest", (req, res) => {
   `);
 });
 
-// serve
-app.use(express.static("public"));
-app.use(express.static("."));
+// serve static
+app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(__dirname));
 
-app.listen(PORT, () => console.log("🚀 Running on", PORT));
+// 🚀 START SERVER
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("🚀 Server running on port", PORT);
+});
