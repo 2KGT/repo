@@ -3,7 +3,7 @@ Name: FBEnhancer
 Depends: mobilesubstrate
 Version: 1.0.0
 Architecture: iphoneos-arm
-Description: Facebook Enhancer (Downloader + UI tools)
+Description: Facebook Enhancer tweak
 Maintainer: You
 Author: You
 Section: Tweaks
