@@ -23,21 +23,21 @@
       "versions": [
         {
           "version": "5.0.2",
-          "date": "2026-05-02T03:46:41.066Z",
+          "date": "2026-05-02T03:46:57.556Z",
           "size": 7473847,
           "downloadURL": "https://2kgt.github.io/repo/apps/ESign_5.0.2.ipa",
           "localizedDescription": "Phiên bản 5.0.2 cập nhật."
         },
         {
           "version": "4.8.1",
-          "date": "2026-05-02T03:46:41.048Z",
+          "date": "2026-05-02T03:46:57.536Z",
           "size": 9115820,
           "downloadURL": "https://2kgt.github.io/repo/apps/ESign_4.8.1.ipa",
           "localizedDescription": "Phiên bản 4.8.1 cập nhật."
         }
       ],
       "version": "5.0.2",
-      "versionDate": "2026-05-02T03:46:41.066Z",
+      "versionDate": "2026-05-02T03:46:57.556Z",
       "size": 7473847,
       "downloadURL": "https://2kgt.github.io/repo/apps/ESign_5.0.2.ipa"
     },
@@ -55,14 +55,14 @@
       "versions": [
         {
           "version": "2.8.2",
-          "date": "2026-05-02T03:46:41.089Z",
+          "date": "2026-05-02T03:46:57.581Z",
           "size": 14210105,
           "downloadURL": "https://2kgt.github.io/repo/apps/Feather_2.8.2.ipa",
           "localizedDescription": "Phiên bản 2.8.2 cập nhật."
         }
       ],
       "version": "2.8.2",
-      "versionDate": "2026-05-02T03:46:41.089Z",
+      "versionDate": "2026-05-02T03:46:57.581Z",
       "size": 14210105,
       "downloadURL": "https://2kgt.github.io/repo/apps/Feather_2.8.2.ipa"
     },
@@ -80,21 +80,21 @@
       "versions": [
         {
           "version": "1.0.6",
-          "date": "2026-05-02T03:46:41.114Z",
+          "date": "2026-05-02T03:46:57.609Z",
           "size": 11155218,
           "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.6.ipa",
           "localizedDescription": "Phiên bản 1.0.6 cập nhật."
         },
         {
           "version": "1.0",
-          "date": "2026-05-02T03:46:41.156Z",
+          "date": "2026-05-02T03:46:57.651Z",
           "size": 10151779,
           "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.ipa",
           "localizedDescription": "Phiên bản 1.0 cập nhật."
         }
       ],
       "version": "1.0.6",
-      "versionDate": "2026-05-02T03:46:41.114Z",
+      "versionDate": "2026-05-02T03:46:57.609Z",
       "size": 11155218,
       "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.6.ipa"
     },
@@ -119,7 +119,7 @@
         },
         {
           "version": "1.4.6",
-          "date": "2026-05-02T03:46:41.156Z",
+          "date": "2026-05-02T03:46:57.651Z",
           "size": 0,
           "downloadURL": "https://2kgt.github.io/repo/apps/Turrit_1.4.6.ipa",
           "localizedDescription": "Phiên bản 1.4.6 cập nhật."
@@ -146,14 +146,14 @@
       "versions": [
         {
           "version": "1.1.28",
-          "date": "2026-05-02T03:46:41.170Z",
+          "date": "2026-05-02T03:46:57.666Z",
           "size": 9592698,
           "downloadURL": "https://2kgt.github.io/repo/apps/Zebra_1.1.28.ipa",
           "localizedDescription": "Phiên bản 1.1.28 cập nhật."
         }
       ],
       "version": "1.1.28",
-      "versionDate": "2026-05-02T03:46:41.170Z",
+      "versionDate": "2026-05-02T03:46:57.666Z",
       "size": 9592698,
       "downloadURL": "https://2kgt.github.io/repo/apps/Zebra_1.1.28.ipa"
     },
@@ -178,28 +178,6 @@
       "versionDate": "2026-05-02T00:57:02Z",
       "size": 274889166,
       "downloadURL": "https://github.com/2KGT/repo/releases/download/V419.0.0/Instagram_v419.0.0.ipa"
-    },
-    {
-      "name": "YouTube",
-      "bundleIdentifier": "com.release.app",
-      "developerName": "Kyic",
-      "subtitle": "YouTube",
-      "category": "Utilities",
-      "iconURL": "https://2kgt.github.io/repo/icons/YouTube.png",
-      "appPermissions": {},
-      "versions": [
-        {
-          "version": "21.17.3",
-          "date": "2026-04-30T06:27:15Z",
-          "size": 138365206,
-          "downloadURL": "https://github.com/2KGT/repo/releases/download/V21.17.3/YouTube_v21.17.3.ipa",
-          "localizedDescription": "YouTube v21.17.3+YTPlus"
-        }
-      ],
-      "version": "21.17.3",
-      "versionDate": "2026-04-30T06:27:15Z",
-      "size": 138365206,
-      "downloadURL": "https://github.com/2KGT/repo/releases/download/V21.17.3/YouTube_v21.17.3.ipa"
     }
   ]
 }
