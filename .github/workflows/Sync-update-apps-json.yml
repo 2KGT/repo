@@ -156,43 +156,75 @@ jobs:
 
             fs.writeFileSync('apps.json', JSON.stringify(finalJson, null, 2));
 
-      - name: "🚀 Bước 6.2: Đồng bộ và Trích xuất thay đổi thực tế"
+      - name: "🚀 Bước 6.2: Đồng bộ và Trích xuất thay đổi"
         id: sync_data
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # 1. Tạm lưu file mới vừa được script tạo ra
+          # 1. Lưu bản mới ra file tạm
           cp apps.json apps_new.json
           
-          # 2. ĐỒNG BỘ CỨNG: Ép nhánh local phải khớp hoàn toàn với Server
+          # 2. Đồng bộ cứng với Server
           git fetch origin main
           git reset --hard origin/main
           
-          # 3. Logic so sánh bản CŨ (vừa fetch) và bản MỚI (vừa lưu tạm)
-          # Tìm bản ghi có sự khác biệt về (Tên + Phiên bản + Ngày)
-          CHANGED_APP_JSON=$(jq -c --slurpfile old apps.json --slurpfile new apps_new.json '
+          # 3. Trích xuất app thay đổi (Dùng biến cục bộ để kiểm tra)
+          # Xóa bỏ các khoảng trắng thừa và so sánh chính xác
+          DIFF_DATA=$(jq -c --slurpfile old apps.json --slurpfile new apps_new.json '
             $new[0].apps[] as $n | 
             select(
               ($old[0].apps | any(.name == $n.name and .version == $n.version and .versionDate == $n.versionDate) | not)
             )
           ' | head -n 1)
 
-          # Lưu Metadata vào biến môi trường để dùng cho bước Telegram
-          echo "app_info=$CHANGED_APP_JSON" >> $GITHUB_ENV
+          # Kiểm tra nếu trống thì lấy bản ghi đầu tiên làm mặc định để không mất thông báo
+          if [ -z "$DIFF_DATA" ]; then
+            DIFF_DATA=$(jq -c '.apps[0]' apps_new.json)
+          fi
+
+          # Lưu vào GITHUB_ENV để bước sau có thể đọc được
+          echo "APP_INFO=$DIFF_DATA" >> $GITHUB_ENV
           
-          # 4. Ghi đè file mới và thực hiện Push
+          # 4. Ghi đè và Push
           mv apps_new.json apps.json
           git add apps.json
-          
           if ! git diff --staged --quiet; then
             git commit -m "Update record [skip ci]"
             git push origin main --force-with-lease
             echo "pushed=true" >> $GITHUB_OUTPUT
           else
-            echo "pushed=false" >> $GITHUB_OUTPUT
+            # Nếu không có thay đổi file nhưng vẫn muốn thông báo (do ghi đè cùng nội dung)
+            echo "pushed=true" >> $GITHUB_OUTPUT
           fi
 
+      - name: "🤖 Bước 7.1: Gửi Telegram"
+        if: success() && env.APP_INFO != ''
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TO: ${{ secrets.TELEGRAM_TO }}
+          INFO: ${{ env.APP_INFO }}
+        run: |
+          # Phân tích cú pháp JSON
+          NAME=$(echo $INFO | jq -r '.name // "Ứng dụng mới"')
+          VER=$(echo $INFO | jq -r '.version // "1.0"')
+          LINK=$(echo $INFO | jq -r '.downloadURL // "#"')
+          REPO_URL="https://2kgt.github.io/repo/apps.json"
+          
+          MSG=$(printf "<b>🚀 REPO ĐÃ CẬP NHẬT</b>\n"
+          printf "━━━━━━━━━━━━━━━━━━\n"
+          printf "📱 <b>Ứng dụng:</b> <code>%s</code>\n" "$NAME"
+          printf "📦 <b>Phiên bản:</b> <code>%s</code>\n\n" "$VER"
+          printf "🔗 <b>Link Repo:</b>\n"
+          printf "<code>%s</code>\n" "$REPO_URL"
+          printf "━━━━━━━━━━━━━━━━━━\n"
+          printf "📥 <a href='%s'>Nhấn để tải IPA</a>" "$LINK")
+
+          curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
+            -d "chat_id=$TO" \
+            -d "parse_mode=HTML" \
+            -d "disable_web_page_preview=true" \
+            --data-urlencode "text=$MSG"
 
       - name: "🤖 Bước 7.1: Thông báo Telegram theo thay đổi vừa xảy ra"
         if: success() && steps.sync_data.outputs.pushed == 'true' && env.app_info != ''
