@@ -8,7 +8,7 @@ on:
         required: true
         type: choice
         default: 'None'
-        options: [ None, AutoAC, AutoDL ]
+        options: [ None, AutoAC, AutoDL, Facebook ]
       ver_type:
         description: 'Cấp độ nâng cấp'
         type: choice
