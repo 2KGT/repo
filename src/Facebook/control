@@ -1,0 +1,9 @@
+Package: com.yourname.fbenhancer
+Name: FBEnhancer
+Depends: mobilesubstrate
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: Facebook Enhancer (Downloader + UI tools)
+Maintainer: You
+Author: You
+Section: Tweaks
