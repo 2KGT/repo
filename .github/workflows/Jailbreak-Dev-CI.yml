@@ -1,0 +1,126 @@
+name: 👑 Jailbreak Dev CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      tweak:
+        type: choice
+        options: [AutoAC, AutoDL, Facebook]
+      ipa_url:
+        description: "Link IPA (optional)"
+        required: false
+      cert:
+        type: choice
+        options: [esign, feather, enterprise]
+
+env:
+  THEOS: ${{ github.workspace }}/theos
+
+jobs:
+  build-sign:
+    runs-on: macos-latest
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: ⚡ Cache Theos
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.THEOS }}
+          key: theos-${{ runner.os }}
+
+      - name: 🛠 Setup Toolchain
+        run: |
+          set -e
+          brew install ldid dpkg unzip wget
+          
+          if [ ! -d "$THEOS" ]; then
+            git clone --recursive https://github.com/theos/theos.git $THEOS
+            mkdir -p $THEOS/sdks
+            curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz --strip-components=1 -C $THEOS/sdks
+          fi
+
+      - name: 🔨 Build Tweak (.dylib)
+        run: |
+          set -e
+          export THEOS=$THEOS
+          make -C src/build-tweaks/${{ github.event.inputs.tweak }} clean package FINALPACKAGE=1
+
+          mkdir inject
+          find src/build-tweaks/${{ github.event.inputs.tweak }}/.theos -name "*.dylib" -exec cp {} inject/ \;
+
+      - name: 📲 Get IPA
+        run: |
+          set -e
+          mkdir ipa
+          
+          if [ -n "${{ github.event.inputs.ipa_url }}" ]; then
+            wget "${{ github.event.inputs.ipa_url }}" -O app.ipa
+          else
+            cp src/ipa/${{ github.event.inputs.tweak }}.ipa app.ipa
+          fi
+
+      - name: 📦 Unpack IPA
+        run: |
+          unzip -q app.ipa -d PayloadExtract
+
+      - name: 🧬 Inject Tweak (real)
+        run: |
+          set -e
+          APP=$(find PayloadExtract/Payload -name "*.app" | head -n 1)
+          BIN=$(defaults read "$APP/Info.plist" CFBundleExecutable)
+          
+          insert_dylib \
+            --strip-codesig \
+            --all-yes \
+            inject/*.dylib \
+            "$APP/$BIN"
+
+      - name: 🔐 Import Cert (SECURE)
+        run: |
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          
+          echo "${{ secrets.CERT_P12 }}" | base64 --decode > cert.p12
+          echo "${{ secrets.MOBILEPROVISION }}" | base64 --decode > profile.mobileprovision
+          
+          security import cert.p12 -P "${{ secrets.CERT_PASSWORD }}" -k build.keychain -T /usr/bin/codesign
+
+      - name: 🧾 Embed Provision
+        run: |
+          APP=$(find PayloadExtract/Payload -name "*.app" | head -n 1)
+          cp profile.mobileprovision "$APP/embedded.mobileprovision"
+
+      - name: 🔍 Detect Signing Identity
+        run: |
+          security find-identity -v -p codesigning
+
+      - name: ✍️ Codesign (REAL)
+        run: |
+          set -e
+          APP=$(find PayloadExtract/Payload -name "*.app" | head -n 1)
+
+          codesign -f -s "$(security find-identity -v -p codesigning | head -n 1 | awk '{print $2}')" \
+            --entitlements <(plistutil -i "$APP/archived-expanded-entitlements.xcent" -o -) \
+            "$APP"
+
+      - name: 📦 Repack IPA
+        run: |
+          cd PayloadExtract
+          zip -qr ../signed.ipa Payload
+
+      - name: 📤 Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-${{ github.event.inputs.tweak }}
+          path: signed.ipa
+
+      - name: 📊 Dashboard
+        run: |
+          echo "## 🚀 BUILD SUCCESS" >> $GITHUB_STEP_SUMMARY
+          echo "| Step | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Tweak | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Inject | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Sign | ✅ |" >> $GITHUB_STEP_SUMMARY
