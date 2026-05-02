@@ -156,71 +156,70 @@ jobs:
 
             fs.writeFileSync('apps.json', JSON.stringify(finalJson, null, 2));
 
-      - name: "🚀 Bước 6.2: So sánh bản ghi và Đồng bộ"
+      - name: "🚀 Bước 6.2: Đồng bộ và Trích xuất thay đổi thực tế"
         id: sync_data
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # Lưu bản JSON mới vào file tạm
+          # 1. Lưu bản JSON mới bạn vừa tạo ra từ script
           cp apps.json apps_new.json
           
-          # Lấy bản JSON cũ từ nhánh main để đối chiếu
+          # 2. Lấy bản JSON cũ từ Server về để làm mốc đối chiếu
           git fetch origin main
           git checkout origin/main -- apps.json || echo '{"apps":[]}' > apps.json
           
-          # Logic: Tìm ứng dụng có tên, phiên bản hoặc ngày cập nhật khác với bản cũ
-          # Chúng ta ưu tiên lấy tên ứng dụng (Name field) theo yêu cầu của bạn
-          CHANGED_APP=$(jq -r --argfile old apps.json --argfile new apps_new.json '
-            $new.apps[] as $n | 
+          # 3. Logic THỜI GIAN THỰC:
+          # So sánh bản CŨ và bản MỚI. 
+          # Thằng nào có (Tên + Version + Ngày) khác biệt thì đó chính là thằng vừa được bạn sửa.
+          CHANGED_APP_JSON=$(jq -c --slurpfile old apps.json --slurpfile new apps_new.json '
+            $new[0].apps[] as $n | 
             select(
-              ($old.apps | any(.name == $n.name and .version == $n.version and .versionDate == $n.versionDate) | not)
-            ) | .name
+              ($old[0].apps | any(.name == $n.name and .version == $n.version and .versionDate == $n.versionDate) | not)
+            )
           ' | head -n 1)
 
-          echo "app_name=$CHANGED_APP" >> $GITHUB_OUTPUT
+          # Lưu toàn bộ dữ liệu của app thay đổi vào biến môi trường
+          echo "app_info=$CHANGED_APP_JSON" >> $GITHUB_ENV
           
-          # Cập nhật file apps.json chính thức
+          # 4. Cập nhật và Push
           mv apps_new.json apps.json
-          
           git add apps.json
           if ! git diff --staged --quiet; then
-            git commit -m "Update record: $CHANGED_APP [skip ci]"
+            git commit -m "Update record [skip ci]"
             git push origin main
             echo "pushed=true" >> $GITHUB_OUTPUT
           else
             echo "pushed=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: "🤖 Bước 7.1: Thông báo đúng bản ghi vừa thay đổi"
-        # Chỉ chạy khi có thay đổi thực tế và xác định được tên ứng dụng
-        if: success() && steps.sync_data.outputs.pushed == 'true' && steps.sync_data.outputs.app_name != ''
+      - name: "🤖 Bước 7.1: Thông báo Telegram theo thay đổi vừa xảy ra"
+        if: success() && steps.sync_data.outputs.pushed == 'true' && env.app_info != ''
         env:
           TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TO: ${{ secrets.TELEGRAM_TO }}
-          TARGET: ${{ steps.sync_data.outputs.app_name }}
+          INFO: ${{ env.app_info }}
         run: |
-          # Trích xuất metadata từ đúng bản ghi vừa được xác định thay đổi
-          INFO=$(jq -c --arg NAME "$TARGET" '.apps[] | select(.name == $NAME)' apps.json | head -n 1)
-          
-          APP_NAME=$(echo $INFO | jq -r '.name')
-          APP_VER=$(echo $INFO | jq -r '.version')
-          APP_LINK=$(echo $INFO | jq -r '.downloadURL')
+          # Trích xuất dữ liệu trực tiếp từ biến info đã lưu ở trên
+          NAME=$(echo $INFO | jq -r '.name // "Unknown"')
+          VER=$(echo $INFO | jq -r '.version // "N/A"')
+          LINK=$(echo $INFO | jq -r '.downloadURL // "#"')
           REPO_URL="https://2kgt.github.io/repo/apps.json"
           
           MSG=$(printf "<b>🚀 REPO ĐÃ CẬP NHẬT</b>\n"
           printf "━━━━━━━━━━━━━━━━━━\n"
-          printf "📱 <b>Ứng dụng:</b> <code>%s</code>\n" "$APP_NAME"
-          printf "📦 <b>Phiên bản:</b> <code>%s</code>\n\n" "$APP_VER"
+          printf "📱 <b>Ứng dụng:</b> <code>%s</code>\n" "$NAME"
+          printf "📦 <b>Phiên bản:</b> <code>%s</code>\n\n" "$VER"
           printf "🔗 <b>Link Repo (Chạm sao chép):</b>\n"
           printf "<code>%s</code>\n" "$REPO_URL"
           printf "━━━━━━━━━━━━━━━━━━\n"
-          printf "📥 <a href='%s'>Nhấn để tải IPA vừa update</a>" "$APP_LINK")
+          printf "📥 <a href='%s'>Nhấn để tải IPA trực tiếp</a>" "$LINK")
 
           curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
             -d "chat_id=$TO" \
             -d "parse_mode=HTML" \
             -d "disable_web_page_preview=true" \
             --data-urlencode "text=$MSG"
+
 
 
