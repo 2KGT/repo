@@ -12,4 +12,7 @@ TWEAK_NAME = FBEnhancer
 FBEnhancer_FILES = Tweak.x
 FBEnhancer_CFLAGS = -fobjc-arc
 
+# Load preferences plist
+FBEnhancer_INSTALL_PATH = /Library/MobileSubstrate/DynamicLibraries
+
 include $(THEOS_MAKE_PATH)/tweak.mk
