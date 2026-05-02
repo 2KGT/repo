@@ -63,13 +63,11 @@ jobs:
               return appsMap[key];
             };
 
-            // 1. Quét thay đổi từ Git Diff
             let changedFiles = [];
             try {
               changedFiles = execSync('git diff --name-only HEAD^ HEAD').toString().split('\n').map(f => f.trim());
             } catch (e) {}
 
-            // 2. Quét thư mục apps/
             if (fs.existsSync('apps')) {
               const files = fs.readdirSync('apps').filter(f => f.toLowerCase().endsWith('.ipa'));
               for (const file of files) {
@@ -93,7 +91,6 @@ jobs:
               }
             }
 
-            // 3. Quét toàn bộ Releases
             try {
               const { data: releases } = await github.rest.repos.listReleases({ 
                 owner: context.repo.owner, 
@@ -121,7 +118,6 @@ jobs:
               }
             } catch (e) { console.log("Lỗi quét Release: " + e.message); }
 
-            // --- TỔNG HỢP ---
             const finalApps = Object.values(appsMap).map(app => {
               app.versions.sort((a, b) => new Date(b.date) - new Date(a.date));
               const latest = app.versions[0];
@@ -129,13 +125,11 @@ jobs:
             });
 
             const repoData = { 
-  name: "Kyic Repository", 
-  identifier: "com.2kgt.repo", 
-  // Gán icon cho cả Repo ở đây:
-  iconURL: "https://2kgt.github.io/repo/icons/repo-logo.png", 
-  apps: finalApps 
-};
-
+              name: "Kyic Repository", 
+              identifier: "com.2kgt.repo", 
+              iconURL: "https://2kgt.github.io/repo/icons/repo-logo.png",
+              apps: finalApps 
+            };
             
             fs.writeFileSync('apps.json', JSON.stringify(repoData, null, 2));
             if (appToNotify) fs.writeFileSync('current_app.json', JSON.stringify(appToNotify));
@@ -160,7 +154,6 @@ jobs:
             VER=$(echo "$INFO" | jq -r '.version')
             LINK=$(echo "$INFO" | jq -r '.downloadURL')
             
-            # Giao diện tin nhắn gọn gàng, mỏng và tươi sáng
             MSG="<b>⭐ Kyic repository update</b>%0A"
             MSG="$MSG──────────────────%0A"
             MSG="$MSG📱 <b>App:</b> <code>$NAME</code>%0A"
