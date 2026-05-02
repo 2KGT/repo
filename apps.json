@@ -124,12 +124,6 @@
       },
       "versions": [
         {
-          "version": "1.4.6",
-          "date": "2026-05-02T06:32:24.815Z",
-          "size": 0,
-          "downloadURL": "https://2kgt.github.io/repo/apps/Turrit_1.4.6.ipa"
-        },
-        {
           "version": "1.4.7",
           "date": "2026-05-02T03:46:31Z",
           "size": 86814066,
@@ -142,12 +136,7 @@
           "downloadURL": "https://github.com/2KGT/repo/releases/download/V.1.4.6/Turrit_v1.4.6.ipa"
         }
       ],
-      "version": "1.4.6",
-      "versionDate": "2026-05-02T06:32:24.815Z",
-      "size": 0,
-      "downloadURL": "https://2kgt.github.io/repo/apps/Turrit_1.4.6.ipa"
-    },
-    {
+
       "name": "Zebra",
       "bundleIdentifier": "xyz.willy.Zebra",
       "developerName": "Kyic",
