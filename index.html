@@ -1,301 +1,151 @@
-<script>
-const API = "https://repo-2xm0.onrender.com"; // 🔥 đổi sau khi deploy
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kyic Sign</title>
-<style>
-body{
-  margin:0;
-  font-family:-apple-system, BlinkMacSystemFont;
-  background:radial-gradient(circle at top,#1e3a8a,#020617);
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  height:100vh;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kyic Repository</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a1428, #1e3a8a);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
 
-.box{
-  width:90%;
-  max-width:360px;
-  padding:30px;
-  border-radius:28px;
-  background:rgba(255,255,255,0.06);
-  backdrop-filter:blur(40px);
-  border:1px solid rgba(255,255,255,0.12);
-  box-shadow:0 20px 60px rgba(0,0,0,0.6);
-  text-align:center;
-  animation:fade .6s ease;
-}
+        .container {
+            text-align: center;
+            padding: 80px 20px 60px;
+            position: relative;
+            z-index: 2;
+        }
 
-@keyframes fade{
-  from{opacity:0; transform:translateY(20px)}
-  to{opacity:1}
-}
+        img {
+            width: 128px;
+            height: 128px;
+            border-radius: 28px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        }
 
-h2{
-  margin-bottom:20px;
-}
+        h1 { font-size: 2.7em; margin-bottom: 12px; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        p { font-size: 1.2em; opacity: 0.92; margin-bottom: 45px; }
 
-.btn{
-  display:block;
-  margin:12px 0;
-  padding:16px;
-  border-radius:18px;
-  background:rgba(255,255,255,0.08);
-  backdrop-filter:blur(20px);
-  border:1px solid rgba(255,255,255,0.12);
-  text-decoration:none;
-  color:#fff;
-  font-weight:600;
-  transition:.2s;
-}
+        /* Glassmorphism mạnh + nhạy */
+        .glass-btn {
+            background: rgba(255, 255, 255, 0.09);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 20px;
+            padding: 22px 30px;
+            font-size: 1.15em;
+            font-weight: 600;
+            text-decoration: none;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+            margin: 16px auto;
+            max-width: 340px;
+            display: block;
+            color: white;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-.btn:active{
-  transform:scale(.96);
-  background:rgba(255,255,255,0.2);
-}
+        .glass-btn:active {
+            transform: scale(0.94) translateY(4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            background: rgba(255, 255, 255, 0.18);
+        }
 
-#status{
-  margin-top:20px;
-  font-size:14px;
-  opacity:.75;
-}
+        .info {
+            margin-top: 60px;
+            font-size: 0.95em;
+            opacity: 0.85;
+            line-height: 1.6;
+        }
 
-.progress{
-  margin-top:20px;
-  height:6px;
-  background:#222;
-  border-radius:10px;
-  overflow:hidden;
-}
+        /* Hiệu ứng thời tiết chuyển động mượt */
+        .particle {
+            position: fixed;
+            font-size: 20px;
+            pointer-events: none;
+            z-index: 1;
+            animation: fall linear infinite;
+            user-select: none;
+        }
 
-.bar{
-  height:100%;
-  width:0%;
-  background:linear-gradient(90deg,#22c55e,#4ade80,#86efac);
-  transition:.3s;
-}
-
-input{
-  display:none;
-}
-</style>
+        @keyframes fall {
+            to { transform: translateY(120vh) rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
-<div class="box">
-  <h2>🚀 Kyic Sign</h2>
-  <div id="status">Ready</div>
-  <div class="progress">
-    <div class="bar" id="bar"></div>
-  </div>
-  <input type="file" id="file" onchange="upload(this.files[0])">
-</div>
-<script>
 
-// ⚠️ THAY LINK NÀY BẰNG LINK SERVER CỦA BẠN
-const API = "https://YOUR_RENDER_URL";
+    <div class="container">
+        <img src="https://2kgt.github.io/repo/icons/Kyic.png" alt="Kyic Repository">
 
-// ===== UI =====
-function pick(){
-  document.getElementById("file").click();
-}
+        <h1>Kyic Repository</h1>
+        <p>Repo cung cấp tweak & IPA chất lượng cao cho iOS</p>
 
-function setStatus(t){
-  document.getElementById("status").innerText = t;
-}
+        <!-- Nút Esign / Feather - Trên -->
+        <a href="#" onclick="copyEsign(); return false;" class="glass-btn">
+            📱 Add vào Esign / Feather
+        </a>
 
-function runFake(done){
-  const bar = document.getElementById("bar");
-  let w = 0;
+        <!-- Nút Sileo - Dưới -->
+        <a href="#" onclick="copySileo(); return false;" class="glass-btn">
+            📦 Add vào Sileo / Cydia / Zebra
+        </a>
 
-  const i = setInterval(()=>{
-    w += Math.random()*15;
-    if(w >= 100){
-      w = 100;
-      clearInterval(i);
-      done();
-    }
-    bar.style.width = w + "%";
-  },300);
-}
-
-// ===== UPLOAD =====
-async function upload(file){
-  if(!file) return;
-
-  setStatus("🔐 Đang ký IPA...");
-  runFake(async ()=>{
-    try{
-      const form = new FormData();
-      form.append("ipa", file);
-
-      const res = await fetch(API + "/sign", {
-        method:"POST",
-        body:form
-      });
-
-      const data = await res.json();
-
-      if(data.success){
-        install(data.manifest);
-      }else{
-        setStatus("❌ Ký thất bại");
-      }
-    }catch(e){
-      setStatus("❌ Lỗi server");
-    }
-  });
-}
-
-// ===== LINK =====
-async function signLink(){
-  const ipa = prompt("Dán link IPA:");
-  if(!ipa) return;
-
-  setStatus("🌐 Đang xử lý link...");
-  runFake(async ()=>{
-    try{
-      const res = await fetch(API + "/sign-from-url?ipa=" + encodeURIComponent(ipa));
-      const data = await res.json();
-
-      if(data.success){
-        install(data.manifest);
-      }else{
-        setStatus("❌ Link lỗi");
-      }
-    }catch(e){
-      setStatus("❌ Server lỗi");
-    }
-  });
-}
-
-// ===== INSTALL =====
-function install(manifest){
-  setStatus("🚀 Đang cài...");
-
-  const url = API + manifest;
-  const itms = "itms-services://?action=download-manifest&url=" + url;
-
-  setTimeout(()=>{
-    window.location.href = itms;
-  },800);
-}
-
-</script>
-
-// ===== COPY LINK (giữ nguyên) =====
-function copySileo() {
-    navigator.clipboard.writeText("https://2kgt.github.io/repo/");
-    showToast("📦 Đã copy link Sileo");
-}
-
-function copyEsign() {
-    navigator.clipboard.writeText("https://2kgt.github.io/repo/apps.json");
-    showToast("📱 Đã copy link Esign");
-}
-
-// ===== TOAST UI XỊN =====
-function showToast(msg) {
-    const t = document.createElement("div");
-    t.innerText = msg;
-    t.style = `
-        position:fixed;
-        bottom:40px;
-        left:50%;
-        transform:translateX(-50%);
-        background:rgba(0,0,0,0.7);
-        padding:12px 20px;
-        border-radius:12px;
-        backdrop-filter:blur(10px);
-        z-index:9999;
-    `;
-    document.body.appendChild(t);
-    setTimeout(()=>t.remove(),2000);
-}
-
-// ===== UPLOAD FILE IPA =====
-async function uploadIPA(file) {
-    const form = new FormData();
-    form.append("ipa", file);
-
-    showProgress("🔐 Đang ký IPA...");
-
-    const res = await fetch(API + "/sign", {
-        method: "POST",
-        body: form
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-        finishInstall(data.manifest);
-    } else {
-        showToast("❌ Ký thất bại");
-    }
-}
-
-// ===== SIGN TỪ LINK =====
-async function signFromLink() {
-    const ipa = prompt("Dán link IPA:");
-    if (!ipa) return;
-
-    showProgress("🌐 Đang tải & ký...");
-
-    const res = await fetch(API + "/sign-from-url?ipa=" + encodeURIComponent(ipa));
-    const data = await res.json();
-
-    if (data.success) {
-        finishInstall(data.manifest);
-    } else {
-        showToast("❌ Lỗi link");
-    }
-}
-
-// ===== PROGRESS FAKE (UI XỊN) =====
-function showProgress(text) {
-    const box = document.createElement("div");
-    box.id = "progressBox";
-    box.innerHTML = `
-        <div style="font-size:18px;margin-bottom:10px">${text}</div>
-        <div style="height:6px;background:#333;border-radius:6px;overflow:hidden">
-            <div id="bar" style="height:100%;width:10%;background:#22c55e"></div>
+        <div class="info">
+            📍 Hanoi, Vietnam<br><br>
+            Nhấn nút để tự động sao chép link
         </div>
-    `;
-    box.style = `
-        position:fixed;
-        top:50%;
-        left:50%;
-        transform:translate(-50%,-50%);
-        background:rgba(20,20,30,0.8);
-        padding:20px;
-        border-radius:20px;
-        backdrop-filter:blur(20px);
-        z-index:9999;
-    `;
-    document.body.appendChild(box);
+    </div>
 
-    let w = 10;
-    const i = setInterval(()=>{
-        w += Math.random()*10;
-        if (w > 90) clearInterval(i);
-        document.getElementById("bar").style.width = w + "%";
-    }, 400);
-}
+    <script>
+        // Tạo hiệu ứng thời tiết mượt mà
+        function createParticle() {
+            const emojis = ['🍂', '❄️', '🌿', '✨', '☀️', '🌸'];
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            particle.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            
+            particle.style.left = Math.random() * 100 + 'vw';
+            particle.style.top = '-30px';
+            particle.style.animationDuration = (Math.random() * 12 + 8) + 's';
+            particle.style.opacity = Math.random() * 0.7 + 0.4;
+            particle.style.fontSize = (Math.random() * 12 + 18) + 'px';
+            
+            document.body.appendChild(particle);
 
-// ===== INSTALL =====
-function finishInstall(manifest) {
-    document.getElementById("progressBox")?.remove();
+            // Xóa sau khi rơi xong
+            setTimeout(() => particle.remove(), 20000);
+        }
 
-    const url = API + manifest;
-    const install = "itms-services://?action=download-manifest&url=" + url;
+        // Tạo liên tục + tăng khi chạm màn hình
+        setInterval(createParticle, 280);
 
-    showToast("🚀 Sẵn sàng cài");
+        // Tăng hiệu ứng khi chạm màn hình
+        document.addEventListener('touchstart', () => {
+            for (let i = 0; i < 6; i++) {
+                setTimeout(createParticle, i * 80);
+            }
+        });
 
-    setTimeout(()=>{
-        window.location.href = install;
-    },1000);
-}
-</script>
+        // Copy functions
+        function copySileo() {
+            navigator.clipboard.writeText("https://2kgt.github.io/repo/").then(() => {
+                alert("✅ Đã copy link Sileo!\n\nMở Sileo → Sources → + → Dán link");
+            });
+        }
+
+        function copyEsign() {
+            navigator.clipboard.writeText("https://2kgt.github.io/repo/apps.json").then(() => {
+                alert("✅ Đã copy link Esign/Feather!\n\nMở Esign → App Source → + → Dán link");
+            });
+        }
+    </script>
+</body>
+</html>
