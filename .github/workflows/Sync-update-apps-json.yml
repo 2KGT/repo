@@ -158,27 +158,32 @@ jobs:
             const repoData = { name: "Kyic Repo", identifier: "com.2kgt.repo", iconURL: "https://2kgt.github.io/repo/icons/Kyic.png", apps: finalApps };
             fs.writeFileSync('apps.json', JSON.stringify(repoData, null, 2));
 
+# ... (Giữ nguyên các phần trên cho đến hết bước Update apps.json) ...
+
       - name: "🚀 Sync & Extract Data"
         id: sync
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Lưu bản mới vừa tạo ra
           cp apps.json apps_new.json
+          
+          # Đồng bộ với repo để tránh xung đột
           git fetch origin main && git reset --hard origin/main
           
-          # Tìm thông tin app mới nhất để gửi Telegram
-          APP_JSON=$(jq -c --slurpfile old apps.json --slurpfile new apps_new.json '
-            $new[0].apps[] as $n | select(($old[0].apps | any(.name == $n.name and .version == $n.version) | not))
-          ' | head -n 1)
-          [ -z "$APP_JSON" ] && APP_JSON=$(jq -c '.apps[0]' apps_new.json)
+          # LOGIC SỬA ĐỔI: Tìm app có versionDate mới nhất thay vì so sánh mảng
+          # Điều này đảm bảo app bạn vừa đẩy lên (có ngày mới nhất) sẽ được chọn
+          APP_JSON=$(jq -c '.apps | sort_by(.versionDate) | last' apps_new.json)
           
           echo "APP_BASE64=$(echo "$APP_JSON" | base64 -w 0)" >> $GITHUB_ENV
+          
           mv apps_new.json apps.json
           git add apps.json && git commit -m "Update metadata [skip ci]" || echo "No changes"
           git push origin main --force-with-lease
 
       - name: "🤖 Telegram Notification"
-        if: always() && env.APP_BASE64 != ''
+        if: success() && env.APP_BASE64 != ''
         env:
           TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TO: ${{ secrets.TELEGRAM_TO }}
@@ -188,5 +193,16 @@ jobs:
           VER=$(echo "$INFO" | jq -r '.version')
           LINK=$(echo "$INFO" | jq -r '.downloadURL')
           
-          MSG="<b>🚀 REPO CẬP NHẬT</b>%0A📱 <b>App:</b> <code>$NAME</code>%0A📦 <b>Ver:</b> <code>$VER</code>%0A🔗 <a href='$LINK'>Tải trực tiếp IPA</a>"
-          curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" -d "chat_id=$TO&parse_mode=HTML&text=$MSG"
+          # Format tin nhắn đẹp hơn
+          MSG="<b>🚀 REPO CẬP NHẬT MỚI</b>%0A"
+          MSG="$MSG━━━━━━━━━━━━━━━━━━%0A"
+          MSG="$MSG📱 <b>Ứng dụng:</b> <code>$NAME</code>%0A"
+          MSG="$MSG📦 <b>Phiên bản:</b> <code>$VER</code>%0A"
+          MSG="$MSG━━━━━━━━━━━━━━━━━━%0A"
+          MSG="$MSG🔗 <a href='$LINK'>Nhấn để tải IPA trực tiếp</a>"
+          
+          curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
+            -d "chat_id=$TO" \
+            -d "parse_mode=HTML" \
+            -d "text=$MSG" \
+            -d "disable_web_page_preview=true"
