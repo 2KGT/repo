@@ -1,6 +1,7 @@
 {
   "name": "Kyic Repository",
   "identifier": "com.2kgt.repo",
+  "iconURL": "https://2kgt.github.io/repo/icons/repo-logo.png",
   "apps": [
     {
       "name": "ESign",
@@ -16,19 +17,19 @@
       "versions": [
         {
           "version": "5.0.2",
-          "date": "2026-05-02T06:02:34.103Z",
+          "date": "2026-05-02T06:32:24.745Z",
           "size": 7473847,
           "downloadURL": "https://2kgt.github.io/repo/apps/ESign_5.0.2.ipa"
         },
         {
           "version": "4.8.1",
-          "date": "2026-05-02T06:02:34.083Z",
+          "date": "2026-05-02T06:32:24.727Z",
           "size": 9115820,
           "downloadURL": "https://2kgt.github.io/repo/apps/ESign_4.8.1.ipa"
         }
       ],
       "version": "5.0.2",
-      "versionDate": "2026-05-02T06:02:34.103Z",
+      "versionDate": "2026-05-02T06:32:24.745Z",
       "size": 7473847,
       "downloadURL": "https://2kgt.github.io/repo/apps/ESign_5.0.2.ipa"
     },
@@ -46,13 +47,13 @@
       "versions": [
         {
           "version": "2.8.2",
-          "date": "2026-05-02T06:02:34.126Z",
+          "date": "2026-05-02T06:32:24.767Z",
           "size": 14210105,
           "downloadURL": "https://2kgt.github.io/repo/apps/Feather_2.8.2.ipa"
         }
       ],
       "version": "2.8.2",
-      "versionDate": "2026-05-02T06:02:34.126Z",
+      "versionDate": "2026-05-02T06:32:24.767Z",
       "size": 14210105,
       "downloadURL": "https://2kgt.github.io/repo/apps/Feather_2.8.2.ipa"
     },
@@ -70,19 +71,19 @@
       "versions": [
         {
           "version": "1.0",
-          "date": "2026-05-02T06:02:34.171Z",
+          "date": "2026-05-02T06:32:24.811Z",
           "size": 10151779,
           "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.ipa"
         },
         {
           "version": "1.0.6",
-          "date": "2026-05-02T06:02:34.152Z",
+          "date": "2026-05-02T06:32:24.792Z",
           "size": 11155218,
           "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.6.ipa"
         }
       ],
       "version": "1.0",
-      "versionDate": "2026-05-02T06:02:34.171Z",
+      "versionDate": "2026-05-02T06:32:24.811Z",
       "size": 10151779,
       "downloadURL": "https://2kgt.github.io/repo/apps/LCSign_1.0.ipa"
     },
@@ -100,13 +101,13 @@
       "versions": [
         {
           "version": "0.1",
-          "date": "2026-05-02T06:02:34.175Z",
+          "date": "2026-05-02T06:32:24.815Z",
           "size": 3085580,
           "downloadURL": "https://2kgt.github.io/repo/apps/Lithium_v0.1.ipa"
         }
       ],
       "version": "0.1",
-      "versionDate": "2026-05-02T06:02:34.175Z",
+      "versionDate": "2026-05-02T06:32:24.815Z",
       "size": 3085580,
       "downloadURL": "https://2kgt.github.io/repo/apps/Lithium_v0.1.ipa"
     },
@@ -124,7 +125,7 @@
       "versions": [
         {
           "version": "1.4.6",
-          "date": "2026-05-02T06:02:34.175Z",
+          "date": "2026-05-02T06:32:24.815Z",
           "size": 0,
           "downloadURL": "https://2kgt.github.io/repo/apps/Turrit_1.4.6.ipa"
         },
@@ -142,7 +143,7 @@
         }
       ],
       "version": "1.4.6",
-      "versionDate": "2026-05-02T06:02:34.175Z",
+      "versionDate": "2026-05-02T06:32:24.815Z",
       "size": 0,
       "downloadURL": "https://2kgt.github.io/repo/apps/Turrit_1.4.6.ipa"
     },
@@ -160,7 +161,7 @@
       "versions": [
         {
           "version": "1.1.28",
-          "date": "2026-05-02T06:02:34.190Z",
+          "date": "2026-05-02T06:32:24.829Z",
           "size": 9592698,
           "downloadURL": "https://2kgt.github.io/repo/apps/Zebra_1.1.28.ipa"
         },
@@ -172,7 +173,7 @@
         }
       ],
       "version": "1.1.28",
-      "versionDate": "2026-05-02T06:02:34.190Z",
+      "versionDate": "2026-05-02T06:32:24.829Z",
       "size": 9592698,
       "downloadURL": "https://2kgt.github.io/repo/apps/Zebra_1.1.28.ipa"
     },
