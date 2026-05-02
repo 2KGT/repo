@@ -226,33 +226,6 @@ jobs:
             -d "disable_web_page_preview=true" \
             --data-urlencode "text=$MSG"
 
-      - name: "🤖 Bước 7.1: Thông báo Telegram theo thay đổi vừa xảy ra"
-        if: success() && steps.sync_data.outputs.pushed == 'true' && env.app_info != ''
-        env:
-          TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TO: ${{ secrets.TELEGRAM_TO }}
-          INFO: ${{ env.app_info }}
-        run: |
-          # Trích xuất dữ liệu trực tiếp từ biến info đã lưu ở trên
-          NAME=$(echo $INFO | jq -r '.name // "Unknown"')
-          VER=$(echo $INFO | jq -r '.version // "N/A"')
-          LINK=$(echo $INFO | jq -r '.downloadURL // "#"')
-          REPO_URL="https://2kgt.github.io/repo/apps.json"
-          
-          MSG=$(printf "<b>🚀 REPO ĐÃ CẬP NHẬT</b>\n"
-          printf "━━━━━━━━━━━━━━━━━━\n"
-          printf "📱 <b>Ứng dụng:</b> <code>%s</code>\n" "$NAME"
-          printf "📦 <b>Phiên bản:</b> <code>%s</code>\n\n" "$VER"
-          printf "🔗 <b>Link Repo (Chạm sao chép):</b>\n"
-          printf "<code>%s</code>\n" "$REPO_URL"
-          printf "━━━━━━━━━━━━━━━━━━\n"
-          printf "📥 <a href='%s'>Nhấn để tải IPA trực tiếp</a>" "$LINK")
-
-          curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
-            -d "chat_id=$TO" \
-            -d "parse_mode=HTML" \
-            -d "disable_web_page_preview=true" \
-            --data-urlencode "text=$MSG"
 
 
 
