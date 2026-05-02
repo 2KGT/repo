@@ -156,52 +156,45 @@ jobs:
 
             fs.writeFileSync('apps.json', JSON.stringify(finalJson, null, 2));
 
-      - name: "🚀 Bước 6.2: Lưu và xác định app thay đổi"
-        id: check_changes
+      - name: "🚀 Bước 6.2: Đồng bộ dữ liệu và Chốt Metadata"
+        id: git_push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          CHANGED_IPA=$(git diff --name-only HEAD^ HEAD | grep 'apps/.*\.ipa$' | head -n 1 || echo "")
-          if [ -z "$CHANGED_IPA" ]; then
-            CHANGED_IPA=$(ls -t apps/*.ipa 2>/dev/null | head -n 1 || echo "")
-          fi
-          
-          APP_FILENAME=$(basename "$CHANGED_IPA" .ipa)
-          echo "target_app=$APP_FILENAME" >> $GITHUB_OUTPUT
-
+          # Tạm lưu file apps.json vừa được script xử lý xong
           cp apps.json apps.json.tmp
+          
+          # Làm sạch xung đột bằng cách reset về bản trên GitHub
           git fetch origin main
           git reset --hard origin/main
+          
+          # Ghi đè lại file mới nhất
           mv apps.json.tmp apps.json
           
           git add apps.json
           if ! git diff --staged --quiet; then
-            git commit -m "Auto-update apps.json [skip ci]"
+            git commit -m "Update repository metadata [skip ci]"
             git push origin main
             echo "pushed=true" >> $GITHUB_OUTPUT
           else
             echo "pushed=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: "🤖 Bước 7.1: Thông báo Telegram (Chạm để sao chép)"
-        if: success() && steps.check_changes.outputs.pushed == 'true'
+      - name: "🤖 Bước 7.1: Thông báo Telegram thông minh (Cập nhật & Sửa đổi)"
+        if: success() && steps.git_push.outputs.pushed == 'true'
         env:
           TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TO: ${{ secrets.TELEGRAM_TO }}
-          TARGET: ${{ steps.check_changes.outputs.target_app }}
         run: |
-          LATEST_APP=$(jq -c --arg TARGET "$TARGET" '.apps[] | select(.name | contains($TARGET))' apps.json | head -n 1)
-          if [ -z "$LATEST_APP" ]; then
-            LATEST_APP=$(jq -c '.apps | sort_by(.versionDate) | reverse | .[0]' apps.json)
-          fi
+          # Logic: Tìm app có versionDate gần nhất trong apps.json (Bất kể là mới hay cũ)
+          LATEST_APP=$(jq -c '.apps | sort_by(.versionDate) | reverse | .[0]' apps.json)
           
           NAME=$(echo $LATEST_APP | jq -r '.name // "Unknown"')
           VER=$(echo $LATEST_APP | jq -r '.version // "N/A"')
           LINK=$(echo $LATEST_APP | jq -r '.downloadURL // "#"')
           REPO_URL="https://2kgt.github.io/repo/apps.json"
           
-          # Đưa link vào thẻ <code> để chạm là copy
           MSG=$(printf "<b>🚀 REPO ĐÃ CẬP NHẬT</b>\n"
           printf "━━━━━━━━━━━━━━━━━━\n"
           printf "📱 <b>Ứng dụng:</b> <code>%s</code>\n" "$NAME"
@@ -216,6 +209,4 @@ jobs:
             -d "parse_mode=HTML" \
             -d "disable_web_page_preview=true" \
             --data-urlencode "text=$MSG"
-
-
 
