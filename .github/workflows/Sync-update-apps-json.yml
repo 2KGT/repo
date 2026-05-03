@@ -163,8 +163,8 @@ jobs:
 
           # 3. Biểu tượng trạng thái
           case "$JOB_STATUS" in
-            success)   ICON="✅" ;;
-            cancelled) ICON="⚪" ;;
+            Đã Thành công)   ICON="✅" ;;
+            Đã bị hủy) ICON="⚪" ;;
             *)         ICON="❌" ;;
           esac
 
@@ -176,14 +176,14 @@ jobs:
           📊 <b>Trạng thái:</b> <code>$JOB_STATUS</code>
           ⏰ <b>Thời gian:</b> <code>$REAL_TIME</code>
           ──────────────────
-          🤩 <i>Hệ thống tự động Kyic Engine</i>"
+          🤩 <i>Hệ thống đồng bộ tự động Kyic</i>"
 
           # 5. Nút bấm: Hai nút cùng hàng, tách biệt
           KEYBOARD=$(cat <<EOF
           {
             "inline_keyboard": [
               [
-                { "text": "🌐 Kyic Repository", "url": "https://2kgt.github.io/repo/" },
+                { "text": "🌐 Kyic repo", "url": "https://2kgt.github.io/repo/" },
                 { "text": "📦 Download IPA", "url": "https://github.com/${{ github.repository }}/releases" }
               ]
             ]
