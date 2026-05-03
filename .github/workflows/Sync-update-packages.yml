@@ -1,4 +1,4 @@
-name: Auto sync sileo Packages
+name: Auto Sync Sileo Packages
 
 on:
   push:
