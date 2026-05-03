@@ -1,41 +1,40 @@
-name: IPA Signer Pro
+name: Sign IPA and Manage Certs
+
 on:
   repository_dispatch:
-    types: [check_cert] # Worker sẽ gọi lệnh này
+    types: [sign_ipa, check_cert]
 
 jobs:
-  sign_ipa:
+  process_request:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Cài đặt Zsign (Bộ công cụ ký)
+      - name: Setup Folders and Save Certificate
         run: |
-          git clone https://github.com/zhlynn/zsign.git
-          cd zsign && g++ *.cpp -lcrypto -O3 -o zsign
-          sudo cp zsign /usr/local/bin/
+          # 1. Định nghĩa đường dẫn dựa trên telegram_id từ client_payload
+          USER_ID="${{ github.event.client_payload.telegram_id }}"
+          CERT_DIR="private/certs/$USER_ID"
+          TEMP_DIR="temp/signed_files"
 
-      - name: Tải tệp cần thiết
-        run: |
-          curl -L "${{ github.event.client_payload.file_url }}" -o cert.p12
-          # Ở bước này, bạn cần bổ sung logic tải file .mobileprovision và .ipa từ người dùng
+          # 2. Tạo thư mục nếu chưa tồn tại
+          mkdir -p "$CERT_DIR"
+          mkdir -p "$TEMP_DIR"
 
-      - name: Thực hiện ký IPA
-        run: |
-          # Lệnh ký cơ bản
-          zsign -k cert.p12 -p "${{ github.event.client_payload.password }}" -m embedded.mobileprovision -o signed.ipa input.ipa
+          # 3. Tải file p12 về thư mục riêng tư (nếu là lệnh ký/kiểm tra)
+          # Lưu ý: File p12 này sẽ được lưu vào repo của bạn
+          curl -L "${{ github.event.client_payload.p12_url }}" -o "$CERT_DIR/certificate.p12"
+          
+          # 4. Thực hiện logic ký IPA (Giả định bạn đã có script sign.sh)
+          # ./scripts/sign.sh --input "${{ github.event.client_payload.ipa_url }}" --cert "$CERT_DIR/certificate.p12" --pass "${{ github.event.client_payload.password }}" --output "$TEMP_DIR/signed.ipa"
 
-      - name: Tạo Link cài đặt trực tiếp (OTA)
+      - name: Commit and Push Changes
         run: |
-          # Bước này sẽ upload signed.ipa lên một dịch vụ lưu trữ và trả về link itms-services
-          # Ví dụ: dùng transfer.sh để lấy link nhanh
-          LINK=$(curl --upload-file ./signed.ipa https://transfer.sh/signed.ipa)
-          echo "SIGNED_URL=$LINK" >> $GITHUB_ENV
-
-      - name: Phản hồi về Telegram
-        run: |
-          MSG="✅ Ký thành công!%n🚀 Cài đặt tại đây: itms-services://?action=download-manifest&url=YOUR_PLIST_URL"
-          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage \
-            -d chat_id=${{ github.event.client_payload.chat_id }} \
-            -d text="$MSG"
+          git config --global user.name "2KGT-Bot"
+          git config --global user.email "bot@2kgt.io"
+          git add private/certs/
+          git commit -m "Automated: Save cert for user ${{ github.event.client_payload.telegram_id }}"
+          git push
