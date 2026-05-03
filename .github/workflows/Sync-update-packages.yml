@@ -24,53 +24,43 @@ jobs:
       - name: Generate Packages & Release
         run: |
           if [ -d "debs" ]; then
-            # 1. Tạo file Packages thô
-            cd debs
-            dpkg-scanpackages -m . /dev/null > ../Packages
-            cd ..
+            # 1. Tạo file Packages thô từ thư mục debs
+            dpkg-scanpackages -m debs /dev/null > Packages
 
-            # 2. Xử lý gán Icon cho từng Tweak từ thư mục icons/
+            # 2. Xử lý gán Icon cho từng Tweak
+            # Lưu ý: Tên file ảnh trong icons/ phải khớp 100% với Name của tweak
             touch Packages.new
             while IFS= read -r line; do
               echo "$line" >> Packages.new
-              if [[ $line == Package:* ]]; then
-                PKG_ID=$(echo $line | awk '{print $2}')
-                
-                # Tìm file deb chứa ID gói này
-                DEB_FILE=$(find debs -name "*.deb" -exec grep -l "Package: $PKG_ID" {} + | head -n 1)
-                
-                if [ -n "$DEB_FILE" ]; then
-                  # Lấy trường Name từ Control của file deb
-                  TWEAK_NAME=$(dpkg-deb -f "$DEB_FILE" Name)
-                  
-                  if [ -n "$TWEAK_NAME" ]; then
-                    # Tự động chèn link icon (icons/Tên_Tweak.png)
-                    echo "Icon: https://raw.githubusercontent.com/${{ github.repository }}/main/icons/${TWEAK_NAME}.png" >> Packages.new
-                  fi
-                fi
+              # Khi gặp dòng Name, chèn ngay dòng Icon bên dưới
+              if [[ $line == Name:* ]]; then
+                TWEAK_NAME=$(echo "$line" | cut -d' ' -f2-)
+                # Sử dụng link GitHub Pages để Sileo nhận diện tốt hơn
+                echo "Icon: https://2kgt.github.io/repo/icons/${TWEAK_NAME}.png" >> Packages.new
               fi
             done < Packages
             mv Packages.new Packages
             
-            # 3. Nén Packages để Sileo đọc nhanh hơn
+            # 3. Nén file
             bzip2 -kf Packages
 
-            # 4. Cập nhật file Release (Chứa Icon chính của Repo)
-            echo "Origin: Kyic Repository" > Release
-            echo "Label: Kyic Repository" >> Release
-            echo "Suite: stable" >> Release
-            echo "Version: 1.0" >> Release
-            echo "Codename: ios" >> Release
-            echo "Architectures: iphoneos-arm64 iphoneos-arm" >> Release
-            echo "Components: main" >> Release
-            echo "Description: Kyic Repository - Kho lưu trữ tweaks & IPA chất lượng cao." >> Release
+            # 4. Cập nhật file Release (Cấu hình Kyic Repository)
+            {
+              echo "Origin: Kyic Repository"
+              echo "Label: Kyic Repository"
+              echo "Suite: stable"
+              echo "Version: 1.0"
+              echo "Codename: ios"
+              echo "Architectures: iphoneos-arm64 iphoneos-arm"
+              echo "Components: main"
+              echo "Description: Kyic Repository - Kho lưu trữ tweaks & IPA chất lượng cao."
+              # Icon chính của Repo - dùng đường dẫn tương đối để tránh lỗi raw content
+              echo "Icon: icons/Kyic.png"
+              echo "Date: $(date -R)"
+              echo "Acquire-By-Hash: yes"
+            } > Release
             
-            # Đường dẫn icon Repo trong thư mục icons/
-            echo "Icon: https://raw.githubusercontent.com/2KGT/repo/main/icons/Kyic.png" >> Release
-            echo "Date: $(date -R)" >> Release
-            echo "Acquire-By-Hash: yes" >> Release
-            
-            echo "✅ Đã cập nhật xong Packages, bz2 và Release"
+            echo "✅ Đã cập nhật xong Packages, bz2 và Release cho Kyic Repository"
           else
             echo "❌ Lỗi: Không tìm thấy thư mục debs"
             exit 1
