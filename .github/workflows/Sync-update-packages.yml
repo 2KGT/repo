@@ -134,12 +134,22 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git pull origin main --rebase
+          
+          # 1. Thêm các file đã thay đổi vào stage
           git add Packages* Release depictions/*.json
+          
+          # 2. Kiểm tra xem thực sự có thay đổi nào không
           if git diff --staged --quiet; then
-            echo "No changes"
+            echo "No changes to commit."
           else
+            # 3. Commit ngay tại chỗ để thư mục làm việc trở nên "sạch"
             git commit -m "Auto-update ${{ steps.info.outputs.tweak_name }} [skip ci]"
+            
+            # 4. Bây giờ mới pull rebase. Nếu có xung đột trên server, 
+            # lệnh này sẽ giúp gộp thay đổi của bạn vào sau cùng.
+            git pull origin main --rebase
+            
+            # 5. Push lên repository
             git push origin main
           fi
 
