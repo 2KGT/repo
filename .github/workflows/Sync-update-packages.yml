@@ -24,31 +24,51 @@ jobs:
       - name: Generate Packages, Release & JSON
         id: info
         run: |
-          if [ -d "debs" ]; then
-            # 1. Lấy file deb mới nhất
-            LATEST_DEB_PATH=$(ls -t debs/*.deb | head -1)
-            FILENAME=$(basename "$LATEST_DEB_PATH")
-            
-            # 2. Trích xuất thông tin (Lấy nguyên văn trường Name)
-            PKG_ID=$(dpkg-deb -f "$LATEST_DEB_PATH" Package)
-            TWEAK_NAME=$(dpkg-deb -f "$LATEST_DEB_PATH" Name || echo "$PKG_ID")
-            TWEAK_VER=$(dpkg-deb -f "$LATEST_DEB_PATH" Version)
-            TWEAK_AUTH=$(dpkg-deb -f "$LATEST_DEB_PATH" Author || echo "Kyic")
-            TWEAK_DESC=$(dpkg-deb -f "$LATEST_DEB_PATH" Description || echo "Không có mô tả.")
-            TWEAK_CHGLOG=$(dpkg-deb -f "$LATEST_DEB_PATH" Changelog || echo "Cập nhật phiên bản mới.")
-            
-            # Đặt tên file JSON chính xác theo Name:
-            JSON_FILENAME="${TWEAK_NAME}.json"
-            
-            # Xuất dữ liệu cho Telegram (Cần encode URL nếu tên có dấu cách)
-            ENCODED_JSON_NAME=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$JSON_FILENAME'))")
-            echo "tweak_name=$TWEAK_NAME" >> $GITHUB_OUTPUT
-            echo "tweak_ver=$TWEAK_VER" >> $GITHUB_OUTPUT
-            echo "deb_url=https://2kgt.github.io/repo/debs/$(python3 -c "import urllib.parse; print(urllib.parse.quote('$FILENAME'))")" >> $GITHUB_OUTPUT
+          if [ ! -d "debs" ]; then echo "Thư mục debs không tồn tại"; exit 1; fi
 
-            # 3. Tạo file JSON trong depictions/
-            mkdir -p depictions
-            cat <<EOF > "depictions/$JSON_FILENAME"
+          # 1. Lấy thông tin file deb mới nhất để xử lý và thông báo
+          LATEST_DEB_PATH=$(ls -t debs/*.deb | head -1)
+          FILENAME=$(basename "$LATEST_DEB_PATH")
+          
+          # Trích xuất metadata
+          TWEAK_ID=$(dpkg-deb -f "$LATEST_DEB_PATH" Package)
+          TWEAK_NAME=$(dpkg-deb -f "$LATEST_DEB_PATH" Name || echo "$TWEAK_ID")
+          TWEAK_VER=$(dpkg-deb -f "$LATEST_DEB_PATH" Version)
+          TWEAK_AUTH=$(dpkg-deb -f "$LATEST_DEB_PATH" Author || echo "Kyic")
+          TWEAK_DESC=$(dpkg-deb -f "$LATEST_DEB_PATH" Description || echo "Không có mô tả.")
+          TWEAK_CHGLOG=$(dpkg-deb -f "$LATEST_DEB_PATH" Changelog || echo "Cập nhật phiên bản mới.")
+          
+          # Xuất output cho các step sau
+          echo "tweak_name=$TWEAK_NAME" >> $GITHUB_OUTPUT
+          echo "tweak_ver=$TWEAK_VER" >> $GITHUB_OUTPUT
+          echo "deb_url=https://2kgt.github.io/repo/debs/$(python3 -c "import urllib.parse; print(urllib.parse.quote('$FILENAME'))")" >> $GITHUB_OUTPUT
+
+          # 2. Xử lý Logic Hình ảnh & Video cho JSON Depiction
+          mkdir -p depictions/images
+          
+          # Kiểm tra Banner (Tên Tweak-banner.png)
+          BANNER_VIEW=""
+          if [ -f "depictions/images/${TWEAK_NAME}-banner.png" ]; then
+            BANNER_VIEW="{ \"class\": \"DepictionImageView\", \"url\": \"https://2kgt.github.io/repo/depictions/images/${TWEAK_NAME}-banner.png\", \"width\": 1242, \"height\": 600 },"
+          fi
+
+          # Kiểm tra Video (Tên Tweak.mp4)
+          VIDEO_VIEW=""
+          if [ -f "depictions/images/${TWEAK_NAME}.mp4" ]; then
+            VIDEO_VIEW="{ \"class\": \"DepictionVideoView\", \"videoURL\": \"https://2kgt.github.io/repo/depictions/images/${TWEAK_NAME}.mp4\", \"cornerRadius\": 8 },"
+          fi
+
+          # Kiểm tra Screenshots (Tên Tweak1.png -> Tên Tweak5.png)
+          SCREENSHOTS=""
+          for i in {1..5}; do
+            if [ -f "depictions/images/${TWEAK_NAME}${i}.png" ]; then
+              SCREENSHOTS="${SCREENSHOTS}{\"url\": \"https://2kgt.github.io/repo/depictions/images/${TWEAK_NAME}${i}.png\", \"accessibilityText\": \"Screenshot $i\"},"
+            fi
+          done
+          SCREENSHOTS=$(echo $SCREENSHOTS | sed 's/,$//') # Xóa dấu phẩy thừa cuối cùng
+
+          # Tạo file JSON Depiction
+          cat <<EOF > "depictions/${TWEAK_NAME}.json"
 {
   "min_bridge_version": "1.1",
   "tabs": [
@@ -56,8 +76,16 @@ jobs:
       "tabname": "Chi tiết",
       "class": "DepictionStackView",
       "views": [
+        $BANNER_VIEW
         { "class": "DepictionHeaderView", "title": "$TWEAK_NAME" },
         { "class": "DepictionSubheaderView", "title": "Phiên bản $TWEAK_VER" },
+        $VIDEO_VIEW
+        {
+          "class": "DepictionScreenshotsView",
+          "itemCornerRadius": 10,
+          "itemSize": "{160, 346}",
+          "screenshots": [ $SCREENSHOTS ]
+        },
         { "class": "DepictionMarkdownView", "markdown": "### Mô tả\n$TWEAK_DESC\n\n### Nhật ký thay đổi\n$TWEAK_CHGLOG", "useRawFormat": true },
         { "class": "DepictionSeparatorView" },
         { "class": "DepictionTableTextView", "title": "Nhà phát triển", "text": "$TWEAK_AUTH" }
@@ -68,28 +96,43 @@ jobs:
 }
 EOF
 
-            # 4. Tạo Packages & chèn SileoDepiction
-            dpkg-scanpackages -m debs /dev/null > Packages
-            # Chèn Icon và Depiction (Dùng dấu | để tránh xung đột đường dẫn)
-            sed -i "s|^Filename: debs/$FILENAME|Filename: debs/$FILENAME\nIcon: https://2kgt.github.io/repo/icons/$TWEAK_NAME.png\nSileoDepiction: https://2kgt.github.io/repo/depictions/$ENCODED_JSON_NAME|" Packages
-            bzip2 -kf Packages
+          # 3. Quét Packages và Gán Link Thông Minh
+          dpkg-scanpackages -m debs /dev/null > Packages
 
-            # 5. Tạo Release
-            {
-              echo "Origin: Kyic Repository"
-              echo "Label: Kyic Repository"
-              echo "Suite: stable"
-              echo "Version: 1.0"
-              echo "Codename: ios"
-              echo "Architectures: iphoneos-arm64 iphoneos-arm"
-              echo "Components: main"
-              echo "Description: Kyic Repository - Kho lưu trữ tweaks chất lượng cao."
-              echo "Icon: icons/Kyic.png"
-              echo "Date: $(date -R)"
-            } > Release
-          else
-            exit 1
-          fi
+          for DEB in debs/*.deb; do
+            CUR_FILE=$(basename "$DEB")
+            CUR_NAME=$(dpkg-deb -f "$DEB" Name || dpkg-deb -f "$DEB" Package)
+            ENC_NAME=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$CUR_NAME'))")
+            
+            # Kiểm tra xem file deb gốc đã có sẵn Icon/Depiction chưa
+            HAS_ICON=$(dpkg-deb -f "$DEB" Icon)
+            HAS_DEPICTION=$(dpkg-deb -f "$DEB" SileoDepiction)
+            
+            # Chỉ gán link mặc định nếu trường đó còn trống
+            if [ -z "$HAS_ICON" ]; then
+              sed -i "/Filename: debs\/$CUR_FILE$/a Icon: https://2kgt.github.io/repo/icons/$CUR_NAME.png" Packages
+            fi
+            
+            if [ -z "$HAS_DEPICTION" ]; then
+              sed -i "/Filename: debs\/$CUR_FILE$/a SileoDepiction: https://2kgt.github.io/repo/depictions/$ENC_NAME.json" Packages
+            fi
+          done
+
+          bzip2 -kf Packages
+
+          # 4. Tạo file Release chuẩn
+          {
+            echo "Origin: Kyic Repository"
+            echo "Label: Kyic Repository"
+            echo "Suite: stable"
+            echo "Version: 1.0"
+            echo "Codename: ios"
+            echo "Architectures: iphoneos-arm64 iphoneos-arm"
+            echo "Components: main"
+            echo "Description: Kyic Repository - Kho lưu trữ tweaks chất lượng cao."
+            echo "Icon: icons/Kyic.png"
+            echo "Date: $(date -R)"
+          } > Release
 
       - name: Commit and Push
         run: |
@@ -100,7 +143,7 @@ EOF
           if git diff --staged --quiet; then
             echo "No changes"
           else
-            git commit -m "Auto-update $TWEAK_NAME [skip ci]"
+            git commit -m "Auto-update ${{ steps.info.outputs.tweak_name }} [skip ci]"
             git push origin main
           fi
 
