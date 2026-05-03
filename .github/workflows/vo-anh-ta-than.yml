@@ -131,26 +131,46 @@ jobs:
         env:
           TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TO: ${{ secrets.TELEGRAM_TO }}
+          JOB_STATUS: ${{ job.status }}
+          DISP_NAME: ${{ steps.metadata.outputs.display_name }}
+          VERSION: ${{ steps.metadata.outputs.final_ver }}
+          PROJ_INPUT: ${{ github.event.inputs.project }}
         run: |
-          STATUS="${{ job.status }}"
-          NAME="${{ steps.metadata.outputs.display_name }}"
-          VER="${{ steps.metadata.outputs.final_ver }}"
-          PROJ_INPUT="${{ github.event.inputs.project }}"
-          
-          [ "$STATUS" == "success" ] && ICON="⚡" || ICON="❌"
-          [ "$STATUS" == "cancelled" ] && ICON="⚪"
+          # 1. Xác định icon trạng thái
+          case "$JOB_STATUS" in
+            success)   ICON="✅" ;;
+            cancelled) ICON="⚪" ;;
+            *)         ICON="❌" ;;
+          esac
 
-          # Đảm bảo các dòng dưới đây thụt lề vào trong so với cột của biến MSG
+          # 2. Nội dung thông báo (đã bỏ các link dài dòng)
           MSG="<b>$ICON Kyic Repository Update</b>
           ──────────────────
-          📱 <b>Dự án:</b> <code>${NAME:-$PROJ_INPUT}</code>
-          💡 <b>Phiên bản:</b> <code>${VER:-Lỗi/Không rõ}</code>
-          📊 <b>Trạng thái:</b> <code>$STATUS</code>
+          📱 <b>Dự án:</b> <code>${DISP_NAME:-$PROJ_INPUT}</code>
+          💡 <b>Phiên bản:</b> <code>${VERSION:-Lỗi/Không rõ}</code>
+          📊 <b>Trạng thái:</b> <code>$JOB_STATUS</code>
           ──────────────────
           🤩 <i>Hệ thống tự động Kyic Engine</i>"
 
+          # 3. Định nghĩa nút bấm (JSON)
+          # Thay URL bên dưới bằng link thực tế của bạn
+          KEYBOARD=$(cat <<EOF
+          {
+            "inline_keyboard": [
+              [
+                { "text": "🌐 Xem Repository", "url": "https://github.com/${{ github.repository }}" },
+                { "text": "📦 Tải về (IPA/Deb)", "url": "https://github.com/${{ github.repository }}/releases" }
+              ]
+            ]
+          }
+          EOF
+          )
+
+          # 4. Gửi qua Telegram API
           curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
             -d "chat_id=$TO" \
             -d "parse_mode=HTML" \
-            --data-urlencode "text=$MSG"
+            --data-urlencode "text=$MSG" \
+            --data-urlencode "reply_markup=$KEYBOARD"
+
 
