@@ -114,7 +114,7 @@ jobs:
             const repoData = { 
               name: "Kyic Repository", 
               identifier: "com.2kgt.repo", 
-              iconURL: "https://2kgt.github.io/repo/icons/repo-logo.png",
+              iconURL: "https://2kgt.github.io/repo/icons/Kyic.png",
               apps: finalApps 
             };
             fs.writeFileSync('apps.json', JSON.stringify(repoData, null, 2));
@@ -183,7 +183,7 @@ jobs:
           {
             "inline_keyboard": [
               [
-                { "text": "🌐 Kyic Repo", "url": "https://github.com/${{ github.repository }}" },
+                { "text": "🌐 Kyic repo IPA", "url": "https://2kgt.github.io/repo/apps.json" },
                 { "text": "📦 Download IPA", "url": "https://github.com/${{ github.repository }}/releases" }
               ]
             ]
