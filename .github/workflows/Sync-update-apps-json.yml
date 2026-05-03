@@ -183,7 +183,7 @@ jobs:
           {
             "inline_keyboard": [
               [
-                { "text": "🌐 Kyic repo IPA", "url": "https://2kgt.github.io/repo/apps.json" },
+                { "text": "🌐 Kyic Repository", "url": "https://2kgt.github.io/repo/" },
                 { "text": "📦 Download IPA", "url": "https://github.com/${{ github.repository }}/releases" }
               ]
             ]
