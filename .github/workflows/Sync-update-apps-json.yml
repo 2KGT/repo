@@ -146,26 +146,26 @@ jobs:
           TO: ${{ secrets.TELEGRAM_TO }}
           JOB_STATUS: ${{ job.status }}
         run: |
-          # 1. Lấy thông tin từ file json đã tạo ở bước JS
+          # 1. Lấy thông tin từ file json do script JS tạo ra
           if [ -f current_app.json ]; then
             APP_NAME=$(jq -r '.name' current_app.json)
             APP_VER=$(jq -r '.version' current_app.json)
-            # Nếu là cập nhật hàng loạt hoặc workflow_dispatch không có file
-            [ "$APP_NAME" == "null" ] && APP_NAME="${{ github.event.inputs.project || 'Kyic Repository' }}"
+            # Fallback nếu dữ liệu null
+            [ "$APP_NAME" == "null" ] && APP_NAME="Kyic Repository"
             [ "$APP_VER" == "null" ] && APP_VER="Latest"
           else
-            APP_NAME="${{ github.event.inputs.project || 'Kyic Repository' }}"
+            APP_NAME="Kyic Repository"
             APP_VER="Cập nhật hệ thống"
           fi
 
-          # 2. Xác định biểu tượng trạng thái
+          # 2. Biểu tượng trạng thái theo logic công việc
           case "$JOB_STATUS" in
             success)   ICON="✅" ;;
             cancelled) ICON="⚪" ;;
             *)         ICON="❌" ;;
           esac
 
-          # 3. Nội dung tin nhắn
+          # 3. Nội dung tin nhắn rút gọn để tập trung vào dự án
           MSG="<b>$ICON Kyic Repository Update</b>
           ──────────────────
           📱 <b>Dự án:</b> <code>$APP_NAME</code>
@@ -174,24 +174,24 @@ jobs:
           ──────────────────
           🤩 <i>Hệ thống tự động Kyic Engine</i>"
 
-          # 4. Nút bấm xếp chồng
+          # 4. Nút bấm: Đặt 2 nút trong 1 cặp ngoặc [] để nằm cùng hàng
+          # Nhãn được rút gọn để không bị Telegram cắt bớt chữ (...)
           KEYBOARD=$(cat <<EOF
           {
             "inline_keyboard": [
               [
-                { "text": "🌐 Kyic Repository", "url": "https://github.com/${{ github.repository }}" }
-              ],
-              [
-                { "text": "📦 Tải về IPA", "url": "https://github.com/${{ github.repository }}/releases" }
+                { "text": "🌐 Kyic Repo", "url": "https://github.com/${{ github.repository }}" },
+                { "text": "📦 Download IPA", "url": "https://github.com/${{ github.repository }}/releases" }
               ]
             ]
           }
           EOF
           )
 
-          # 5. Gửi thông báo
+          # 5. Gửi qua API
           curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
             -d "chat_id=$TO" \
             -d "parse_mode=HTML" \
             --data-urlencode "text=$MSG" \
             --data-urlencode "reply_markup=$KEYBOARD"
+
