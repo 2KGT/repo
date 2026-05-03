@@ -64,13 +64,27 @@ jobs:
             exit 1
           fi
 
-      - name: Commit and Push
+      - name: Commit and Push (Manual Fix)
         id: push
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Auto-update Sileo Repo [skip ci]"
-          file_pattern: "Packages* Release"
-          branch: main
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          # Thêm các file đã thay đổi
+          git add Packages* Release
+          
+          # Chỉ commit nếu có sự thay đổi
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-update Sileo Repo [skip ci]"
+            
+            # Kéo dữ liệu mới nhất về và gộp (rebase) để tránh lỗi non-fast-forward
+            git pull --rebase origin main
+            
+            # Đẩy lên lại
+            git push origin main
+          fi
 
       - name: "🤖 Telegram Notify"
         if: steps.push.outcome == 'success' || steps.push.outcome == 'skipped'
