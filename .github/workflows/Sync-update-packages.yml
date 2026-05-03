@@ -22,19 +22,27 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y dpkg-dev
 
       - name: Generate Packages & Release
-        id: info # ID này cực kỳ quan trọng để bước cuối có thể gọi dữ liệu
+        id: info
         run: |
           if [ -d "debs" ]; then
-            # 1. Trích xuất thông tin Tweak
-            LATEST_DEB=$(ls -t debs/*.deb | head -1)
-            TWEAK_NAME=$(dpkg-deb -f "$LATEST_DEB" Name)
-            TWEAK_VER=$(dpkg-deb -f "$LATEST_DEB" Version)
+            # 1. Tìm file deb mới nhất vừa được thêm vào
+            LATEST_DEB_PATH=$(ls -t debs/*.deb | head -1)
+            FILENAME=$(basename "$LATEST_DEB_PATH")
             
-            # Lưu vào outputs của bước này
+            # 2. Trích xuất thông tin từ file deb
+            TWEAK_NAME=$(dpkg-deb -f "$LATEST_DEB_PATH" Name)
+            TWEAK_VER=$(dpkg-deb -f "$LATEST_DEB_PATH" Version)
+            
+            # 3. Tạo link download trực tiếp từ GitHub Pages
+            # Thay 'user/repo' bằng đúng tên user và repo của bạn nếu không dùng biến môi trường
+            DEB_URL="https://2kgt.github.io/repo/debs/$FILENAME"
+            
+            # Xuất dữ liệu ra output
             echo "tweak_name=$TWEAK_NAME" >> $GITHUB_OUTPUT
             echo "tweak_ver=$TWEAK_VER" >> $GITHUB_OUTPUT
+            echo "deb_url=$DEB_URL" >> $GITHUB_OUTPUT
 
-            # 2. Xử lý Packages & Release (Giữ nguyên logic của bạn)
+            # 4. Logic tạo Packages & Release (Giữ nguyên)
             dpkg-scanpackages -m debs /dev/null > Packages
             sed -i "s/^Name: \(.*\)/Name: \1\nIcon: https:\/\/2kgt.github.io\/repo\/icons\/\1.png/" Packages
             bzip2 -kf Packages
@@ -46,7 +54,7 @@ jobs:
               echo "Codename: ios"
               echo "Architectures: iphoneos-arm64 iphoneos-arm"
               echo "Components: main"
-              echo "Description: Kyic Repository - Kho lưu trữ tweaks & IPA chất lượng cao."
+              echo "Description: Kyic Repository - Kho lưu trữ tweaks chất lượng cao."
               echo "Icon: icons/Kyic.png"
               echo "Date: $(date -R)"
               echo "Acquire-By-Hash: yes"
@@ -57,50 +65,47 @@ jobs:
           fi
 
       - name: Commit and Push
-        id: push # Thêm ID để kiểm tra trạng thái push
+        id: push
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Auto-update Repo (Icons, Packages & Release) [skip ci]"
+          commit_message: "Auto-update Sileo Repo [skip ci]"
           file_pattern: "Packages* Release"
           branch: main
 
       - name: "🤖 Telegram Notify"
-        # Chỉ chạy khi bước Push thành công
         if: steps.push.outcome == 'success' || steps.push.outcome == 'skipped'
         env:
           TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TO: ${{ secrets.TELEGRAM_TO }}
-          # Gọi lại dữ liệu từ bước 'info' ở trên
           TWEAK_NAME: ${{ steps.info.outputs.tweak_name }}
           TWEAK_VER: ${{ steps.info.outputs.tweak_ver }}
+          DEB_URL: ${{ steps.info.outputs.deb_url }}
         run: |
-          # 1. Thời gian thực
           REAL_TIME=$(TZ="Asia/Ho_Chi_Minh" date +"%d/%m/%Y %H:%M")
 
-          # 2. Nội dung tin nhắn
+          # Nội dung thông báo tập trung vào Tweak
           MSG="<b>✅ Kyic Sileo Update</b>
           ──────────────────
-          📱 <b>Tweak:</b> <code>${TWEAK_NAME:-Cập nhật Repo}</code>
-          💡 <b>Phiên bản:</b> <code>${TWEAK_VER:-Latest}</code>
-          📊 <b>Trạng thái:</b> <code>Hệ thống đã sẵn sàng</code>
+          📦 <b>Tweak:</b> <code>${TWEAK_NAME}</code>
+          💡 <b>Phiên bản:</b> <code>${TWEAK_VER}</code>
+          📊 <b>Trạng thái:</b> <code>Đã cập nhật kho</code>
           ⏰ <b>Thời gian:</b> <code>$REAL_TIME</code>
           ──────────────────
           🤩 <i>Hệ thống tự động Kyic Engine</i>"
 
-          # 3. Nút bấm cùng hàng, tách biệt
+          # Thiết kế nút theo yêu cầu mới
           KEYBOARD=$(cat <<EOF
           {
             "inline_keyboard": [
               [
-                { "text": "🌐 Kyic Repo", "url": "https://2kgt.github.io/repo/" },
-                { "text": "📥 Download IPA", "url": "https://github.com/${{ github.repository }}/releases" }
+                { "text": "🌐 Kyic Repo Sileo", "url": "https://2kgt.github.io/repo/" },
+                { "text": "📥 Download Deb", "url": "$DEB_URL" }
               ]
             ]
           }
           EOF
           )
 
-          # 4. Gửi qua API
           curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
             -d "chat_id=$TO" \
             -d "parse_mode=HTML" \
