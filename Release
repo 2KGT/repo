@@ -5,7 +5,7 @@ Version: 1.0
 Codename: ios
 Architectures: iphoneos-arm64 iphoneos-arm
 Components: main
-Description: Kyic Repository - Kho lưu trữ tweaks & IPA chất lượng cao.
+Description: Kyic Repository - Kho lưu trữ tweaks chất lượng cao.
 Icon: icons/Kyic.png
-Date: Sun, 03 May 2026 02:41:48 +0000
+Date: Sun, 03 May 2026 02:54:14 +0000
 Acquire-By-Hash: yes
