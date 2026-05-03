@@ -1,16 +1,52 @@
 {
-  "class": "DepictionTabView",
-  "tabs": [{
-    "tabname": "Details",
-    "class": "DepictionStackView",
-    "views": [
-      {"class": "DepictionHeaderView", "title": "AutoAC"},
-      {"class": "DepictionImageView", "url": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC-banner.png", "width": 1242, "height": 500, "cornerRadius": 10},
-      {"class": "DepictionVideoView", "videoURL": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC.mp4", "cornerRadius": 8},
-      {"class": "DepictionMarkdownView", "markdown": "### ✨ Mới nhất (v)\n- \n\n### 🐛 Sửa lỗi\n- ", "useMargins": true},
-      {"class": "DepictionSeparatorView"},
-      {"class": "DepictionHeaderView", "title": "Screenshots"},
-      {"class": "DepictionScreenshotsView", "itemCornerRadius": 8, "screenshots": [{"url": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC1.png", "accessibilityText": "Screenshot 1"},{"url": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC2.png", "accessibilityText": "Screenshot 2"},{"url": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC3.png", "accessibilityText": "Screenshot 3"},{"url": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC4.png", "accessibilityText": "Screenshot 4"},{"url": "https://raw.githubusercontent.com/2KGT/repo/main/depictions/images/AutoAC5.png", "accessibilityText": "Screenshot 5"}]}
-    ]
-  }]
+  "min_bridge_version": "1.1",
+  "tabs": [
+    {
+      "tabname": "Chi tiết",
+      "class": "DepictionStackView",
+      "views": [
+        {
+          "class": "DepictionHeaderView",
+          "title": "AutoAC"
+        },
+        {
+          "class": "DepictionSubheaderView",
+          "title": "Phiên bản 0.0.0.1"
+        },
+        {
+          "class": "DepictionScreenshotsView",
+          "itemCornerRadius": 10,
+          "itemSize": "{160, 346}",
+          "screenshots": [
+            {
+              "url": "https://2kgt.github.io/repo/depictions/images/AutoAC1.png",
+              "accessibilityText": "Screenshot 1"
+            },
+            {
+              "url": "https://2kgt.github.io/repo/depictions/images/AutoAC2.png",
+              "accessibilityText": "Screenshot 2"
+            },
+            {
+              "url": "https://2kgt.github.io/repo/depictions/images/AutoAC3.png",
+              "accessibilityText": "Screenshot 3"
+            }
+          ]
+        },
+        {
+          "class": "DepictionMarkdownView",
+          "markdown": "### Mô tả\nAutoAC - tự động xoá cache + xoá Ads, banner tag sản phẩm trong ứng dụng YouTube.\n\n### Nhật ký thay đổi\n",
+          "useRawFormat": true
+        },
+        {
+          "class": "DepictionSeparatorView"
+        },
+        {
+          "class": "DepictionTableTextView",
+          "title": "Nhà phát triển",
+          "text": "Kyic"
+        }
+      ]
+    }
+  ],
+  "class": "DepictionTabView"
 }

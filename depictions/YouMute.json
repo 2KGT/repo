@@ -7,15 +7,15 @@
       "views": [
         {
           "class": "DepictionHeaderView",
-          "title": "YouTube X"
+          "title": "YouMute"
         },
         {
           "class": "DepictionSubheaderView",
-          "title": "Phiên bản 1.7.19"
+          "title": "Phiên bản 1.4.0"
         },
         {
           "class": "DepictionMarkdownView",
-          "markdown": "### Mô tả\nA YouTube improvement tweak.\n\n### Nhật ký thay đổi\n",
+          "markdown": "### Mô tả\nMutes/unmutes videos in YouTube directly.\n\n### Nhật ký thay đổi\n",
           "useRawFormat": true
         },
         {

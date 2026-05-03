@@ -7,15 +7,15 @@
       "views": [
         {
           "class": "DepictionHeaderView",
-          "title": "YouTube X"
+          "title": "YouGroupSettings"
         },
         {
           "class": "DepictionSubheaderView",
-          "title": "Phiên bản 1.7.19"
+          "title": "Phiên bản 1.0.9"
         },
         {
           "class": "DepictionMarkdownView",
-          "markdown": "### Mô tả\nA YouTube improvement tweak.\n\n### Nhật ký thay đổi\n",
+          "markdown": "### Mô tả\nAllows tweak-made settings to be grouped and displayed in iOS YouTube app.\n\n### Nhật ký thay đổi\n",
           "useRawFormat": true
         },
         {
@@ -24,7 +24,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Nhà phát triển",
-          "text": "PoomSmart"
+          "text": "PoomSmart <unicorn03.glimmer@icloud.com>"
         }
       ]
     }

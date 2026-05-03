@@ -7,15 +7,15 @@
       "views": [
         {
           "class": "DepictionHeaderView",
-          "title": "YouTube X"
+          "title": "YouTube Fix"
         },
         {
           "class": "DepictionSubheaderView",
-          "title": "Phiên bản 1.7.19"
+          "title": "Phiên bản 1.0"
         },
         {
           "class": "DepictionMarkdownView",
-          "markdown": "### Mô tả\nA YouTube improvement tweak.\n\n### Nhật ký thay đổi\n",
+          "markdown": "### Mô tả\nFix YouTube images not loading\n\n### Nhật ký thay đổi\n",
           "useRawFormat": true
         },
         {
@@ -24,7 +24,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Nhà phát triển",
-          "text": "PoomSmart"
+          "text": "Eevee"
         }
       ]
     }

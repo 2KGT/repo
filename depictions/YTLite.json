@@ -7,15 +7,15 @@
       "views": [
         {
           "class": "DepictionHeaderView",
-          "title": "YouTube X"
+          "title": "YTLite"
         },
         {
           "class": "DepictionSubheaderView",
-          "title": "Phiên bản 1.7.19"
+          "title": "Phiên bản 5.2.1"
         },
         {
           "class": "DepictionMarkdownView",
-          "markdown": "### Mô tả\nA YouTube improvement tweak.\n\n### Nhật ký thay đổi\n",
+          "markdown": "### Mô tả\nLightweight YouTube Enhancer\n\n### Nhật ký thay đổi\n",
           "useRawFormat": true
         },
         {
@@ -24,7 +24,7 @@
         {
           "class": "DepictionTableTextView",
           "title": "Nhà phát triển",
-          "text": "PoomSmart"
+          "text": "dvntm"
         }
       ]
     }

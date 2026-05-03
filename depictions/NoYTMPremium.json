@@ -7,15 +7,15 @@
       "views": [
         {
           "class": "DepictionHeaderView",
-          "title": "YouTube X"
+          "title": "NoYTMPremium"
         },
         {
           "class": "DepictionSubheaderView",
-          "title": "Phiên bản 1.7.19"
+          "title": "Phiên bản 1.0.2"
         },
         {
           "class": "DepictionMarkdownView",
-          "markdown": "### Mô tả\nA YouTube improvement tweak.\n\n### Nhật ký thay đổi\n",
+          "markdown": "### Mô tả\nRemoves YouTube Music Premium upsell elements.\n\n### Nhật ký thay đổi\n",
           "useRawFormat": true
         },
         {
