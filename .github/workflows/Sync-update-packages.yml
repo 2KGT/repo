@@ -150,7 +150,7 @@ jobs:
             IS_MANUAL=$(jq -r '.is_manual' $JSON_PATH)
           fi
 
-          [ "$IS_MANUAL" == "true" ] && TITLE="🔄 <b>Cập nhật Kho Sileo</b>" || TITLE="🚀 <b>Tweak Mới Xuất Hiện</b>"
+          [ "$IS_MANUAL" == "true" ] && TITLE="🔄 <b>Cập nhật kho lưu trữ Sileo</b>" || TITLE="🚀 <b>Tweak mới xuất hiện</b>"
           [ "$IS_MANUAL" == "true" ] && SUB="✨ <i>Hệ thống vừa được làm mới thủ công</i>" || SUB="🤩 <i>Hệ thống đồng bộ tự động Kyic</i>"
 
           MSG="$TITLE
@@ -164,8 +164,8 @@ jobs:
 
           KEYBOARD=$(jq -nrc --arg url1 "https://2kgt.github.io/repo/" --arg url2 "$URL" '{
             inline_keyboard: [[
-              {text: "🌐 Kyic Repo", url: $url1},
-              {text: "📥 Tải về .deb", url: $url2}
+              {text: "🌐 Add source", url: $url1},
+              {text: "📥 Tải về deb", url: $url2}
             ]]
           }')
 
