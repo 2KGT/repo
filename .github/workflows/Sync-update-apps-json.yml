@@ -135,26 +135,34 @@ jobs:
       - name: "🤖 Telegram Notify"
         run: |
           if [ -f notify_temp.json ]; then
+            # 1. Trích xuất dữ liệu
             INFO=$(cat notify_temp.json)
             NAME=$(echo "$INFO" | jq -r '.name')
             VER=$(echo "$INFO" | jq -r '.version')
             LINK=$(echo "$INFO" | jq -r '.downloadURL')
             
-            # Sử dụng dấu gạch ngang chuẩn để đảm bảo hiển thị
-            MSG="<b>⭐ Kyic repository update</b>%0A"
-            MSG="$MSG--------------------------------%0A"
-            MSG="$MSG📱 <b>App:</b> <code>$NAME</code>%0A"
-            MSG="$MSG💡 <b>Ver:</b> <code>$VER</code>%0A"
-            MSG="$MSG💯 <b>Status:</b> <code>Ready ✅</code>%0A"
-            MSG="$MSG--------------------------------%0A"
-            MSG="$MSG🌐 <a href='https://2kgt.github.io/repo/'>Webstore</a>%0A"
-            MSG="$MSG📥 <a href='$LINK'><b>DOWNLOAD IPA</b></a>%0A"
-            MSG="$MSG--------------------------------%0A"
-            MSG="$MSG🤩 <i>Enjoy your experience!</i>"
+            # 2. Tạo nội dung tin nhắn (Dùng \n để tránh lỗi %0A trong chuỗi)
+            MSG=$(printf "<b>⭐ Kyic repository update</b>\n")
+            MSG="${MSG}--------------------------------\n"
+            MSG="${MSG}📱 <b>App:</b> <code>$NAME</code>\n"
+            MSG="${MSG}💡 <b>Ver:</b> <code>$VER</code>\n"
+            MSG="${MSG}💯 <b>Status:</b> <code>Ready ✅</code>\n"
+            MSG="${MSG}--------------------------------\n"
+            MSG="${MSG}🤩 <i>Enjoy your experience!</i>"
 
+            # 3. Tạo cấu trúc Inline Keyboard (Nút bấm song song)
+            KEYBOARD=$(jq -n -c '{
+              inline_keyboard: [[
+                {text: "🌐 Kyic Repo", url: "https://2kgt.github.io/repo/"},
+                {text: "📥 Tải xuống", url: $link}
+              ]]
+            }' --arg link "$LINK")
+
+            # 4. Gửi tin nhắn qua Telegram API
             curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" \
               -d "chat_id=${{ secrets.TELEGRAM_TO }}" \
               -d "parse_mode=HTML" \
-              -d "disable_web_page_preview=false" \
-              -d "text=$MSG"
+              --data-urlencode "text=$MSG" \
+              -d "reply_markup=$KEYBOARD"
           fi
+fi
