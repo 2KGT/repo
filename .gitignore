@@ -1,0 +1,10 @@
+# Loại bỏ thư mục tạm chứa file IPA đã ký
+temp/
+
+# Loại bỏ các file chứng chỉ cục bộ nếu bạn test trên máy
+*.p12
+*.mobileprovision
+
+# Nếu bạn muốn giữ cấu trúc thư mục private nhưng không muốn lưu nội dung chi tiết (nếu repo là public)
+# private/certs/*
+# !private/certs/.gitkeep
