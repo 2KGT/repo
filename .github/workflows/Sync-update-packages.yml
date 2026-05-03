@@ -84,7 +84,7 @@ jobs:
           REAL_TIME=$(TZ="Asia/Ho_Chi_Minh" date +"%d/%m/%Y %H:%M")
 
           # Nội dung thông báo tập trung vào Tweak
-          MSG="<b>✅ Kyic Sileo Update</b>
+          MSG="<b>✅ Kyic Repository Sileo</b>
           ──────────────────
           📦 <b>Tweak:</b> <code>${TWEAK_NAME}</code>
           💡 <b>Phiên bản:</b> <code>${TWEAK_VER}</code>
