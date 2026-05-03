@@ -7,5 +7,5 @@ Architectures: iphoneos-arm64 iphoneos-arm
 Components: main
 Description: Kyic Repository - Kho lưu trữ tweaks & IPA chất lượng cao.
 Icon: icons/Kyic.png
-Date: Sun, 03 May 2026 00:59:24 +0000
+Date: Sun, 03 May 2026 01:03:03 +0000
 Acquire-By-Hash: yes
