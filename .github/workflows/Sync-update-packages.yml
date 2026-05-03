@@ -22,29 +22,30 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y dpkg-dev
 
       - name: Generate Packages & Release
+        id: info # Thêm ID để lấy dữ liệu cho bước sau
         run: |
           if [ -d "debs" ]; then
-            # 1. Tạo file Packages thô từ thư mục debs
-            dpkg-scanpackages -m debs /dev/null > Packages
+            # 1. Lấy thông tin file deb mới nhất để thông báo
+            LATEST_DEB=$(ls -t debs/*.deb | head -1)
+            TWEAK_NAME=$(dpkg-deb -f "$LATEST_DEB" Name)
+            TWEAK_VER=$(dpkg-deb -f "$LATEST_DEB" Version)
+            echo "tweak_name=$TWEAK_NAME" >> $GITHUB_OUTPUT
+            echo "tweak_ver=$TWEAK_VER" >> $GITHUB_OUTPUT
 
-            # 2. Xử lý gán Icon cho từng Tweak
-            # Lưu ý: Tên file ảnh trong icons/ phải khớp 100% với Name của tweak
+            # 2. Tạo file Packages & xử lý Icon
+            dpkg-scanpackages -m debs /dev/null > Packages
             touch Packages.new
             while IFS= read -r line; do
               echo "$line" >> Packages.new
-              # Khi gặp dòng Name, chèn ngay dòng Icon bên dưới
               if [[ $line == Name:* ]]; then
-                TWEAK_NAME=$(echo "$line" | cut -d' ' -f2-)
-                # Sử dụng link GitHub Pages để Sileo nhận diện tốt hơn
-                echo "Icon: https://2kgt.github.io/repo/icons/${TWEAK_NAME}.png" >> Packages.new
+                NAME_VAL=$(echo "$line" | cut -d' ' -f2-)
+                echo "Icon: https://2kgt.github.io/repo/icons/${NAME_VAL}.png" >> Packages.new
               fi
             done < Packages
             mv Packages.new Packages
-            
-            # 3. Nén file
             bzip2 -kf Packages
 
-            # 4. Cập nhật file Release (Cấu hình Kyic Repository)
+            # 3. Cập nhật file Release
             {
               echo "Origin: Kyic Repository"
               echo "Label: Kyic Repository"
@@ -54,17 +55,16 @@ jobs:
               echo "Architectures: iphoneos-arm64 iphoneos-arm"
               echo "Components: main"
               echo "Description: Kyic Repository - Kho lưu trữ tweaks & IPA chất lượng cao."
-              # Icon chính của Repo - dùng đường dẫn tương đối để tránh lỗi raw content
               echo "Icon: icons/Kyic.png"
               echo "Date: $(date -R)"
               echo "Acquire-By-Hash: yes"
             } > Release
-            
-            echo "✅ Đã cập nhật xong Packages, bz2 và Release cho Kyic Repository"
+            echo "✅ Cập nhật xong Packages & Release"
           else
-            echo "❌ Lỗi: Không tìm thấy thư mục debs"
+            echo "❌ Không tìm thấy thư mục debs"
             exit 1
           fi
+
 
       - name: Commit and Push
         uses: stefanzweifel/git-auto-commit-action@v5
@@ -74,34 +74,44 @@ jobs:
           branch: main
 
       - name: "🤖 Telegram Notify"
+        if: success()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TO: ${{ secrets.TELEGRAM_TO }}
+          TWEAK_NAME: ${{ steps.info.outputs.tweak_name }}
+          TWEAK_VER: ${{ steps.info.outputs.tweak_ver }}
         run: |
-          if [ -f notify_temp.json ]; then
-            INFO=$(cat notify_temp.json)
-            NAME=$(echo "$INFO" | jq -r '.name')
-            VER=$(echo "$INFO" | jq -r '.version')
-            LINK=$(echo "$INFO" | jq -r '.downloadURL')
-            
-            # Khai báo nội dung tin nhắn
-            MSG="<b>⭐ Kyic repository update</b>%0A"
-            MSG="$MSG--------------------------------%0A"
-            MSG="$MSG📱 <b>App:</b> <code>$NAME</code>%0A"
-            MSG="$MSG💡 <b>Ver:</b> <code>$VER</code>%0A"
-            MSG="$MSG💯 <b>Status:</b> <code>Ready ✅</code>%0A"
-            MSG="$MSG--------------------------------%0A"
-            # Link 1: Đổi tên thành Kyic Repository
-            MSG="$MSG🌐 <a href='https://2kgt.github.io/repo/'>Kyic Repository</a>%0A"
-            # Thêm 1 dòng trống ở đây để giãn cách hai link
-            MSG="$MSG%0A" 
-            # Link 2: Download
-            MSG="$MSG📥 <a href='$LINK'><b>DOWNLOAD IPA</b></a>%0A"
-            MSG="$MSG--------------------------------%0A"
-            MSG="$MSG🤩 <i>Enjoy your experience!</i>"
+          # 1. Thời gian thực (Hà Nội)
+          REAL_TIME=$(TZ="Asia/Ho_Chi_Minh" date +"%d/%m/%Y %H:%M")
 
-            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" \
-              -d "chat_id=${{ secrets.TELEGRAM_TO }}" \
-              -d "parse_mode=HTML" \
-              -d "disable_web_page_preview=true" \
-              --data-urlencode "text=$MSG"
-          fi
+          # 2. Nội dung tin nhắn
+          MSG="<b>✅ Kyic Sileo Update</b>
+          ──────────────────
+          📱 <b>Tweak:</b> <code>${TWEAK_NAME:-Kyic Repo}</code>
+          💡 <b>Phiên bản:</b> <code>${TWEAK_VER:-Latest}</code>
+          📊 <b>Trạng thái:</b> <code>Ready</code>
+          ⏰ <b>Thời gian:</b> <code>$REAL_TIME</code>
+          ──────────────────
+          🤩 <i>Hệ thống tự động Kyic Engine</i>"
 
+          # 3. Nút bấm: Hai nút cùng hàng ngang
+          # Nút 1 dẫn về trang chủ Repo, Nút 2 mở trực tiếp trong Sileo (nếu người dùng dùng iPhone)
+          KEYBOARD=$(cat <<EOF
+          {
+            "inline_keyboard": [
+              [
+                { "text": "🌐 Kyic Repo", "url": "https://2kgt.github.io/repo/" },
+                { "text": "📥 Thêm vào Sileo", "url": "sileo://source/https://2kgt.github.io/repo/" }
+              ]
+            ]
+          }
+          EOF
+          )
 
+          # 4. Gửi qua Telegram
+          curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
+            -d "chat_id=$TO" \
+            -d "parse_mode=HTML" \
+            -d "disable_web_page_preview=true" \
+            --data-urlencode "text=$MSG" \
+            --data-urlencode "reply_markup=$KEYBOARD"
