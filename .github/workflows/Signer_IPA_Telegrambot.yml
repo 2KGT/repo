@@ -1,40 +1,48 @@
-name: Sign IPA and Manage Certs
+name: 2KGT Sign & Manage Certs
 
 on:
   repository_dispatch:
     types: [sign_ipa, check_cert]
 
 jobs:
-  process_request:
+  process:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Folders and Save Certificate
+      - name: Set Variables
         run: |
-          # 1. Định nghĩa đường dẫn dựa trên telegram_id từ client_payload
           USER_ID="${{ github.event.client_payload.telegram_id }}"
-          CERT_DIR="private/certs/$USER_ID"
-          TEMP_DIR="temp/signed_files"
+          echo "CERT_PATH=private/certs/$USER_ID" >> $GITHUB_ENV
+          mkdir -p "private/certs/$USER_ID"
+          mkdir -p "temp/output"
 
-          # 2. Tạo thư mục nếu chưa tồn tại
-          mkdir -p "$CERT_DIR"
-          mkdir -p "$TEMP_DIR"
+      - name: Download Cert
+        run: |
+          curl -L "${{ github.event.client_payload.p12_url }}" -o "$CERT_PATH/certificate.p12"
 
-          # 3. Tải file p12 về thư mục riêng tư (nếu là lệnh ký/kiểm tra)
-          # Lưu ý: File p12 này sẽ được lưu vào repo của bạn
-          curl -L "${{ github.event.client_payload.p12_url }}" -o "$CERT_DIR/certificate.p12"
-          
-          # 4. Thực hiện logic ký IPA (Giả định bạn đã có script sign.sh)
-          # ./scripts/sign.sh --input "${{ github.event.client_payload.ipa_url }}" --cert "$CERT_DIR/certificate.p12" --pass "${{ github.event.client_payload.password }}" --output "$TEMP_DIR/signed.ipa"
+      - name: Process Sign
+        if: github.event.action == 'sign_ipa'
+        run: |
+          curl -L "${{ github.event.client_payload.ipa_url }}" -o "temp/input.ipa"
+          # Lệnh ký (Ví dụ dùng zsign)
+          # zsign -k "$CERT_PATH/certificate.p12" -p "${{ github.event.client_payload.password }}" -o "temp/output/signed.ipa" "temp/input.ipa"
 
-      - name: Commit and Push Changes
+      - name: Save Cert to Private Folder
         run: |
           git config --global user.name "2KGT-Bot"
           git config --global user.email "bot@2kgt.io"
           git add private/certs/
-          git commit -m "Automated: Save cert for user ${{ github.event.client_payload.telegram_id }}"
+          git commit -m "Update cert for $USER_ID" || echo "No changes"
           git push
+
+      - name: Upload Artifact (24h)
+        if: github.event.action == 'sign_ipa'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Signed_IPA_${{ github.event.client_payload.telegram_id }}
+          path: temp/output/*.ipa
+          retention-days: 1
