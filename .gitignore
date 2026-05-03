@@ -4,6 +4,8 @@ temp/
 # Loại bỏ các file chứng chỉ cục bộ nếu bạn test trên máy
 *.p12
 *.mobileprovision
+*.ipa
+node_modules/
 
 # Nếu bạn muốn giữ cấu trúc thư mục private nhưng không muốn lưu nội dung chi tiết (nếu repo là public)
 # private/certs/*
