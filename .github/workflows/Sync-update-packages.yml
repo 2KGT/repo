@@ -105,15 +105,15 @@ jobs:
           📊 <b>Trạng thái:</b> <code>Đã cập nhật kho</code>
           ⏰ <b>Thời gian:</b> <code>$REAL_TIME</code>
           ──────────────────
-          🤩 <i>Hệ thống tự động Kyic Engine</i>"
+          🤩 <i>Hệ thống đồng bộ tự động Kyic</i>"
 
           # Thiết kế nút theo yêu cầu mới
           KEYBOARD=$(cat <<EOF
           {
             "inline_keyboard": [
               [
-                { "text": "🌐 Kyic Repository", "url": "https://2kgt.github.io/repo/" },
-                { "text": "📥 Tải xuống deb", "url": "$DEB_URL" }
+                { "text": "🌐 Kyic repo", "url": "https://2kgt.github.io/repo/" },
+                { "text": "📥 Download deb", "url": "$DEB_URL" }
               ]
             ]
           }
