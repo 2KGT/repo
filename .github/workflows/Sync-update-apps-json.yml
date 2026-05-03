@@ -141,63 +141,51 @@ jobs:
 
       - name: 🤖 6.1 Telegram Notification
         if: always()
-        env:
-          TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TO: ${{ secrets.TELEGRAM_TO }}
-          JOB_STATUS: ${{ job.status }}
-          IPA_URL: ${{ steps.upload.outputs.url }} # Đảm bảo bạn có biến này
         run: |
-          # 1. Lấy thời gian thực
           REAL_TIME=$(TZ="Asia/Ho_Chi_Minh" date +"%d/%m/%Y %H:%M")
+          
+          # Đọc dữ liệu từ JSON
+          IS_MANUAL=$(jq -r '.isManual' current_app.json)
+          APP_NAME=$(jq -r '.targetApp.name' current_app.json)
+          APP_VER=$(jq -r '.targetApp.version' current_app.json)
+          IPA_URL=$(jq -r '.targetApp.downloadURL' current_app.json)
 
-          # 2. Lấy thông tin từ file json
-          if [ -f current_app.json ]; then
-            APP_NAME=$(jq -r '.name // "Kyic Repository"' current_app.json)
-            APP_VER=$(jq -r '.version // "Latest"' current_app.json)
+          # Thiết lập Tiêu đề & Biểu tượng dựa trên cách chạy
+          if [ "$IS_MANUAL" == "true" ]; then
+            TITLE="🔄 <b>Cập nhật Kho lưu trữ</b>"
+            SUB_TITLE="✨ <i>Hệ thống vừa được làm mới thủ công</i>"
           else
-            APP_NAME="Kyic Repository"
-            APP_VER="Cập nhật hệ thống"
+            TITLE="🚀 <b>Cập nhật Ứng dụng mới</b>"
+            SUB_TITLE="🤩 <i>Hệ thống đồng bộ tự động Kyic</i>"
           fi
 
-          # 3. Biểu tượng trạng thái (Sửa lỗi syntax và khớp với GitHub Status)
-          # GitHub trả về: success, failure, hoặc cancelled
+          # Xử lý Icon trạng thái
           case "$JOB_STATUS" in
-            "success")
-              ICON="✅"
-              TEXT_STATUS="Thành công"
-              ;;
-            "cancelled")
-              ICON="⚪"
-              TEXT_STATUS="Đã bị hủy"
-              ;;
-            *)
-              ICON="❌"
-              TEXT_STATUS="Thất bại"
-              ;;
+            "success") ICON="✅"; TEXT_STT="Thành công" ;;
+            *)         ICON="❌"; TEXT_STT="Thất bại" ;;
           esac
 
-          # 4. Nội dung tin nhắn
-          MSG="<b>$ICON Kyic Repository IPA</b>
+          # Nội dung tin nhắn kết hợp
+          MSG="$TITLE
           ──────────────────
-          📱 <b>Dự án:</b> <code>$APP_NAME</code>
+          📱 <b>Ứng dụng:</b> <code>$APP_NAME</code>
           💡 <b>Phiên bản:</b> <code>$APP_VER</code>
-          📊 <b>Trạng thái:</b> <code>$TEXT_STATUS</code>
+          📊 <b>Trạng thái:</b> <code>$TEXT_STT</code>
           ⏰ <b>Thời gian:</b> <code>$REAL_TIME</code>
           ──────────────────
-          🤩 <i>Hệ thống đồng bộ tự động Kyic</i>"
+          $SUB_TITLE"
 
-          # 5. Nút bấm (Sửa lỗi "ur1" thành "url" và bọc biến vào JSON an toàn)
+          # Tạo Keyboard
           KEYBOARD=$(jq -nrc --arg url1 "https://2kgt.github.io/repo/" --arg url2 "$IPA_URL" '{
             inline_keyboard: [[
-              { text: "🌐 Kyic repo", url: $url1 },
-              { text: "📦 Download IPA", url: $url2 }
+              { text: "🌐 Add Kyic repo", url: $url1 },
+              { text: "📦 Tải xuống IPA", url: $url2 }
             ]]
           }')
 
-          # 6. Gửi qua API
+          # Gửi tin nhắn
           curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
-            -d "chat_id=$TO" \
-            -d "parse_mode=HTML" \
+            -d "chat_id=$TO" -d "parse_mode=HTML" \
             --data-urlencode "text=$MSG" \
             --data-urlencode "reply_markup=$KEYBOARD"
 
