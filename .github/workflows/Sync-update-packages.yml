@@ -98,7 +98,7 @@ jobs:
           {
             "inline_keyboard": [
               [
-                { "text": "🌐 Kyic Repo Sileo", "url": "https://2kgt.github.io/repo/" },
+                { "text": "🌐 Kyic Sileo", "url": "https://2kgt.github.io/repo/" },
                 { "text": "📥 Download Deb", "url": "$DEB_URL" }
               ]
             ]
