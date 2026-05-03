@@ -1,3 +1,22 @@
+Package: com.dvntm.ytlite
+Version: 5.2.1
+Architecture: iphoneos-arm
+Maintainer: dvntm
+Installed-Size: 20764
+Depends: mobilesubstrate
+Filename: debs/ytlite_5.2.1.deb
+Size: 7420522
+MD5sum: ffba73f062577070050fc20e6844fd70
+SHA1: 1ac014831f89c19abf364c2c76c4c36c5e87029d
+SHA256: fe634567474704eea699d81c36b8af59575882deaad30f3e8bd4898b5019ef70
+Section: Tweaks
+Description: Lightweight YouTube Enhancer
+Author: dvntm
+Icon: https://raw.githubusercontent.com/dayanch96/YTLite/refs/heads/main/Resources/icon.png
+Name: YTLite
+Icon: https://2kgt.github.io/repo/icons/YTLite.png
+Sileodepiction: https://raw.githubusercontent.com/dayanch96/YTLite/main/Resources/depiction.json
+
 Package: com.eevee.youtubefix
 Version: 1.0
 Architecture: iphoneos-arm
