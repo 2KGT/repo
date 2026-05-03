@@ -72,3 +72,24 @@ jobs:
           commit_message: "Auto-update Repo (Icons, Packages & Release) [skip ci]"
           file_pattern: "Packages* Release"
           branch: main
+
+      - name: 🤖 Thông báo Kyic Repo Update
+        if: always()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TO: ${{ secrets.TELEGRAM_TO }}
+        run: |
+          STATUS="${{ job.status }}"
+          [ "$STATUS" == "success" ] && ICON="⚡" || ICON="❌"
+          
+          MSG="<b>$ICON Kyic repository update</b>%0A"
+          MSG="$MSG──────────────────%0A"
+          MSG="$MSG📊 <b>Status:</b> <code>$STATUS</code>%0A"
+          MSG="$MSG📅 <b>Time:</b> <code>$(date '+%H:%M:%S %d/%m/%Y')</code>%0A"
+          MSG="$MSG──────────────────%0A"
+          MSG="$MSG🤩 <i>Repo metadata is now synced!</i>"
+
+          curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
+            -d "chat_id=$TO" \
+            -d "parse_mode=HTML" \
+            --data-urlencode "text=$MSG"
