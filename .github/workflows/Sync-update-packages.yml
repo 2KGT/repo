@@ -82,14 +82,16 @@ jobs:
           STATUS="${{ job.status }}"
           [ "$STATUS" == "success" ] && ICON="⚡" || ICON="❌"
           
-          MSG="<b>$ICON Kyic repository update</b>%0A"
-          MSG="$MSG──────────────────%0A"
-          MSG="$MSG📊 <b>Status:</b> <code>$STATUS</code>%0A"
-          MSG="$MSG📅 <b>Time:</b> <code>$(date '+%H:%M:%S %d/%m/%Y')</code>%0A"
-          MSG="$MSG──────────────────%0A"
-          MSG="$MSG🤩 <i>Repo metadata is now synced!</i>"
+          # Sử dụng printf để tạo nội dung có xuống dòng thật thay vì dùng %0A
+          MSG=$(printf "<b>$ICON Kyic repository update</b>\n\n"
+          printf "──────────────────\n"
+          printf "📊 <b>Status:</b> <code>$STATUS</code>\n"
+          printf "📅 <b>Time:</b> <code>$(date '+%H:%M:%S %d/%m/%Y')</code>\n"
+          printf "──────────────────\n"
+          printf "🤩 <i>Siêu dữ liệu kho lưu trữ hiện đã được đồng bộ hóa!</i>")
 
-          curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
-            -d "chat_id=$TO" \
+          # Gửi tin nhắn
+          curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+            -d "chat_id=${TO}" \
             -d "parse_mode=HTML" \
             --data-urlencode "text=$MSG"
