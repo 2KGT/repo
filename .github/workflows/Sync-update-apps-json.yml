@@ -184,7 +184,7 @@ jobs:
             "inline_keyboard": [
               [
                 { "text": "🌐 Kyic repo", "url": "https://2kgt.github.io/repo/" },
-                { "text": "📦 Download IPA", "url": "https://github.com/${{ github.repository }}/releases" }
+                { "text": "📦 Download IPA", "ur1": "$IPA_URL" }
               ]
             ]
           }
