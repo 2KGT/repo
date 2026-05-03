@@ -21,31 +21,60 @@ jobs:
       - name: Install dpkg-dev
         run: sudo apt-get update && sudo apt-get install -y dpkg-dev
 
-      - name: Generate Packages & Release
+      - name: Generate Packages, Release & JSON
         id: info
         run: |
           if [ -d "debs" ]; then
-            # 1. Tìm file deb mới nhất vừa được thêm vào
+            # 1. Lấy file deb mới nhất
             LATEST_DEB_PATH=$(ls -t debs/*.deb | head -1)
             FILENAME=$(basename "$LATEST_DEB_PATH")
             
-            # 2. Trích xuất thông tin từ file deb
-            TWEAK_NAME=$(dpkg-deb -f "$LATEST_DEB_PATH" Name)
+            # 2. Trích xuất thông tin (Lấy nguyên văn trường Name)
+            PKG_ID=$(dpkg-deb -f "$LATEST_DEB_PATH" Package)
+            TWEAK_NAME=$(dpkg-deb -f "$LATEST_DEB_PATH" Name || echo "$PKG_ID")
             TWEAK_VER=$(dpkg-deb -f "$LATEST_DEB_PATH" Version)
+            TWEAK_AUTH=$(dpkg-deb -f "$LATEST_DEB_PATH" Author || echo "Kyic")
+            TWEAK_DESC=$(dpkg-deb -f "$LATEST_DEB_PATH" Description || echo "Không có mô tả.")
+            TWEAK_CHGLOG=$(dpkg-deb -f "$LATEST_DEB_PATH" Changelog || echo "Cập nhật phiên bản mới.")
             
-            # 3. Tạo link download trực tiếp từ GitHub Pages
-            # Thay 'user/repo' bằng đúng tên user và repo của bạn nếu không dùng biến môi trường
-            DEB_URL="https://2kgt.github.io/repo/debs/$FILENAME"
+            # Đặt tên file JSON chính xác theo Name:
+            JSON_FILENAME="${TWEAK_NAME}.json"
             
-            # Xuất dữ liệu ra output
+            # Xuất dữ liệu cho Telegram (Cần encode URL nếu tên có dấu cách)
+            ENCODED_JSON_NAME=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$JSON_FILENAME'))")
             echo "tweak_name=$TWEAK_NAME" >> $GITHUB_OUTPUT
             echo "tweak_ver=$TWEAK_VER" >> $GITHUB_OUTPUT
-            echo "deb_url=$DEB_URL" >> $GITHUB_OUTPUT
+            echo "deb_url=https://2kgt.github.io/repo/debs/$(python3 -c "import urllib.parse; print(urllib.parse.quote('$FILENAME'))")" >> $GITHUB_OUTPUT
 
-            # 4. Logic tạo Packages & Release (Giữ nguyên)
+            # 3. Tạo file JSON trong depictions/
+            mkdir -p depictions
+            cat <<EOF > "depictions/$JSON_FILENAME"
+{
+  "min_bridge_version": "1.1",
+  "tabs": [
+    {
+      "tabname": "Chi tiết",
+      "class": "DepictionStackView",
+      "views": [
+        { "class": "DepictionHeaderView", "title": "$TWEAK_NAME" },
+        { "class": "DepictionSubheaderView", "title": "Phiên bản $TWEAK_VER" },
+        { "class": "DepictionMarkdownView", "markdown": "### Mô tả\n$TWEAK_DESC\n\n### Nhật ký thay đổi\n$TWEAK_CHGLOG", "useRawFormat": true },
+        { "class": "DepictionSeparatorView" },
+        { "class": "DepictionTableTextView", "title": "Nhà phát triển", "text": "$TWEAK_AUTH" }
+      ]
+    }
+  ],
+  "class": "DepictionTabView"
+}
+EOF
+
+            # 4. Tạo Packages & chèn SileoDepiction
             dpkg-scanpackages -m debs /dev/null > Packages
-            sed -i "s/^Name: \(.*\)/Name: \1\nIcon: https:\/\/2kgt.github.io\/repo\/icons\/\1.png/" Packages
+            # Chèn Icon và Depiction (Dùng dấu | để tránh xung đột đường dẫn)
+            sed -i "s|^Filename: debs/$FILENAME|Filename: debs/$FILENAME\nIcon: https://2kgt.github.io/repo/icons/$TWEAK_NAME.png\nSileoDepiction: https://2kgt.github.io/repo/depictions/$ENCODED_JSON_NAME|" Packages
             bzip2 -kf Packages
+
+            # 5. Tạo Release
             {
               echo "Origin: Kyic Repository"
               echo "Label: Kyic Repository"
@@ -57,37 +86,26 @@ jobs:
               echo "Description: Kyic Repository - Kho lưu trữ tweaks chất lượng cao."
               echo "Icon: icons/Kyic.png"
               echo "Date: $(date -R)"
-              echo "Acquire-By-Hash: yes"
             } > Release
           else
-            echo "❌ Không tìm thấy thư mục debs"
             exit 1
           fi
 
-      - name: Commit and Push (Manual Fix)
-        id: push
+      - name: Commit and Push
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
-          # Thêm các file đã thay đổi
-          git add Packages* Release
-          
-          # Chỉ commit nếu có sự thay đổi
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git pull origin main --rebase
+          git add Packages* Release depictions/*.json
           if git diff --staged --quiet; then
-            echo "No changes to commit"
+            echo "No changes"
           else
-            git commit -m "Auto-update Sileo Repo [skip ci]"
-            
-            # Kéo dữ liệu mới nhất về và gộp (rebase) để tránh lỗi non-fast-forward
-            git pull --rebase origin main
-            
-            # Đẩy lên lại
+            git commit -m "Auto-update $TWEAK_NAME [skip ci]"
             git push origin main
           fi
 
       - name: "🤖 Telegram Notify"
-        if: steps.push.outcome == 'success' || steps.push.outcome == 'skipped'
+        if: success()
         env:
           TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TO: ${{ secrets.TELEGRAM_TO }}
@@ -95,34 +113,17 @@ jobs:
           TWEAK_VER: ${{ steps.info.outputs.tweak_ver }}
           DEB_URL: ${{ steps.info.outputs.deb_url }}
         run: |
-          REAL_TIME=$(TZ="Asia/Ho_Chi_Minh" date +"%d/%m/%Y %H:%M")
-
-          # Nội dung thông báo tập trung vào Tweak
           MSG="<b>✅ Kyic Repository Sileo</b>
           ──────────────────
           📦 <b>Tweak:</b> <code>${TWEAK_NAME}</code>
           💡 <b>Phiên bản:</b> <code>${TWEAK_VER}</code>
           📊 <b>Trạng thái:</b> <code>Đã cập nhật kho</code>
-          ⏰ <b>Thời gian:</b> <code>$REAL_TIME</code>
+          ⏰ <b>Thời gian:</b> <code>$(TZ="Asia/Ho_Chi_Minh" date +"%d/%m/%Y %H:%M")</code>
           ──────────────────
           🤩 <i>Hệ thống đồng bộ tự động Kyic</i>"
 
-          # Thiết kế nút theo yêu cầu mới
-          KEYBOARD=$(cat <<EOF
-          {
-            "inline_keyboard": [
-              [
-                { "text": "🌐 Kyic repo", "url": "https://2kgt.github.io/repo/" },
-                { "text": "📥 Download deb", "url": "$DEB_URL" }
-              ]
-            ]
-          }
-          EOF
-          )
+          KEYBOARD="{\"inline_keyboard\":[[{\"text\":\"🌐 Kyic repo\",\"url\":\"https://2kgt.github.io/repo/\"},{\"text\":\"📥 Download deb\",\"url\":\"$DEB_URL\"}]]}"
 
           curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
-            -d "chat_id=$TO" \
-            -d "parse_mode=HTML" \
-            -d "disable_web_page_preview=true" \
-            --data-urlencode "text=$MSG" \
-            --data-urlencode "reply_markup=$KEYBOARD"
+            -d "chat_id=$TO" -d "parse_mode=HTML" -d "disable_web_page_preview=true" \
+            --data-urlencode "text=$MSG" --data-urlencode "reply_markup=$KEYBOARD"
