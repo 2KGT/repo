@@ -1,0 +1,25 @@
+{
+  "min_bridge_version": "1.1",
+  "tabs": [
+    {
+      "tabname": "Chi tiết",
+      "class": "DepictionStackView",
+      "views": [
+        
+        { "class": "DepictionHeaderView", "title": "YouTube X" },
+        { "class": "DepictionSubheaderView", "title": "Phiên bản 1.7.19" },
+        
+        {
+          "class": "DepictionScreenshotsView",
+          "itemCornerRadius": 10,
+          "itemSize": "{160, 346}",
+          "screenshots": [  ]
+        },
+        { "class": "DepictionMarkdownView", "markdown": "### Mô tả\nA YouTube improvement tweak.\n\n### Nhật ký thay đổi\n", "useRawFormat": true },
+        { "class": "DepictionSeparatorView" },
+        { "class": "DepictionTableTextView", "title": "Nhà phát triển", "text": "PoomSmart" }
+      ]
+    }
+  ],
+  "class": "DepictionTabView"
+}
