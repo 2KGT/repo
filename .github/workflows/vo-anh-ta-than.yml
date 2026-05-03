@@ -133,30 +133,37 @@ jobs:
           TO: ${{ secrets.TELEGRAM_TO }}
         run: |
           STATUS="${{ job.status }}"
-          NAME="${{ steps.metadata.outputs.display_name || 'N/A' }}"
-          VER="${{ steps.metadata.outputs.final_ver || 'N/A' }}"
-          ICON="🧿"
-          [ "$STATUS" == "success" ] && ICON="⚡"
-          [ "$STATUS" == "failure" ] && ICON="❌"
+          # Lấy giá trị an toàn, tránh lỗi nếu các bước trước fail
+          NAME="${{ steps.metadata.outputs.display_name }}"
+          VER="${{ steps.metadata.outputs.final_ver }}"
+          PROJ_INPUT="${{ github.event.inputs.project }}"
+          
+          # Thiết lập Icon trạng thái
+          [ "$STATUS" == "success" ] && ICON="⚡" || ICON="❌"
+          [ "$STATUS" == "cancelled" ] && ICON="⚪"
 
-          # Tin nhắn giao diện Kyic
-          MSG="<b>$ICON Kyic repository update</b>%0A"
-          MSG="$MSG──────────────────%0A"
-          MSG="$MSG📱 <b>App:</b> <code>$NAME</code>%0A"
-          MSG="$MSG💡 <b>Ver:</b> <code>$VER</code>%0A"
-          MSG="$MSG💯 <b>Status:</b> <code>$STATUS ✅</code>%0A"
-          MSG="$MSG──────────────────%0A"
-          MSG="$MSG🤩 <i>Enjoy your experience!</i>"
+          # Tạo nội dung tin nhắn dùng printf để xuống dòng chuẩn
+          MSG=$(printf "<b>$ICON Kyic Repository Update</b>\n")
+          MSG="${MSG}──────────────────\n"
+          MSG="${MSG}📱 <b>Dự án:</b> <code>${NAME:-$PROJ_INPUT}</code>\n"
+          MSG="${MSG}💡 <b>Phiên bản:</b> <code>${VER:-Lỗi/Không rõ}</code>\n"
+          MSG="${MSG}📊 <b>Trạng thái:</b> <code>$STATUS</code>\n"
+          MSG="${MSG}──────────────────\n"
+          MSG="${MSG}🤩 <i>Hệ thống tự động Kyic Engine</i>"
 
+          # Gửi tin nhắn text
           curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
             -d "chat_id=$TO" \
             -d "parse_mode=HTML" \
             --data-urlencode "text=$MSG"
           
+          # Gửi file .deb nếu thành công
           if [ "$STATUS" == "success" ] && [ "${{ github.event.inputs.send_deb }}" == "true" ]; then
-            find output -name "*.deb" -type f | while read -r file; do
-              curl -s -F "chat_id=$TO" -F "document=@$file" \
-                -F "caption=✅ Build thành công: $(basename "$file")" \
-                "https://api.telegram.org/bot$TOKEN/sendDocument"
+            for file in output/*.deb; do
+              if [ -f "$file" ]; then
+                curl -s -F "chat_id=$TO" -F "document=@$file" \
+                  -F "caption=✅ Build thành công: $(basename "$file")" \
+                  "https://api.telegram.org/bot$TOKEN/sendDocument"
+              fi
             done
           fi
