@@ -169,7 +169,7 @@ jobs:
           esac
 
           # 4. Nội dung tin nhắn (Thêm mục Thời gian)
-          MSG="<b>$ICON Kyic Repository Update</b>
+          MSG="<b>$ICON Kyic Repository IPA</b>
           ──────────────────
           📱 <b>Dự án:</b> <code>$APP_NAME</code>
           💡 <b>Phiên bản:</b> <code>$APP_VER</code>
