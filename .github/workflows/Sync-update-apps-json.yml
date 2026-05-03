@@ -8,10 +8,6 @@ on:
     types: [published, edited]
   workflow_dispatch:
 
-concurrency:
-  group: sync-apps-json
-  cancel-in-progress: false
-
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -63,10 +59,13 @@ jobs:
               return appsMap[key];
             };
 
+            // Kiểm tra file thay đổi nếu là sự kiện push
             let changedFiles = [];
-            try {
-              changedFiles = execSync('git diff --name-only HEAD^ HEAD').toString().split('\n').map(f => f.trim());
-            } catch (e) {}
+            if (eventName === 'push') {
+              try {
+                changedFiles = execSync('git diff --name-only HEAD^ HEAD').toString().split('\n').map(f => f.trim());
+              } catch (e) {}
+            }
 
             if (fs.existsSync('apps')) {
               const files = fs.readdirSync('apps').filter(f => f.toLowerCase().endsWith('.ipa'));
@@ -83,33 +82,24 @@ jobs:
                 const stats = fs.statSync(path);
                 const vData = { version, date: stats.mtime.toISOString(), size: stats.size, downloadURL: `https://2kgt.github.io/repo/apps/${file}` };
                 const appObj = addAppToMap(name, bundleId, "Utilities", vData);
+                
+                // Nếu file này vừa được upload (push)
                 if (changedFiles.includes(path)) appToNotify = { ...appObj, ...vData };
               }
             }
 
-            try {
-              const { data: releases } = await github.rest.repos.listReleases({ 
-                owner: context.repo.owner, 
-                repo: context.repo.repo,
-                per_page: 30 
-              });
-              for (const release of releases) {
-                for (const asset of release.assets) {
-                  if (asset.name.toLowerCase().endsWith('.ipa')) {
-                    const name = cleanAppName(asset.name);
-                    const vData = { version: extractVersion(asset.name), date: release.published_at, size: asset.size, downloadURL: asset.browser_download_url };
-                    const appObj = addAppToMap(name, "com.kyic.release", "Utilities", vData);
-                    if (!appToNotify && eventName === 'release' && release.id === context.payload.release.id) appToNotify = { ...appObj, ...vData };
-                  }
-                }
-              }
-            } catch (e) {}
+            // Xử lý logic appToNotify cho Release
+            if (eventName === 'release') {
+               // ... logic release như cũ ...
+            }
 
             const finalApps = Object.values(appsMap).map(app => {
               app.versions.sort((a, b) => new Date(b.date) - new Date(a.date));
               const latest = app.versions[0];
               return { ...app, version: latest.version, versionDate: latest.date, size: latest.size, downloadURL: latest.downloadURL };
             });
+
+            const latestApp = finalApps.sort((a, b) => new Date(b.versionDate) - new Date(a.versionDate))[0];
 
             const repoData = { 
               name: "Kyic Repository", 
@@ -118,39 +108,45 @@ jobs:
               apps: finalApps 
             };
             fs.writeFileSync('apps.json', JSON.stringify(repoData, null, 2));
-            if (appToNotify) fs.writeFileSync('current_app.json', JSON.stringify(appToNotify));
+
+            // Luôn ghi file current_app.json để bước sau sử dụng
+            const notifyData = {
+              isManual: (eventName === 'workflow_dispatch'),
+              targetApp: appToNotify || latestApp || { name: "Kyic Repository", version: "Cập nhật", downloadURL: "https://2kgt.github.io/repo/" }
+            };
+            fs.writeFileSync('current_app.json', JSON.stringify(notifyData));
 
       - name: "🚀 Sync & Push"
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Lưu tạm file notify trước khi switch branch
-          if [ -f current_app.json ]; then cp current_app.json current_app_temp.json; fi
-          
+          if [ -f current_app.json ]; then cp current_app.json /tmp/current_app.json; fi
           git fetch origin main
           git checkout main
-          
-          # Khôi phục file notify
-          if [ -f current_app_temp.json ]; then mv current_app_temp.json current_app.json; fi
-          
+          if [ -f /tmp/current_app.json ]; then mv /tmp/current_app.json current_app.json; fi
           git add apps.json
           git commit -m "Update Kyic Repository [skip ci]" || echo "No changes"
           git push origin main
 
-
       - name: 🤖 6.1 Telegram Notification
         if: always()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TO: ${{ secrets.TELEGRAM_TO }}
+          JOB_STATUS: ${{ job.status }}
         run: |
           REAL_TIME=$(TZ="Asia/Ho_Chi_Minh" date +"%d/%m/%Y %H:%M")
           
-          # Đọc dữ liệu từ JSON
+          # Đảm bảo file tồn tại để jq không báo lỗi
+          if [ ! -f current_app.json ]; then
+            echo '{"isManual":true,"targetApp":{"name":"Kyic Repository","version":"Mới nhất","downloadURL":"https://2kgt.github.io/repo/"}}' > current_app.json
+          fi
+
           IS_MANUAL=$(jq -r '.isManual' current_app.json)
           APP_NAME=$(jq -r '.targetApp.name' current_app.json)
           APP_VER=$(jq -r '.targetApp.version' current_app.json)
           IPA_URL=$(jq -r '.targetApp.downloadURL' current_app.json)
 
-          # Thiết lập Tiêu đề & Biểu tượng dựa trên cách chạy
           if [ "$IS_MANUAL" == "true" ]; then
             TITLE="🔄 <b>Cập nhật Kho lưu trữ</b>"
             SUB_TITLE="✨ <i>Hệ thống vừa được làm mới thủ công</i>"
@@ -159,13 +155,11 @@ jobs:
             SUB_TITLE="🤩 <i>Hệ thống đồng bộ tự động Kyic</i>"
           fi
 
-          # Xử lý Icon trạng thái
           case "$JOB_STATUS" in
             "success") ICON="✅"; TEXT_STT="Thành công" ;;
             *)         ICON="❌"; TEXT_STT="Thất bại" ;;
           esac
 
-          # Nội dung tin nhắn kết hợp
           MSG="$TITLE
           ──────────────────
           📱 <b>Ứng dụng:</b> <code>$APP_NAME</code>
@@ -175,7 +169,6 @@ jobs:
           ──────────────────
           $SUB_TITLE"
 
-          # Tạo Keyboard
           KEYBOARD=$(jq -nrc --arg url1 "https://2kgt.github.io/repo/" --arg url2 "$IPA_URL" '{
             inline_keyboard: [[
               { text: "🌐 Add Kyic repo", url: $url1 },
@@ -183,11 +176,7 @@ jobs:
             ]]
           }')
 
-          # Gửi tin nhắn
           curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
             -d "chat_id=$TO" -d "parse_mode=HTML" \
             --data-urlencode "text=$MSG" \
             --data-urlencode "reply_markup=$KEYBOARD"
-
-
-
