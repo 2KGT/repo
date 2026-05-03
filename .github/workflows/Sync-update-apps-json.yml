@@ -148,7 +148,7 @@ jobs:
           IPA_URL=$(jq -r '.targetApp.downloadURL' current_app.json)
 
           if [ "$IS_MANUAL" == "true" ]; then
-            TITLE="🔄 <b>Cập nhật Kho lưu trữ</b>"
+            TITLE="🔄 <b>Cập nhật Kho lưu trữ IPA</b>"
             SUB_TITLE="✨ <i>Hệ thống vừa được làm mới thủ công</i>"
           else
             TITLE="🚀 <b>Cập nhật Ứng dụng mới</b>"
@@ -171,8 +171,8 @@ jobs:
 
           KEYBOARD=$(jq -nrc --arg url1 "https://2kgt.github.io/repo/" --arg url2 "$IPA_URL" '{
             inline_keyboard: [[
-              { text: "🌐 Add Kyic repo", url: $url1 },
-              { text: "📦 Tải xuống IPA", url: $url2 }
+              { text: "🌐 Add source", url: $url1 },
+              { text: "📦 Tải về IPA", url: $url2 }
             ]]
           }')
 
