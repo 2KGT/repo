@@ -140,8 +140,7 @@ jobs:
           [ "$STATUS" == "success" ] && ICON="⚡" || ICON="❌"
           [ "$STATUS" == "cancelled" ] && ICON="⚪"
 
-          # Tạo nội dung tin nhắn với dấu xuống dòng thực tế
-          # Sử dụng ký tự xuống dòng trực tiếp trong bash
+          # Đảm bảo các dòng dưới đây thụt lề vào trong so với cột của biến MSG
           MSG="<b>$ICON Kyic Repository Update</b>
           ──────────────────
           📱 <b>Dự án:</b> <code>${NAME:-$PROJ_INPUT}</code>
@@ -150,9 +149,8 @@ jobs:
           ──────────────────
           🤩 <i>Hệ thống tự động Kyic Engine</i>"
 
-          # Gửi tin nhắn bằng --data-urlencode để xử lý xuống dòng chuẩn
           curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
             -d "chat_id=$TO" \
             -d "parse_mode=HTML" \
             --data-urlencode "text=$MSG"
-fi
+
