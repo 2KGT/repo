@@ -73,7 +73,7 @@ jobs:
           file_pattern: "Packages* Release"
           branch: main
 
-     - name: "🤖 Telegram Notify"
+      - name: "🤖 Telegram Notify"
         run: |
           if [ -f notify_temp.json ]; then
             INFO=$(cat notify_temp.json)
@@ -103,5 +103,5 @@ jobs:
               -d "disable_web_page_preview=true" \
               --data-urlencode "text=$MSG"
           fi
-fi
+
 
