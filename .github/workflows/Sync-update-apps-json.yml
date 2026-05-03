@@ -142,30 +142,32 @@ jobs:
           VERSION: ${{ steps.metadata.outputs.final_ver }}
           PROJ_INPUT: ${{ github.event.inputs.project }}
         run: |
-          # 1. Xác định icon trạng thái
+          # 1. Biểu tượng trạng thái
           case "$JOB_STATUS" in
             success)   ICON="✅" ;;
             cancelled) ICON="⚪" ;;
             *)         ICON="❌" ;;
           esac
 
-          # 2. Nội dung thông báo (đã bỏ các link dài dòng)
+          # 2. Nội dung tin nhắn
+          # Dùng phông chữ Mono (code) cho tên dự án để nổi bật
           MSG="<b>$ICON Kyic Repository Update</b>
           ──────────────────
           📱 <b>Dự án:</b> <code>${DISP_NAME:-$PROJ_INPUT}</code>
-          💡 <b>Phiên bản:</b> <code>${VERSION:-Lỗi/Không rõ}</code>
+          💡 <b>Phiên bản:</b> <code>${VERSION:-Cập nhật hệ thống}</code>
           📊 <b>Trạng thái:</b> <code>$JOB_STATUS</code>
           ──────────────────
           🤩 <i>Hệ thống tự động Kyic Engine</i>"
 
-          # 3. Định nghĩa nút bấm (JSON)
-          # Thay URL bên dưới bằng link thực tế của bạn
+          # 3. Nút bấm xếp chồng (mỗi nút 1 mảng [] riêng để nằm riêng hàng)
           KEYBOARD=$(cat <<EOF
           {
             "inline_keyboard": [
               [
-                { "text": "🌐 Xem Repository", "url": "https://github.com/${{ github.repository }}" },
-                { "text": "📦 Tải về (IPA/Deb)", "url": "https://github.com/${{ github.repository }}/releases" }
+                { "text": "🌐 Kyic Repository", "url": "https://github.com/${{ github.repository }}" }
+              ],
+              [
+                { "text": "📦 Tải về IPA", "url": "https://github.com/${{ github.repository }}/releases" }
               ]
             ]
           }
@@ -178,4 +180,5 @@ jobs:
             -d "parse_mode=HTML" \
             --data-urlencode "text=$MSG" \
             --data-urlencode "reply_markup=$KEYBOARD"
+
 
