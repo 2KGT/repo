@@ -146,11 +146,14 @@ jobs:
           TO: ${{ secrets.TELEGRAM_TO }}
           JOB_STATUS: ${{ job.status }}
         run: |
-          # 1. Lấy thông tin từ file json do script JS tạo ra
+          # 1. Lấy thời gian thực theo múi giờ Hà Nội
+          # Định dạng: Thứ, Ngày/Tháng/Năm - Giờ:Phút
+          REAL_TIME=$(TZ="Asia/Ho_Chi_Minh" date +"%d/%m/%Y %H:%M")
+
+          # 2. Lấy thông tin từ file json
           if [ -f current_app.json ]; then
             APP_NAME=$(jq -r '.name' current_app.json)
             APP_VER=$(jq -r '.version' current_app.json)
-            # Fallback nếu dữ liệu null
             [ "$APP_NAME" == "null" ] && APP_NAME="Kyic Repository"
             [ "$APP_VER" == "null" ] && APP_VER="Latest"
           else
@@ -158,24 +161,24 @@ jobs:
             APP_VER="Cập nhật hệ thống"
           fi
 
-          # 2. Biểu tượng trạng thái theo logic công việc
+          # 3. Biểu tượng trạng thái
           case "$JOB_STATUS" in
             success)   ICON="✅" ;;
             cancelled) ICON="⚪" ;;
             *)         ICON="❌" ;;
           esac
 
-          # 3. Nội dung tin nhắn rút gọn để tập trung vào dự án
+          # 4. Nội dung tin nhắn (Thêm mục Thời gian)
           MSG="<b>$ICON Kyic Repository Update</b>
           ──────────────────
           📱 <b>Dự án:</b> <code>$APP_NAME</code>
           💡 <b>Phiên bản:</b> <code>$APP_VER</code>
           📊 <b>Trạng thái:</b> <code>$JOB_STATUS</code>
+          ⏰ <b>Thời gian:</b> <code>$REAL_TIME</code>
           ──────────────────
           🤩 <i>Hệ thống tự động Kyic Engine</i>"
 
-          # 4. Nút bấm: Đặt 2 nút trong 1 cặp ngoặc [] để nằm cùng hàng
-          # Nhãn được rút gọn để không bị Telegram cắt bớt chữ (...)
+          # 5. Nút bấm: Hai nút cùng hàng, tách biệt
           KEYBOARD=$(cat <<EOF
           {
             "inline_keyboard": [
@@ -188,10 +191,11 @@ jobs:
           EOF
           )
 
-          # 5. Gửi qua API
+          # 6. Gửi qua API
           curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
             -d "chat_id=$TO" \
             -d "parse_mode=HTML" \
             --data-urlencode "text=$MSG" \
             --data-urlencode "reply_markup=$KEYBOARD"
+
 
