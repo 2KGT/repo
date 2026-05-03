@@ -73,25 +73,35 @@ jobs:
           file_pattern: "Packages* Release"
           branch: main
 
-      - name: 🤖 Thông báo Kyic Repo Update
-        if: always()
-        env:
-          TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TO: ${{ secrets.TELEGRAM_TO }}
+      - name: "🤖 Telegram Notify"
         run: |
-          STATUS="${{ job.status }}"
-          [ "$STATUS" == "success" ] && ICON="⚡" || ICON="❌"
-          
-          # Sử dụng printf để tạo nội dung có xuống dòng thật thay vì dùng %0A
-          MSG=$(printf "<b>$ICON Kyic repository update</b>\n\n"
-          printf "──────────────────\n"
-          printf "📊 <b>Status:</b> <code>$STATUS</code>\n"
-          printf "📅 <b>Time:</b> <code>$(date '+%H:%M:%S %d/%m/%Y')</code>\n"
-          printf "──────────────────\n"
-          printf "☁️ <i>Dữ liệu kho lưu trữ hiện đã được đồng bộ!</i>")
+          if [ -f notify_temp.json ]; then
+            INFO=$(cat notify_temp.json)
+            NAME=$(echo "$INFO" | jq -r '.name')
+            VER=$(echo "$INFO" | jq -r '.version')
+            LINK=$(echo "$INFO" | jq -r '.downloadURL')
+            
+            MSG=$(printf "<b>⭐ Kyic repository update</b>\n")
+            MSG="${MSG}--------------------------------\n"
+            MSG="${MSG}📱 <b>App:</b> <code>$NAME</code>\n"
+            MSG="${MSG}💡 <b>Ver:</b> <code>$VER</code>\n"
+            MSG="${MSG}💯 <b>Status:</b> <code>Ready ✅</code>\n"
+            MSG="${MSG}--------------------------------\n"
+            MSG="${MSG}🤩 <i>Enjoy your experience!</i>"
 
-          # Gửi tin nhắn
-          curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
-            -d "chat_id=${TO}" \
-            -d "parse_mode=HTML" \
-            --data-urlencode "text=$MSG"
+            KEYBOARD=$(jq -n -c '{
+              inline_keyboard: [[
+                {text: "🌐 Kyic Repo", url: "https://2kgt.github.io/repo/"},
+                {text: "📥 Tải xuống", url: $link}
+              ]]
+            }' --arg link "$LINK")
+
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage" \
+              -d "chat_id=${{ secrets.TELEGRAM_TO }}" \
+              -d "parse_mode=HTML" \
+              --data-urlencode "text=$MSG" \
+              -d "reply_markup=$KEYBOARD"
+          else
+            echo "File notify_temp.json not found, skipping notification."
+          fi
+
