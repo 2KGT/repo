@@ -1,20 +1,11 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
   "name": "2kgt-telegram-bot",
   "main": "index.js",
   "compatibility_date": "2026-05-04",
-  "observability": {
-    "enabled": true
-  },
   "kv_namespaces": [
     {
       "binding": "BOT_KV",
-      "id": "ID_KV_NAMESPACE_CỦA_BẠN" 
+      "id": "82f0f50bdd674047bcf06dd3dd837565" // ID này không nhạy cảm, cứ để lại
     }
-  ],
-  "vars": {
-    "GH_REPO": "2KGT/repo",
-    "TELEGRAM_TOKEN": "TOKEN_BOT_CỦA_BẠN",
-    "GITHUB_PAT": "TOKEN_PAT_CỦA_BẠN"
-  }
+  ]
 }
