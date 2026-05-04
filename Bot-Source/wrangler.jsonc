@@ -1,0 +1,19 @@
+{
+  "name": "2kgt-telegram-bot",
+  "main": "index.js",
+  "compatibility_date": "2026-05-04",
+  "observability": {
+    "enabled": true
+  },
+  "kv_namespaces": [
+    {
+      "binding": "BOT_KV",
+      "id": "ID_KV_CỦA_BẠN_Ở_ĐÂY" 
+    }
+  ],
+  "vars": {
+    "GH_REPO": "2KGT/repo",
+    "TELEGRAM_TOKEN": "TOKEN_BOT_CỦA_BẠN",
+    "GITHUB_PAT": "TOKEN_PAT_CỦA_BẠN"
+  }
+}
