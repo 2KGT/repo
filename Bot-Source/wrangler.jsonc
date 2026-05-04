@@ -1,4 +1,5 @@
 {
+  "$schema": "node_modules/wrangler/config-schema.json",
   "name": "2kgt-telegram-bot",
   "main": "index.js",
   "compatibility_date": "2026-05-04",
@@ -8,7 +9,7 @@
   "kv_namespaces": [
     {
       "binding": "BOT_KV",
-      "id": "ID_KV_CỦA_BẠN_Ở_ĐÂY" 
+      "id": "ID_KV_NAMESPACE_CỦA_BẠN" 
     }
   ],
   "vars": {
