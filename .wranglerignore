@@ -1,0 +1,11 @@
+# Bỏ qua các thư mục chứa dữ liệu nặng của Repo
+.git/
+debs/
+apps/
+icons/
+depictions/
+private/
+node_modules/
+temp/
+*.ipa
+*.p12
