@@ -1,6 +1,7 @@
 {
   "name": "Kyic Repository",
   "identifier": "com.kyic.repo",
+  "Icon": "icons/Kyic.png",
   "iconURL": "https://2kgt.github.io/repo/icons/Kyic.png",
   "apps": [
     {
