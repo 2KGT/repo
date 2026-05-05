@@ -103,7 +103,7 @@ jobs:
 
             const repoData = { 
               name: "Kyic Repository", 
-              identifier: "com.2kgt.repo", 
+              identifier: "com.kyic.repo", 
               iconURL: "https://2kgt.github.io/repo/icons/Kyic.png",
               apps: finalApps 
             };
